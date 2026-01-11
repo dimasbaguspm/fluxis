@@ -19,7 +19,7 @@ func main() {
 
 	pool, err := db.Connect(ctx)
 	if err != nil {
-		slog.Error("Unable to create database connection", "error", err)
+		slog.Error("Database is unreachable", "err", err)
 		panic(err)
 	}
 
@@ -27,7 +27,7 @@ func main() {
 
 	slog.Info("Performing migration")
 	if err := migration.Up(); err != nil {
-		slog.Error("Failed to run migration", err)
+		slog.Error("Failed to run migration", "error", err.Error())
 		panic(err)
 	}
 	slog.Info("DB migration completed")
@@ -37,7 +37,7 @@ func main() {
 	internal.RegisterPublicRoutes(humaApi, pool)
 	internal.RegisterPrivateRoutes(r, humaApi, pool)
 
-	slog.Info("All is ready! serving to port ", env.AppPort)
+	slog.Info("All is ready! serving to port ", "Info", env.AppPort)
 
 	http.ListenAndServe(fmt.Sprintf(":%s", env.AppPort), r)
 }

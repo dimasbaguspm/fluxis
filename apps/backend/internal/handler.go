@@ -18,5 +18,6 @@ func RegisterPublicRoutes(api huma.API, pgx *pgxpool.Pool) {
 }
 
 func RegisterPrivateRoutes(r *http.ServeMux, api huma.API, pgx *pgxpool.Pool) {
+	//
 
 }

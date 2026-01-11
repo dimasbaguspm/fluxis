@@ -1,9 +1,9 @@
 package repositories
 
 import (
-	"errors"
 	"time"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/dimasbaguspm/fluxis/internal/models"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,8 +18,9 @@ func NewAuthRepository(pgx *pgxpool.Pool) AuthRepository {
 }
 
 var (
-	AuthErrorInvalidSigningMethod = errors.New("Invalid signin method")
-	AuthErrorInvalidToken         = errors.New("Token is invalid")
+	AuthErrorInvalidSigningMethod = huma.Error400BadRequest("Invalid signin method")
+	AuthErrorInvalidRefreshToken  = huma.Error400BadRequest("Invalid refresh token")
+	AuthErrorInvalidAccessToken   = huma.Error400BadRequest("Invalid access token")
 )
 
 const (
@@ -50,16 +51,16 @@ func (ar AuthRepository) RegenerateAccessToken(refreshToken string) (string, err
 	})
 
 	if err != nil {
-		return "", err
+		return "", AuthErrorInvalidRefreshToken
 	}
 
 	if !token.Valid {
-		return "", AuthErrorInvalidToken
+		return "", AuthErrorInvalidAccessToken
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || claims["sub"] != refreshTokenType {
-		return "", AuthErrorInvalidToken
+		return "", AuthErrorInvalidAccessToken
 	}
 
 	return generateToken(accessTokenType)

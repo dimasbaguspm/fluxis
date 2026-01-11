@@ -1,0 +1,49 @@
+services:
+  fluxis-backend-postgres:
+    image: postgres:16-alpine
+    container_name: fluxis-backend-postgres
+    environment:
+      POSTGRES_USER: db_user
+      POSTGRES_PASSWORD: db_password
+      POSTGRES_DB: fluxis-backend
+    ports:
+      - "5432:5432"
+    volumes:
+      - fluxis_backend_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U db_user -d fluxis-backend"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fluxis-backend
+
+  fluxis-backend-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fluxis-backend-api
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: fluxis-backend-postgres
+      DB_PORT: 5432
+      DB_USER: db_user
+      DB_PASSWORD: db_password
+      DB_NAME: fluxis-backend
+      APP_PORT: "8080"
+      IS_DEV_ENV: "true"
+      ADMIN_USERNAME: my-username
+      ADMIN_PASSWORD: my-password
+    depends_on:
+      fluxis-backend-postgres:
+        condition: service_healthy
+    networks:
+      - fluxis-backend
+
+volumes:
+  fluxis_backend_postgres_data:
+
+networks:
+  fluxis-backend:
+    driver: bridge

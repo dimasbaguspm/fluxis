@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
+	// Register file source driver and postgres database driver for migrations.
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 type migration struct {
