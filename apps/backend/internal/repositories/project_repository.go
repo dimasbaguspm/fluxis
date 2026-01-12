@@ -19,20 +19,17 @@ func NewProjectRepository(pgx *pgxpool.Pool) ProjectRepository {
 }
 
 func (pr ProjectRepository) GetPaginated(ctx context.Context, query models.ProjectSearchModel) (models.ProjectPaginatedModel, error) {
-	sortMap := map[string]string{
+	sortByMap := map[string]string{
 		"createdAt": "created_at",
 		"updatedAt": "updated_at",
 		"status":    "status",
 	}
-	sortColumn, ok := sortMap[query.SortBy]
-	if !ok {
-		sortColumn = "created_at" // default fallback
+	sortOrderMap := map[string]string{
+		"asc":  "ASC",
+		"desc": "DESC",
 	}
-
-	sortDirection := "DESC"
-	if query.SortOrder == "asc" {
-		sortDirection = "ASC"
-	}
+	sortColumn, _ := sortByMap[query.SortBy]
+	sortOrder, _ := sortOrderMap[query.SortOrder]
 
 	offset := (query.PageNumber - 1) * query.PageSize
 	searchPattern := "%" + query.Query + "%"
@@ -59,7 +56,7 @@ func (pr ProjectRepository) GetPaginated(ctx context.Context, query models.Proje
 			c.total
 		FROM filtered f
 		CROSS JOIN counted c
-		ORDER BY f.` + sortColumn + ` ` + sortDirection + `
+		ORDER BY f.` + sortColumn + ` ` + sortOrder + `
 		LIMIT $4 OFFSET $5
 	`
 

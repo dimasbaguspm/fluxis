@@ -101,6 +101,7 @@ func (pr ProjectResource) create(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
+
 	return &struct{ Body models.ProjectModel }{
 		Body: respSrc,
 	}, nil
@@ -114,6 +115,7 @@ func (pr ProjectResource) update(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
+
 	return &struct{ Body models.ProjectModel }{
 		Body: respSrc,
 	}, nil
@@ -126,5 +128,6 @@ func (pr ProjectResource) delete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
+
 	return nil, nil
 }

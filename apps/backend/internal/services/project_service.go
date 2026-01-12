@@ -18,15 +18,19 @@ func NewProjectService(projectRepo repositories.ProjectRepository) ProjectServic
 }
 
 func (ps *ProjectService) GetPaginated(ctx context.Context, q models.ProjectSearchModel) (models.ProjectPaginatedModel, error) {
+	for _, id := range q.ID {
+		if !common.ValidateUUID(id) {
+			return models.ProjectPaginatedModel{}, huma.Error400BadRequest("Must provide UUID format")
+		}
+	}
 	return ps.projectRepo.GetPaginated(ctx, q)
-
 }
 
 func (ps *ProjectService) GetDetail(ctx context.Context, id string) (models.ProjectModel, error) {
 	isValidID := common.ValidateUUID(id)
 
 	if !isValidID {
-		return models.ProjectModel{}, huma.Error400BadRequest("Must provided UUID format")
+		return models.ProjectModel{}, huma.Error400BadRequest("Must provide UUID format")
 	}
 
 	return ps.projectRepo.GetDetail(ctx, id)
@@ -40,7 +44,7 @@ func (ps *ProjectService) Update(ctx context.Context, id string, p models.Projec
 	isValidID := common.ValidateUUID(id)
 
 	if !isValidID {
-		return models.ProjectModel{}, huma.Error400BadRequest("Must provided UUID format")
+		return models.ProjectModel{}, huma.Error400BadRequest("Must provide UUID format")
 	}
 
 	return ps.projectRepo.Update(ctx, id, p)
@@ -50,7 +54,7 @@ func (ps *ProjectService) Delete(ctx context.Context, id string) error {
 	isValidID := common.ValidateUUID(id)
 
 	if !isValidID {
-		return huma.Error400BadRequest("Must provided UUID format")
+		return huma.Error400BadRequest("Must provide UUID format")
 	}
 
 	return ps.projectRepo.Delete(ctx, id)
