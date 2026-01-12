@@ -21,10 +21,13 @@ func RegisterPrivateRoutes(api huma.API, pgx *pgxpool.Pool) {
 
 	projectRepo := repositories.NewProjectRepository(pgx)
 	statusRepo := repositories.NewStatusRepository(pgx)
+	taskRepo := repositories.NewTaskRepository(pgx)
 
 	projectSrv := services.NewProjectService(projectRepo)
 	statusSrv := services.NewStatusService(statusRepo)
+	taskSrv := services.NewTaskService(taskRepo, projectRepo, statusRepo)
 
 	resources.NewProjectResource(projectSrv).Routes(api)
 	resources.NewStatusResource(statusSrv).Routes(api)
+	resources.NewTaskResource(taskSrv).Routes(api)
 }
