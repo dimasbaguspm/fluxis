@@ -177,6 +177,7 @@ Web-based user interface for the project management system.
 | Database Schema | `apps/backend/docs/06-migrations-workflow.md` | Migration workflow         |
 | Request Flow    | `apps/backend/docs/02-code-flow.md`           | Full lifecycle             |
 | Design Patterns | `apps/backend/docs/03-rsrm-pattern.md`        | Layer responsibilities     |
+| Concurrency     | `apps/backend/docs/07-concurrency.md`         | Goroutine patterns         |
 
 ---
 
