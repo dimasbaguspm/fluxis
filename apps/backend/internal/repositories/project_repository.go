@@ -42,8 +42,8 @@ func (pr ProjectRepository) GetPaginated(ctx context.Context, query models.Proje
 			SELECT id, name, description, status, created_at, updated_at
 			FROM projects
 			WHERE deleted_at IS NULL
-				AND (CARDINALITY($1::uuid[]) = 0 OR id = ANY($1))
-				AND (CARDINALITY($2::text[]) = 0 OR status::text = ANY($2))
+				AND ($1::uuid[] IS NULL OR CARDINALITY($1::uuid[]) = 0 OR id = ANY($1))
+				AND ($2::text[] IS NULL OR CARDINALITY($2::text[]) = 0 OR status::text = ANY($2))
 				AND ($3 = '' OR name ILIKE $3 OR description ILIKE $3)
 		),
 		counted AS (
