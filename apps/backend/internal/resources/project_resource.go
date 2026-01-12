@@ -41,7 +41,7 @@ func (pr ProjectResource) Routes(api huma.API) {
 	huma.Register(api, huma.Operation{
 		OperationID: "project-create",
 		Method:      http.MethodPost,
-		Path:        "/projects/{projectId}",
+		Path:        "/projects",
 		Summary:     "Create single project",
 		Tags:        []string{"Project"},
 		Security: []map[string][]string{
