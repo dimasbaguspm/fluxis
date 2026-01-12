@@ -66,6 +66,24 @@ func (ar AuthRepository) RegenerateAccessToken(refreshToken string) (string, err
 	return generateToken(accessTokenType)
 }
 
+func (ar AuthRepository) IsTokenValid(token string) bool {
+	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, AuthErrorInvalidSigningMethod
+		}
+		return []byte(secretJWT), nil
+	})
+	if err != nil {
+		return false
+	}
+
+	if !parsedToken.Valid {
+		return false
+	}
+
+	return true
+}
+
 func generateToken(sub string) (string, error) {
 	now := time.Now()
 

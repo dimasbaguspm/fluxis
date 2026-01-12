@@ -10,21 +10,24 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type projectRepository struct {
+type ProjectRepository struct {
 	pgx *pgxpool.Pool
 }
 
-func NewProjectRepository(pgx *pgxpool.Pool) projectRepository {
-	return projectRepository{pgx}
+func NewProjectRepository(pgx *pgxpool.Pool) ProjectRepository {
+	return ProjectRepository{pgx}
 }
 
-func (pr projectRepository) GetPaginated(ctx context.Context, query models.ProjectSearchModel) (models.ProjectPaginatedModel, error) {
+func (pr ProjectRepository) GetPaginated(ctx context.Context, query models.ProjectSearchModel) (models.ProjectPaginatedModel, error) {
 	sortMap := map[string]string{
 		"createdAt": "created_at",
 		"updatedAt": "updated_at",
 		"status":    "status",
 	}
-	sortColumn := sortMap[query.SortBy]
+	sortColumn, ok := sortMap[query.SortBy]
+	if !ok {
+		sortColumn = "created_at" // default fallback
+	}
 
 	sortDirection := "DESC"
 	if query.SortOrder == "asc" {
@@ -39,20 +42,20 @@ func (pr projectRepository) GetPaginated(ctx context.Context, query models.Proje
 			SELECT id, name, description, status, created_at, updated_at
 			FROM projects
 			WHERE deleted_at IS NULL
-				AND (CARDINALITY($1::text[]) = 0 OR id = ANY($1))
-				AND (CARDINALITY($2::text[]) = 0 OR status = ANY($2))
+				AND (CARDINALITY($1::uuid[]) = 0 OR id = ANY($1))
+				AND (CARDINALITY($2::text[]) = 0 OR status::text = ANY($2))
 				AND ($3 = '' OR name ILIKE $3 OR description ILIKE $3)
 		),
 		counted AS (
 			SELECT COUNT(*) as total FROM filtered
 		)
 		SELECT 
-			COALESCE(f.id, '') as id,
-			COALESCE(f.name, '') as name,
+			f.id,
+			f.name,
 			COALESCE(f.description, '') as description,
-			COALESCE(f.status, '') as status,
-			COALESCE(f.created_at::text, '') as created_at,
-			COALESCE(f.updated_at::text, '') as updated_at,
+			f.status::text as status,
+			f.created_at,
+			f.updated_at,
 			c.total
 		FROM filtered f
 		CROSS JOIN counted c
@@ -97,17 +100,16 @@ func (pr projectRepository) GetPaginated(ctx context.Context, query models.Proje
 		PageSize:   query.PageSize,
 		TotalPages: totalPages,
 		TotalCount: totalCount,
-		SortBy:     query.SortBy,
-		SortOrder:  query.SortOrder,
 	}, nil
 }
 
-func (pr projectRepository) GetDetail(ctx context.Context, id string) (models.ProjectModel, error) {
+func (pr ProjectRepository) GetDetail(ctx context.Context, id string) (models.ProjectModel, error) {
+
 	var data models.ProjectModel
 
 	sql := `SELECT id, name, description, status, created_at, updated_at
-			FROM projects
-			WHERE id = $1 AND deleted_at IS NULL`
+				FROM projects
+				WHERE id = $1::uuid AND deleted_at IS NULL`
 
 	err := pr.pgx.QueryRow(ctx, sql, id).Scan(&data.ID, &data.Name, &data.Description, &data.Status, &data.CreatedAt, &data.UpdatedAt)
 
@@ -121,10 +123,11 @@ func (pr projectRepository) GetDetail(ctx context.Context, id string) (models.Pr
 	return data, nil
 }
 
-func (pr projectRepository) Create(ctx context.Context, payload models.ProjectCreateModel) (models.ProjectModel, error) {
+func (pr ProjectRepository) Create(ctx context.Context, payload models.ProjectCreateModel) (models.ProjectModel, error) {
 	var data models.ProjectModel
 
-	sql := `INSERT into projects (name, description, status) VALUES ($1,$2,$3) RETURNING id, name, description, status, created_at, updated_at`
+	sql := `INSERT into projects (name, description, status) VALUES ($1, $2, $3)
+				RETURNING id, name, description, status, created_at, updated_at`
 
 	err := pr.pgx.QueryRow(ctx, sql, payload.Name, payload.Description, payload.Status).Scan(&data.ID, &data.Name, &data.Description, &data.Status, &data.CreatedAt, &data.UpdatedAt)
 
@@ -135,7 +138,7 @@ func (pr projectRepository) Create(ctx context.Context, payload models.ProjectCr
 	return data, nil
 }
 
-func (pr projectRepository) Update(ctx context.Context, id string, payload models.ProjectUpdateModel) (models.ProjectModel, error) {
+func (pr ProjectRepository) Update(ctx context.Context, id string, payload models.ProjectUpdateModel) (models.ProjectModel, error) {
 	var data models.ProjectModel
 
 	sql := `UPDATE projects
@@ -143,7 +146,7 @@ func (pr projectRepository) Update(ctx context.Context, id string, payload model
 				description = COALESCE($2, description),
 				status = COALESCE($3, status),
 				updated_at = CURRENT_TIMESTAMP
-			WHERE id = $4 AND deleted_at IS NULL
+				WHERE id = $4::uuid AND deleted_at IS NULL
 			RETURNING id, name, description, status, created_at, updated_at`
 	err := pr.pgx.QueryRow(ctx, sql, payload.Name, payload.Description, payload.Status, id).Scan(&data.ID, &data.Name, &data.Description, &data.Status, &data.CreatedAt, &data.UpdatedAt)
 
@@ -157,18 +160,17 @@ func (pr projectRepository) Update(ctx context.Context, id string, payload model
 	return data, nil
 }
 
-func (pr projectRepository) Delete(ctx context.Context, id string) error {
+func (pr ProjectRepository) Delete(ctx context.Context, id string) error {
 	sql := `UPDATE projects
-			SET deleted_at = CURRENT_TIMESTAMP		
-			WHERE id = $1 AND deleted_at IS NULL`
+					SET deleted_at = CURRENT_TIMESTAMP      
+					WHERE id = $1::uuid AND deleted_at IS NULL`
 
-	err := pr.pgx.QueryRow(ctx, sql, id).Scan()
-
+	cmdTag, err := pr.pgx.Exec(ctx, sql, id)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
-		}
-		return err
+		return huma.Error400BadRequest("Unable to delete the record", err)
+	}
+	if cmdTag.RowsAffected() == 0 {
+		return huma.Error404NotFound("No project found")
 	}
 
 	return nil

@@ -1,9 +1,8 @@
 package internal
 
 import (
-	"net/http"
-
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/dimasbaguspm/fluxis/internal/middlewares"
 	"github.com/dimasbaguspm/fluxis/internal/repositories"
 	"github.com/dimasbaguspm/fluxis/internal/resources"
 	"github.com/dimasbaguspm/fluxis/internal/services"
@@ -12,12 +11,16 @@ import (
 
 func RegisterPublicRoutes(api huma.API, pgx *pgxpool.Pool) {
 	authRepo := repositories.NewAuthRepository(pgx)
-	authService := services.NewAuthService(authRepo)
+	authSrv := services.NewAuthService(authRepo)
 
-	resources.NewAuthResource(authService).Routes(api)
+	resources.NewAuthResource(authSrv).Routes(api)
 }
 
-func RegisterPrivateRoutes(r *http.ServeMux, api huma.API, pgx *pgxpool.Pool) {
-	//
+func RegisterPrivateRoutes(api huma.API, pgx *pgxpool.Pool) {
+	api.UseMiddleware(middlewares.SessionMiddleware(api))
 
+	projectRepo := repositories.NewProjectRepository(pgx)
+	projectSrv := services.NewProjectService(projectRepo)
+
+	resources.NewProjectResource(projectSrv).Routes(api)
 }

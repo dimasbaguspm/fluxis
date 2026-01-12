@@ -35,7 +35,7 @@ func main() {
 	humaApi := humago.New(r, configs.GetOpenapiConfig(env))
 
 	internal.RegisterPublicRoutes(humaApi, pool)
-	internal.RegisterPrivateRoutes(r, humaApi, pool)
+	internal.RegisterPrivateRoutes(humaApi, pool)
 
 	slog.Info("All is ready! serving to port ", "Info", env.AppPort)
 

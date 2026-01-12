@@ -1,13 +1,15 @@
 package models
 
+import "time"
+
 type ProjectModel struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Status      string `json:"status"`
-	CreatedAt   string `json:"createdAt"`
-	UpdatedAt   string `json:"updatedAt"`
-	DeletedAt   string `json:"deletedAt,omitempty"`
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Status      string     `json:"status" enum:"active,paused,archived"`
+	CreatedAt   time.Time  `json:"createdAt" enum:"active,paused,archived"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
+	DeletedAt   *time.Time `json:"deletedAt,omitempty"`
 }
 
 type ProjectPaginatedModel struct {
@@ -16,18 +18,16 @@ type ProjectPaginatedModel struct {
 	PageSize   int            `json:"pageSize"`
 	TotalPages int            `json:"totalPages"`
 	TotalCount int            `json:"totalCount"`
-	SortBy     string         `json:"sortBy" enum:"createdAt,updatedAt,status"`
-	SortOrder  string         `json:"sortOrder" enum:"asc,desc"`
 }
 
 type ProjectSearchModel struct {
-	ID         []string `json:"id"`
-	Query      string   `json:"query"`
-	Status     []string `json:"status" enum:"active,paused,archived"`
-	PageNumber int      `json:"pageNumber" default:"1"`
-	PageSize   int      `json:"pageSize" default:"25"`
-	SortBy     string   `json:"sortBy" enum:"createdAt,updatedAt,status" default:"createdAt"`
-	SortOrder  string   `json:"sortOrder" enum:"asc,desc" default:"desc"`
+	ID         []string `query:"id"`
+	Query      string   `query:"query"`
+	Status     []string `query:"status" enum:"active,paused,archived"`
+	PageNumber int      `query:"pageNumber" default:"1"`
+	PageSize   int      `query:"pageSize" default:"25"`
+	SortBy     string   `query:"sortBy" enum:"createdAt,updatedAt,status" default:"createdAt"`
+	SortOrder  string   `query:"sortOrder" enum:"asc,desc" default:"desc"`
 }
 
 type ProjectCreateModel struct {
