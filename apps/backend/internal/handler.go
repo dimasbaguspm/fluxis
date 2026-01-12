@@ -20,7 +20,11 @@ func RegisterPrivateRoutes(api huma.API, pgx *pgxpool.Pool) {
 	api.UseMiddleware(middlewares.SessionMiddleware(api))
 
 	projectRepo := repositories.NewProjectRepository(pgx)
+	statusRepo := repositories.NewStatusRepository(pgx)
+
 	projectSrv := services.NewProjectService(projectRepo)
+	statusSrv := services.NewStatusService(statusRepo)
 
 	resources.NewProjectResource(projectSrv).Routes(api)
+	resources.NewStatusResource(statusSrv).Routes(api)
 }

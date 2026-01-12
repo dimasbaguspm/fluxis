@@ -18,7 +18,9 @@ CREATE TABLE statuses (
         slug TEXT NOT NULL,
         position INT NOT NULL DEFAULT 0,
         is_default BOOLEAN NOT NULL DEFAULT FALSE,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        deleted_at TIMESTAMPTZ
 );
 
 CREATE OR REPLACE FUNCTION create_default_statuses_for_project()
