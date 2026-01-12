@@ -183,3 +183,18 @@ func (sr StatusRepository) ValidateReorderCounts(ctx context.Context, projectId 
 	}
 	return total, matched, nil
 }
+
+func (sr StatusRepository) GetDetail(ctx context.Context, id string) (models.StatusModel, error) {
+	var s models.StatusModel
+	sql := `SELECT id, project_id, name, slug, position, is_default, created_at, updated_at
+		FROM statuses WHERE id = $1::uuid AND deleted_at IS NULL`
+
+	err := sr.pgx.QueryRow(ctx, sql, id).Scan(&s.ID, &s.ProjectID, &s.Name, &s.Slug, &s.Position, &s.IsDefault, &s.CreatedAt, &s.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.StatusModel{}, huma.Error404NotFound("No status found")
+		}
+		return models.StatusModel{}, huma.Error400BadRequest("Unable to query status", err)
+	}
+	return s, nil
+}

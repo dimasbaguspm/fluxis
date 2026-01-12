@@ -68,3 +68,10 @@ func (ss *StatusService) Reorder(ctx context.Context, projectId string, ids []st
 
 	return ss.statusRepo.Reorder(ctx, projectId, ids)
 }
+
+func (ss *StatusService) GetDetail(ctx context.Context, id string) (models.StatusModel, error) {
+	if !common.ValidateUUID(id) {
+		return models.StatusModel{}, huma.Error400BadRequest("Must provide UUID format")
+	}
+	return ss.statusRepo.GetDetail(ctx, id)
+}

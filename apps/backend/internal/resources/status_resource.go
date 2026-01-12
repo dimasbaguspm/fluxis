@@ -28,6 +28,15 @@ func (sr StatusResource) Routes(api huma.API) {
 	}, sr.getByProject)
 
 	huma.Register(api, huma.Operation{
+		OperationID: "status-get",
+		Method:      http.MethodGet,
+		Path:        "/statuses/{statusId}",
+		Summary:     "Get a status by id",
+		Tags:        []string{"Project", "Status"},
+		Security:    []map[string][]string{{"bearer": {}}},
+	}, sr.get)
+
+	huma.Register(api, huma.Operation{
 		OperationID: "status-create",
 		Method:      http.MethodPost,
 		Path:        "/projects/{projectId}/statuses",
@@ -72,6 +81,16 @@ func (sr StatusResource) getByProject(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return &struct{ Body []models.StatusModel }{Body: resp}, nil
+}
+
+func (sr StatusResource) get(ctx context.Context, input *struct {
+	Path string `path:"statusId"`
+}) (*struct{ Body models.StatusModel }, error) {
+	resp, err := sr.statusSrv.GetDetail(ctx, input.Path)
+	if err != nil {
+		return nil, err
+	}
+	return &struct{ Body models.StatusModel }{Body: resp}, nil
 }
 
 func (sr StatusResource) create(ctx context.Context, input *struct {
