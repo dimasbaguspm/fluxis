@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/dimasbaguspm/fluxis/internal/common"
 	"github.com/dimasbaguspm/fluxis/internal/models"
 	"github.com/dimasbaguspm/fluxis/internal/repositories"
 	"github.com/dimasbaguspm/fluxis/internal/workers"
@@ -15,11 +16,11 @@ type TaskService struct {
 	projectRepo repositories.ProjectRepository
 	statusRepo  repositories.StatusRepository
 	lr          repositories.LogRepository
-	lw          *workers.LogWorker
+	tw          *workers.TaskWorker
 }
 
-func NewTaskService(taskRepo repositories.TaskRepository, projectRepo repositories.ProjectRepository, statusRepo repositories.StatusRepository, lw *workers.LogWorker, lr repositories.LogRepository) TaskService {
-	return TaskService{taskRepo: taskRepo, projectRepo: projectRepo, statusRepo: statusRepo, lr: lr, lw: lw}
+func NewTaskService(taskRepo repositories.TaskRepository, projectRepo repositories.ProjectRepository, statusRepo repositories.StatusRepository, tw *workers.TaskWorker, lr repositories.LogRepository) TaskService {
+	return TaskService{taskRepo: taskRepo, projectRepo: projectRepo, statusRepo: statusRepo, lr: lr, tw: tw}
 }
 
 func (ts *TaskService) GetPaginated(ctx context.Context, q models.TaskSearchModel) (models.TaskPaginatedModel, error) {
@@ -64,7 +65,7 @@ func (ts *TaskService) Create(ctx context.Context, payload models.TaskCreateMode
 		return t, err
 	}
 
-	ts.lw.Enqueue(workers.Trigger{Resource: "task", ID: t.ID, Action: "created"})
+	ts.tw.Enqueue(common.Trigger{Resource: "task", ID: t.ID, Action: "created"})
 	return t, nil
 }
 
@@ -110,9 +111,9 @@ func (ts *TaskService) Update(ctx context.Context, id string, payload models.Tas
 
 	// Generate log entry
 	if statusChanged {
-		ts.lw.Enqueue(workers.Trigger{Resource: "task", ID: res.ID, Action: "status_changed"})
+		ts.tw.Enqueue(common.Trigger{Resource: "task", ID: res.ID, Action: "status_changed"})
 	} else {
-		ts.lw.Enqueue(workers.Trigger{Resource: "task", ID: res.ID, Action: "updated"})
+		ts.tw.Enqueue(common.Trigger{Resource: "task", ID: res.ID, Action: "updated"})
 	}
 	return res, nil
 }
@@ -122,7 +123,7 @@ func (ts *TaskService) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	ts.lw.Enqueue(workers.Trigger{Resource: "task", ID: id, Action: "deleted"})
+	ts.tw.Enqueue(common.Trigger{Resource: "task", ID: id, Action: "deleted"})
 	return nil
 }
 

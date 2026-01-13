@@ -41,9 +41,11 @@ apps/
 6. **`06-migrations-workflow.md`** - Database migrations system and workflow
    - Reference when: Making database schema changes
 7. **`07-concurrency.md`** - Goroutine patterns and concurrency
-   - Reference when: Working with concurrent operations, workers
+   - Reference when: Working with concurrent operations, parallel reads
+8. **`08-workers.md`** - Worker pattern for async event processing
+   - Reference when: Creating workers, processing entity changes, asynchronous logging
 
-**Key Implementation Patterns:**
+## Key Implementation Patterns:
 
 - Follow the **RSRM** (Resource-Service-Repository-Model) pattern strictly
 - Implementation order: Model → Repository → Service → Resource
@@ -59,7 +61,8 @@ apps/backend/internal/
 ├── services/        # Business logic layer
 ├── resources/       # HTTP handlers layer
 ├── handler.go       # Route registration
-└── middlewares/     # Middleware implementations
+├── middlewares/     # Middleware implementations
+└── workers/         # Worker logic for async processing
 ```
 
 ### When Working on Backend E2E (`apps/backend-e2e/`)

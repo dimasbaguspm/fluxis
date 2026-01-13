@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 
+	"github.com/dimasbaguspm/fluxis/internal/common"
 	"github.com/dimasbaguspm/fluxis/internal/models"
 	"github.com/dimasbaguspm/fluxis/internal/repositories"
 	"github.com/dimasbaguspm/fluxis/internal/workers"
@@ -10,12 +11,12 @@ import (
 
 type ProjectService struct {
 	pr repositories.ProjectRepository
-	lw *workers.LogWorker
+	pw *workers.ProjectWorker
 	lr repositories.LogRepository
 }
 
-func NewProjectService(pr repositories.ProjectRepository, lw *workers.LogWorker, lr repositories.LogRepository) ProjectService {
-	return ProjectService{pr: pr, lw: lw, lr: lr}
+func NewProjectService(pr repositories.ProjectRepository, pw *workers.ProjectWorker, lr repositories.LogRepository) ProjectService {
+	return ProjectService{pr: pr, pw: pw, lr: lr}
 }
 
 func (ps *ProjectService) GetPaginated(ctx context.Context, q models.ProjectSearchModel) (models.ProjectPaginatedModel, error) {
@@ -32,8 +33,8 @@ func (ps *ProjectService) Create(ctx context.Context, p models.ProjectCreateMode
 		return proj, err
 	}
 
-	if ps.lw != nil {
-		ps.lw.Enqueue(workers.Trigger{Resource: "project", ID: proj.ID, Action: "created"})
+	if ps.pw != nil {
+		ps.pw.Enqueue(common.Trigger{Resource: "project", ID: proj.ID, Action: "created"})
 	}
 
 	return proj, nil
@@ -45,8 +46,8 @@ func (ps *ProjectService) Update(ctx context.Context, id string, p models.Projec
 		return proj, err
 	}
 
-	if ps.lw != nil {
-		ps.lw.Enqueue(workers.Trigger{Resource: "project", ID: proj.ID, Action: "updated"})
+	if ps.pw != nil {
+		ps.pw.Enqueue(common.Trigger{Resource: "project", ID: proj.ID, Action: "updated"})
 	}
 
 	return proj, nil
@@ -57,8 +58,8 @@ func (ps *ProjectService) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	if ps.lw != nil {
-		ps.lw.Enqueue(workers.Trigger{Resource: "project", ID: id, Action: "deleted"})
+	if ps.pw != nil {
+		ps.pw.Enqueue(common.Trigger{Resource: "project", ID: id, Action: "deleted"})
 	}
 
 	return nil

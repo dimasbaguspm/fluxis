@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/dimasbaguspm/fluxis/internal/middlewares"
@@ -28,11 +27,13 @@ func RegisterPrivateRoutes(ctx context.Context, api huma.API, pgx *pgxpool.Pool)
 	tR := repositories.NewTaskRepository(pgx)
 	lR := repositories.NewLogRepository(pgx)
 
-	lW := workers.NewLogWorker(pR, sR, tR, lR, 10*time.Second)
+	pW := workers.NewProjectWorker(ctx, pR, lR)
+	sW := workers.NewStatusWorker(ctx, sR, lR)
+	tW := workers.NewTaskWorker(ctx, tR, lR)
 
-	pS := services.NewProjectService(pR, lW, lR)
-	sS := services.NewStatusService(sR, lW, lR, pR)
-	tS := services.NewTaskService(tR, pR, sR, lW, lR)
+	pS := services.NewProjectService(pR, pW, lR)
+	sS := services.NewStatusService(sR, sW, lR, pR)
+	tS := services.NewTaskService(tR, pR, sR, tW, lR)
 
 	resources.NewProjectResource(pS).Routes(api)
 	resources.NewStatusResource(sS).Routes(api)
@@ -40,7 +41,9 @@ func RegisterPrivateRoutes(ctx context.Context, api huma.API, pgx *pgxpool.Pool)
 
 	go func() {
 		<-ctx.Done()
-		lW.Stop()
+		pW.Stop()
+		sW.Stop()
+		tW.Stop()
 	}()
 
 }

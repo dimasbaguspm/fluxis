@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/dimasbaguspm/fluxis/internal/common"
 	"github.com/dimasbaguspm/fluxis/internal/models"
 	"github.com/dimasbaguspm/fluxis/internal/repositories"
 	"github.com/dimasbaguspm/fluxis/internal/workers"
@@ -13,11 +14,11 @@ type StatusService struct {
 	sr repositories.StatusRepository
 	pr repositories.ProjectRepository
 	lr repositories.LogRepository
-	lw *workers.LogWorker
+	sw *workers.StatusWorker
 }
 
-func NewStatusService(sr repositories.StatusRepository, lw *workers.LogWorker, lr repositories.LogRepository, pr repositories.ProjectRepository) StatusService {
-	return StatusService{sr: sr, lr: lr, lw: lw, pr: pr}
+func NewStatusService(sr repositories.StatusRepository, sw *workers.StatusWorker, lr repositories.LogRepository, pr repositories.ProjectRepository) StatusService {
+	return StatusService{sr: sr, lr: lr, sw: sw, pr: pr}
 }
 
 func (ss *StatusService) GetByProject(ctx context.Context, pId string) ([]models.StatusModel, error) {
@@ -31,7 +32,7 @@ func (ss *StatusService) Create(ctx context.Context, p models.StatusCreateModel)
 		return s, err
 	}
 
-	ss.lw.Enqueue(workers.Trigger{Resource: "status", ID: s.ID, Action: "created"})
+	ss.sw.Enqueue(common.Trigger{Resource: "status", ID: s.ID, Action: "created"})
 	return s, nil
 }
 
@@ -41,7 +42,7 @@ func (ss *StatusService) Update(ctx context.Context, id string, p models.StatusU
 		return s, err
 	}
 
-	ss.lw.Enqueue(workers.Trigger{Resource: "status", ID: s.ID, Action: "updated"})
+	ss.sw.Enqueue(common.Trigger{Resource: "status", ID: s.ID, Action: "updated"})
 	return s, nil
 }
 
@@ -50,7 +51,7 @@ func (ss *StatusService) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	ss.lw.Enqueue(workers.Trigger{Resource: "status", ID: id, Action: "deleted"})
+	ss.sw.Enqueue(common.Trigger{Resource: "status", ID: id, Action: "deleted"})
 	return nil
 }
 
