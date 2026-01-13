@@ -1,0 +1,49 @@
+name: Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/backend/**"
+      - ".github/workflows/check-backend.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  check-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.25"
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install Dependencies
+        working-directory: apps/backend
+        run: go mod download
+
+      - name: Run go vet
+        working-directory: apps/backend
+        run: go vet ./...
+
+      - name: Run tests
+        working-directory: apps/backend
+        run: go test ./... -v
+
+      - name: Build
+        working-directory: apps/backend
+        run: go build ./...
