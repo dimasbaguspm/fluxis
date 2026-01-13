@@ -23,7 +23,7 @@ func (sr StatusResource) Routes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/projects/{projectId}/statuses",
 		Summary:     "Get statuses for a project",
-		Tags:        []string{"Project", "Status"},
+		Tags:        []string{"Status"},
 		Security:    []map[string][]string{{"bearer": {}}},
 	}, sr.getByProject)
 
@@ -32,7 +32,7 @@ func (sr StatusResource) Routes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/statuses/{statusId}",
 		Summary:     "Get a status by id",
-		Tags:        []string{"Project", "Status"},
+		Tags:        []string{"Status"},
 		Security:    []map[string][]string{{"bearer": {}}},
 	}, sr.get)
 
@@ -41,7 +41,7 @@ func (sr StatusResource) Routes(api huma.API) {
 		Method:      http.MethodPost,
 		Path:        "/projects/{projectId}/statuses",
 		Summary:     "Create a status for a project",
-		Tags:        []string{"Project", "Status"},
+		Tags:        []string{"Status"},
 		Security:    []map[string][]string{{"bearer": {}}},
 	}, sr.create)
 
@@ -50,7 +50,7 @@ func (sr StatusResource) Routes(api huma.API) {
 		Method:      http.MethodPatch,
 		Path:        "/statuses/{statusId}",
 		Summary:     "Update a status",
-		Tags:        []string{"Project", "Status"},
+		Tags:        []string{"Status"},
 		Security:    []map[string][]string{{"bearer": {}}},
 	}, sr.update)
 
@@ -59,7 +59,7 @@ func (sr StatusResource) Routes(api huma.API) {
 		Method:      http.MethodDelete,
 		Path:        "/statuses/{statusId}",
 		Summary:     "Delete a status",
-		Tags:        []string{"Project", "Status"},
+		Tags:        []string{"Status"},
 		Security:    []map[string][]string{{"bearer": {}}},
 	}, sr.delete)
 
@@ -68,7 +68,7 @@ func (sr StatusResource) Routes(api huma.API) {
 		Method:      http.MethodPost,
 		Path:        "/projects/{projectId}/statuses/reorder",
 		Summary:     "Reorder statuses for a project",
-		Tags:        []string{"Project", "Status"},
+		Tags:        []string{"Status"},
 		Security:    []map[string][]string{{"bearer": {}}},
 	}, sr.reorder)
 }

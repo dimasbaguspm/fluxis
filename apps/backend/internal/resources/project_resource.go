@@ -68,6 +68,17 @@ func (pr ProjectResource) Routes(api huma.API) {
 			{"bearer": {}},
 		},
 	}, pr.delete)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "project-get-logs",
+		Method:      http.MethodGet,
+		Path:        "/projects/{projectId}/logs",
+		Summary:     "Get Project logs",
+		Tags:        []string{"Project"},
+		Security: []map[string][]string{
+			{"bearer": {}},
+		},
+	}, pr.getLogs)
 }
 
 func (pr ProjectResource) getPaginated(ctx context.Context, input *models.ProjectSearchModel) (*struct{ Body models.ProjectPaginatedModel }, error) {
@@ -130,4 +141,18 @@ func (pr ProjectResource) delete(ctx context.Context, input *struct {
 	}
 
 	return nil, nil
+}
+
+func (pr ProjectResource) getLogs(ctx context.Context, input *struct {
+	Path string `path:"projectId"`
+	models.LogSearchModel
+}) (*struct{ Body models.LogPaginatedModel }, error) {
+	respSrv, err := pr.projectSrv.GetLogs(ctx, input.Path, input.LogSearchModel)
+	if err != nil {
+		return nil, err
+	}
+
+	return &struct{ Body models.LogPaginatedModel }{
+		Body: respSrv,
+	}, nil
 }

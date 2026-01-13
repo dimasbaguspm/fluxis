@@ -1,11 +1,15 @@
 package internal
 
 import (
+	"context"
+	"time"
+
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/dimasbaguspm/fluxis/internal/middlewares"
 	"github.com/dimasbaguspm/fluxis/internal/repositories"
 	"github.com/dimasbaguspm/fluxis/internal/resources"
 	"github.com/dimasbaguspm/fluxis/internal/services"
+	"github.com/dimasbaguspm/fluxis/internal/workers"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -16,18 +20,27 @@ func RegisterPublicRoutes(api huma.API, pgx *pgxpool.Pool) {
 	resources.NewAuthResource(authSrv).Routes(api)
 }
 
-func RegisterPrivateRoutes(api huma.API, pgx *pgxpool.Pool) {
+func RegisterPrivateRoutes(ctx context.Context, api huma.API, pgx *pgxpool.Pool) {
 	api.UseMiddleware(middlewares.SessionMiddleware(api))
 
-	projectRepo := repositories.NewProjectRepository(pgx)
-	statusRepo := repositories.NewStatusRepository(pgx)
-	taskRepo := repositories.NewTaskRepository(pgx)
+	prR := repositories.NewProjectRepository(pgx)
+	sR := repositories.NewStatusRepository(pgx)
+	tR := repositories.NewTaskRepository(pgx)
+	lr := repositories.NewLogRepository(pgx)
 
-	projectSrv := services.NewProjectService(projectRepo)
-	statusSrv := services.NewStatusService(statusRepo)
-	taskSrv := services.NewTaskService(taskRepo, projectRepo, statusRepo)
+	lW := workers.NewLogWorker(prR, sR, tR, lr, 10*time.Second)
 
-	resources.NewProjectResource(projectSrv).Routes(api)
-	resources.NewStatusResource(statusSrv).Routes(api)
-	resources.NewTaskResource(taskSrv).Routes(api)
+	pS := services.NewProjectService(prR, lW, lr)
+	sS := services.NewStatusService(sR)
+	tS := services.NewTaskService(tR, prR, sR)
+
+	resources.NewProjectResource(pS).Routes(api)
+	resources.NewStatusResource(sS).Routes(api)
+	resources.NewTaskResource(tS).Routes(api)
+
+	go func() {
+		<-ctx.Done()
+		lW.Stop()
+	}()
+
 }
