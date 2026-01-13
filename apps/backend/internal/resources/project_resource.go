@@ -93,7 +93,7 @@ func (pr ProjectResource) getPaginated(ctx context.Context, input *models.Projec
 }
 
 func (pr ProjectResource) getDetail(ctx context.Context, input *struct {
-	Path string `path:"projectId"`
+	Path string `path:"projectId" format:"uuid"`
 }) (*struct{ Body models.ProjectModel }, error) {
 	respSrv, err := pr.projectSrv.GetDetail(ctx, input.Path)
 	if err != nil {
@@ -119,7 +119,7 @@ func (pr ProjectResource) create(ctx context.Context, input *struct {
 }
 
 func (pr ProjectResource) update(ctx context.Context, input *struct {
-	Path string `path:"projectId"`
+	Path string `path:"projectId" format:"uuid"`
 	Body models.ProjectUpdateModel
 }) (*struct{ Body models.ProjectModel }, error) {
 	respSrc, err := pr.projectSrv.Update(ctx, input.Path, input.Body)
@@ -133,7 +133,7 @@ func (pr ProjectResource) update(ctx context.Context, input *struct {
 }
 
 func (pr ProjectResource) delete(ctx context.Context, input *struct {
-	Path string `path:"projectId"`
+	Path string `path:"projectId" format:"uuid"`
 }) (*struct{}, error) {
 	err := pr.projectSrv.Delete(ctx, input.Path)
 	if err != nil {
@@ -144,7 +144,7 @@ func (pr ProjectResource) delete(ctx context.Context, input *struct {
 }
 
 func (pr ProjectResource) getLogs(ctx context.Context, input *struct {
-	Path string `path:"projectId"`
+	Path string `path:"projectId" format:"uuid"`
 	models.LogSearchModel
 }) (*struct{ Body models.LogPaginatedModel }, error) {
 	respSrv, err := pr.projectSrv.GetLogs(ctx, input.Path, input.LogSearchModel)

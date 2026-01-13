@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 
-	"github.com/danielgtaylor/huma/v2"
-	"github.com/dimasbaguspm/fluxis/internal/common"
 	"github.com/dimasbaguspm/fluxis/internal/models"
 	"github.com/dimasbaguspm/fluxis/internal/repositories"
 	"github.com/dimasbaguspm/fluxis/internal/workers"
@@ -21,21 +19,10 @@ func NewProjectService(pr repositories.ProjectRepository, lw *workers.LogWorker,
 }
 
 func (ps *ProjectService) GetPaginated(ctx context.Context, q models.ProjectSearchModel) (models.ProjectPaginatedModel, error) {
-	for _, id := range q.ID {
-		if !common.ValidateUUID(id) {
-			return models.ProjectPaginatedModel{}, huma.Error400BadRequest("Must provide UUID format")
-		}
-	}
 	return ps.pr.GetPaginated(ctx, q)
 }
 
 func (ps *ProjectService) GetDetail(ctx context.Context, id string) (models.ProjectModel, error) {
-	isValidID := common.ValidateUUID(id)
-
-	if !isValidID {
-		return models.ProjectModel{}, huma.Error400BadRequest("Must provide UUID format")
-	}
-
 	return ps.pr.GetDetail(ctx, id)
 }
 
@@ -53,12 +40,6 @@ func (ps *ProjectService) Create(ctx context.Context, p models.ProjectCreateMode
 }
 
 func (ps *ProjectService) Update(ctx context.Context, id string, p models.ProjectUpdateModel) (models.ProjectModel, error) {
-	isValidID := common.ValidateUUID(id)
-
-	if !isValidID {
-		return models.ProjectModel{}, huma.Error400BadRequest("Must provide UUID format")
-	}
-
 	proj, err := ps.pr.Update(ctx, id, p)
 	if err != nil {
 		return proj, err
@@ -72,12 +53,6 @@ func (ps *ProjectService) Update(ctx context.Context, id string, p models.Projec
 }
 
 func (ps *ProjectService) Delete(ctx context.Context, id string) error {
-	isValidID := common.ValidateUUID(id)
-
-	if !isValidID {
-		return huma.Error400BadRequest("Must provide UUID format")
-	}
-
 	if err := ps.pr.Delete(ctx, id); err != nil {
 		return err
 	}
@@ -90,8 +65,7 @@ func (ps *ProjectService) Delete(ctx context.Context, id string) error {
 }
 
 func (ps *ProjectService) GetLogs(ctx context.Context, projectID string, q models.LogSearchModel) (models.LogPaginatedModel, error) {
-	if !common.ValidateUUID(projectID) {
-		return models.LogPaginatedModel{}, huma.Error400BadRequest("Must provide UUID format")
-	}
+	q.StatusID = []string{}
+	q.TaskID = []string{}
 	return ps.lr.GetPaginated(ctx, projectID, q)
 }

@@ -4,104 +4,82 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/dimasbaguspm/fluxis/internal/common"
 	"github.com/dimasbaguspm/fluxis/internal/models"
 	"github.com/dimasbaguspm/fluxis/internal/repositories"
 	"github.com/dimasbaguspm/fluxis/internal/workers"
 )
 
 type StatusService struct {
-	statusRepo repositories.StatusRepository
-	lr         repositories.LogRepository
-	lw         *workers.LogWorker
+	sr repositories.StatusRepository
+	pr repositories.ProjectRepository
+	lr repositories.LogRepository
+	lw *workers.LogWorker
 }
 
-func NewStatusService(statusRepo repositories.StatusRepository, lw *workers.LogWorker, lr repositories.LogRepository) StatusService {
-	return StatusService{statusRepo: statusRepo, lr: lr, lw: lw}
+func NewStatusService(sr repositories.StatusRepository, lw *workers.LogWorker, lr repositories.LogRepository, pr repositories.ProjectRepository) StatusService {
+	return StatusService{sr: sr, lr: lr, lw: lw, pr: pr}
 }
 
-func (ss *StatusService) GetByProject(ctx context.Context, projectId string) ([]models.StatusModel, error) {
-	if !common.ValidateUUID(projectId) {
-		return nil, huma.Error400BadRequest("Must provide UUID format")
-	}
-	return ss.statusRepo.GetByProject(ctx, projectId)
+func (ss *StatusService) GetByProject(ctx context.Context, pId string) ([]models.StatusModel, error) {
+	return ss.sr.GetByProject(ctx, pId)
 }
 
-func (ss *StatusService) Create(ctx context.Context, projectId string, payload models.StatusCreateModel) (models.StatusModel, error) {
-	if !common.ValidateUUID(projectId) {
-		return models.StatusModel{}, huma.Error400BadRequest("Must provide UUID format")
-	}
-	s, err := ss.statusRepo.Create(ctx, projectId, payload)
+func (ss *StatusService) Create(ctx context.Context, p models.StatusCreateModel) (models.StatusModel, error) {
+
+	s, err := ss.sr.Create(ctx, p)
 	if err != nil {
 		return s, err
 	}
-	if ss.lw != nil {
-		ss.lw.Enqueue(workers.Trigger{Resource: "status", ID: s.ID, Action: "created"})
-	}
+
+	ss.lw.Enqueue(workers.Trigger{Resource: "status", ID: s.ID, Action: "created"})
 	return s, nil
 }
 
-func (ss *StatusService) Update(ctx context.Context, id string, payload models.StatusUpdateModel) (models.StatusModel, error) {
-	if !common.ValidateUUID(id) {
-		return models.StatusModel{}, huma.Error400BadRequest("Must provide UUID format")
-	}
-	s, err := ss.statusRepo.Update(ctx, id, payload)
+func (ss *StatusService) Update(ctx context.Context, id string, p models.StatusUpdateModel) (models.StatusModel, error) {
+	s, err := ss.sr.Update(ctx, id, p)
 	if err != nil {
 		return s, err
 	}
-	if ss.lw != nil {
-		ss.lw.Enqueue(workers.Trigger{Resource: "status", ID: s.ID, Action: "updated"})
-	}
+
+	ss.lw.Enqueue(workers.Trigger{Resource: "status", ID: s.ID, Action: "updated"})
 	return s, nil
 }
 
 func (ss *StatusService) Delete(ctx context.Context, id string) error {
-	if !common.ValidateUUID(id) {
-		return huma.Error400BadRequest("Must provide UUID format")
-	}
-	if err := ss.statusRepo.Delete(ctx, id); err != nil {
+	if err := ss.sr.Delete(ctx, id); err != nil {
 		return err
 	}
-	if ss.lw != nil {
-		ss.lw.Enqueue(workers.Trigger{Resource: "status", ID: id, Action: "deleted"})
-	}
+
+	ss.lw.Enqueue(workers.Trigger{Resource: "status", ID: id, Action: "deleted"})
 	return nil
 }
 
-func (ss *StatusService) Reorder(ctx context.Context, projectId string, ids []string) ([]models.StatusModel, error) {
-	if !common.ValidateUUID(projectId) {
-		return nil, huma.Error400BadRequest("Must provide UUID format")
-	}
-	for _, id := range ids {
-		if !common.ValidateUUID(id) {
-			return nil, huma.Error400BadRequest("Must provide UUID format")
-		}
-	}
-
-	total, matched, err := ss.statusRepo.ValidateReorderCounts(ctx, projectId, ids)
+func (ss *StatusService) Reorder(ctx context.Context, mod models.StatusReorderModel) ([]models.StatusModel, error) {
+	total, matched, err := ss.sr.ValidateReorderCounts(ctx, mod)
 	if err != nil {
 		return nil, err
 	}
-	if len(ids) != total {
-		return nil, huma.Error400BadRequest("Reorder payload must include all statuses for the project")
+	if len(mod.IDs) != total {
+		return nil, huma.Error400BadRequest("Reorder p must include all statuses for the project")
 	}
-	if matched != len(ids) {
-		return nil, huma.Error400BadRequest("Reorder payload contains invalid or out-of-project status ids")
+	if matched != len(mod.IDs) {
+		return nil, huma.Error400BadRequest("Reorder p contains invalid or out-of-project status ids")
 	}
 
-	return ss.statusRepo.Reorder(ctx, projectId, ids)
+	return ss.sr.Reorder(ctx, mod)
 }
 
 func (ss *StatusService) GetDetail(ctx context.Context, id string) (models.StatusModel, error) {
-	if !common.ValidateUUID(id) {
-		return models.StatusModel{}, huma.Error400BadRequest("Must provide UUID format")
-	}
-	return ss.statusRepo.GetDetail(ctx, id)
+	return ss.sr.GetDetail(ctx, id)
 }
 
-func (ss *StatusService) GetLogs(ctx context.Context, projectID string, q models.LogSearchModel) (models.LogPaginatedModel, error) {
-	if !common.ValidateUUID(projectID) {
-		return models.LogPaginatedModel{}, huma.Error400BadRequest("Must provide UUID format")
+func (ss *StatusService) GetLogs(ctx context.Context, sId string, q models.LogSearchModel) (models.LogPaginatedModel, error) {
+	s, err := ss.GetDetail(ctx, sId)
+	if err != nil {
+		return models.LogPaginatedModel{}, err
 	}
-	return ss.lr.GetPaginated(ctx, projectID, q)
+
+	q.StatusID = []string{s.ID}
+	q.TaskID = []string{}
+	return ss.lr.GetPaginated(ctx, s.ProjectID, q)
 }

@@ -3,7 +3,7 @@ package models
 import "time"
 
 type ProjectModel struct {
-	ID          string     `json:"id"`
+	ID          string     `json:"id" format:"uuid"`
 	Name        string     `json:"name"`
 	Description string     `json:"description"`
 	Status      string     `json:"status" enum:"active,paused,archived"`
@@ -21,7 +21,7 @@ type ProjectPaginatedModel struct {
 }
 
 type ProjectSearchModel struct {
-	ID         []string `query:"id"`
+	ID         []string `query:"id" format:"uuid"`
 	Query      string   `query:"query"`
 	Status     []string `query:"status" enum:"active,paused,archived"`
 	PageNumber int      `query:"pageNumber" default:"1"`

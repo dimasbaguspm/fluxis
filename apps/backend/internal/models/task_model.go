@@ -3,11 +3,11 @@ package models
 import "time"
 
 type TaskModel struct {
-	ID        string     `json:"id"`
-	ProjectID string     `json:"projectId"`
+	ID        string     `json:"id" format:"uuid"`
+	ProjectID string     `json:"projectId" format:"uuid"`
+	StatusID  string     `json:"statusId" format:"uuid"`
 	Title     string     `json:"title"`
 	Details   string     `json:"details"`
-	StatusID  string     `json:"statusId"`
 	Priority  int        `json:"priority"`
 	DueDate   *time.Time `json:"dueDate,omitempty"`
 	CreatedAt time.Time  `json:"createdAt"`
@@ -23,9 +23,9 @@ type TaskPaginatedModel struct {
 }
 
 type TaskSearchModel struct {
-	ID         []string `query:"id"`
-	ProjectID  []string `query:"projectId"`
-	StatusID   []string `query:"statusId"`
+	ID         []string `query:"id" format:"uuid"`
+	ProjectID  []string `query:"projectId" format:"uuid"`
+	StatusID   []string `query:"statusId" format:"uuid"`
 	Query      string   `query:"query"`
 	PageNumber int      `query:"pageNumber" default:"1"`
 	PageSize   int      `query:"pageSize" default:"25"`
@@ -34,8 +34,8 @@ type TaskSearchModel struct {
 }
 
 type TaskCreateModel struct {
-	ProjectID string     `json:"projectId" minLength:"1"`
-	StatusID  string     `json:"statusId" required:"true"`
+	ProjectID string     `json:"projectId" minLength:"1" format:"uuid"`
+	StatusID  string     `json:"statusId" required:"true" format:"uuid"`
 	Title     string     `json:"title" minLength:"1"`
 	Details   string     `json:"details"`
 	Priority  int        `json:"priority" default:"1"`

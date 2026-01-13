@@ -22,7 +22,7 @@ func (tr TaskResource) Routes(api huma.API) {
 		OperationID: "task-get-paginated",
 		Method:      http.MethodGet,
 		Path:        "/tasks",
-		Summary:     "Search tasks",
+		Summary:     "Get tasks",
 		Tags:        []string{"Task"},
 		Security:    []map[string][]string{{"bearer": {}}},
 	}, tr.search)
@@ -100,7 +100,7 @@ func (tr TaskResource) create(ctx context.Context, input *struct{ Body models.Ta
 }
 
 func (tr TaskResource) update(ctx context.Context, input *struct {
-	Path string `path:"taskId"`
+	Path string `path:"taskId" format:"uuid"`
 	Body models.TaskUpdateModel
 }) (*struct{ Body models.TaskModel }, error) {
 	resp, err := tr.taskSrv.Update(ctx, input.Path, input.Body)
@@ -111,7 +111,7 @@ func (tr TaskResource) update(ctx context.Context, input *struct {
 }
 
 func (tr TaskResource) delete(ctx context.Context, input *struct {
-	Path string `path:"taskId"`
+	Path string `path:"taskId" format:"uuid"`
 }) (*struct{}, error) {
 	err := tr.taskSrv.Delete(ctx, input.Path)
 	if err != nil {
@@ -121,23 +121,10 @@ func (tr TaskResource) delete(ctx context.Context, input *struct {
 }
 
 func (tr TaskResource) getLogs(ctx context.Context, input *struct {
-	Path string `path:"taskId"`
+	Path string `path:"taskId" format:"uuid"`
 	models.LogSearchModel
 }) (*struct{ Body models.LogPaginatedModel }, error) {
-	// need project id for repository query
-	t, err := tr.taskSrv.GetDetail(ctx, input.Path)
-	if err != nil {
-		return nil, err
-	}
-
-	q := input.LogSearchModel
-	if q.TaskID == nil {
-		q.TaskID = []string{input.Path}
-	} else {
-		q.TaskID = append(q.TaskID, input.Path)
-	}
-
-	resp, err := tr.taskSrv.GetLogs(ctx, t.ProjectID, q)
+	resp, err := tr.taskSrv.GetLogs(ctx, input.Path, input.LogSearchModel)
 	if err != nil {
 		return nil, err
 	}

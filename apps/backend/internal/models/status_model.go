@@ -3,8 +3,8 @@ package models
 import "time"
 
 type StatusModel struct {
-	ID        string     `json:"id"`
-	ProjectID string     `json:"projectId"`
+	ID        string     `json:"id" format:"uuid"`
+	ProjectID string     `json:"projectId" format:"uuid"`
 	Name      string     `json:"name"`
 	Slug      string     `json:"slug"`
 	Position  int        `json:"position"`
@@ -15,7 +15,8 @@ type StatusModel struct {
 }
 
 type StatusCreateModel struct {
-	Name string `json:"name" minLength:"1"`
+	ProjectID string `json:"projectId" format:"uuid" required:"true"`
+	Name      string `json:"name" minLength:"1"`
 }
 
 type StatusUpdateModel struct {
@@ -23,5 +24,6 @@ type StatusUpdateModel struct {
 }
 
 type StatusReorderModel struct {
-	IDs []string `json:"ids"`
+	ProjectID string   `json:"projectId" format:"uuid" required:"true"`
+	IDs       []string `json:"ids" format:"uuid"`
 }

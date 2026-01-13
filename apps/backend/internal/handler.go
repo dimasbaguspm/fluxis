@@ -23,16 +23,16 @@ func RegisterPublicRoutes(api huma.API, pgx *pgxpool.Pool) {
 func RegisterPrivateRoutes(ctx context.Context, api huma.API, pgx *pgxpool.Pool) {
 	api.UseMiddleware(middlewares.SessionMiddleware(api))
 
-	prR := repositories.NewProjectRepository(pgx)
+	pR := repositories.NewProjectRepository(pgx)
 	sR := repositories.NewStatusRepository(pgx)
 	tR := repositories.NewTaskRepository(pgx)
-	lr := repositories.NewLogRepository(pgx)
+	lR := repositories.NewLogRepository(pgx)
 
-	lW := workers.NewLogWorker(prR, sR, tR, lr, 10*time.Second)
+	lW := workers.NewLogWorker(pR, sR, tR, lR, 10*time.Second)
 
-	pS := services.NewProjectService(prR, lW, lr)
-	sS := services.NewStatusService(sR, lW, lr)
-	tS := services.NewTaskService(tR, prR, sR, lW, lr)
+	pS := services.NewProjectService(pR, lW, lR)
+	sS := services.NewStatusService(sR, lW, lR, pR)
+	tS := services.NewTaskService(tR, pR, sR, lW, lR)
 
 	resources.NewProjectResource(pS).Routes(api)
 	resources.NewStatusResource(sS).Routes(api)

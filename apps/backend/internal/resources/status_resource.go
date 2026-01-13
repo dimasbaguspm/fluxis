@@ -21,11 +21,19 @@ func (sr StatusResource) Routes(api huma.API) {
 	huma.Register(api, huma.Operation{
 		OperationID: "status-get-by-project",
 		Method:      http.MethodGet,
-		Path:        "/projects/{projectId}/statuses",
+		Path:        "/statuses",
 		Summary:     "Get statuses for a project",
 		Tags:        []string{"Status"},
 		Security:    []map[string][]string{{"bearer": {}}},
 	}, sr.getByProject)
+	huma.Register(api, huma.Operation{
+		OperationID: "status-create",
+		Method:      http.MethodPost,
+		Path:        "/statuses",
+		Summary:     "Create a status for a project",
+		Tags:        []string{"Status"},
+		Security:    []map[string][]string{{"bearer": {}}},
+	}, sr.create)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "status-get",
@@ -35,15 +43,6 @@ func (sr StatusResource) Routes(api huma.API) {
 		Tags:        []string{"Status"},
 		Security:    []map[string][]string{{"bearer": {}}},
 	}, sr.get)
-
-	huma.Register(api, huma.Operation{
-		OperationID: "status-create",
-		Method:      http.MethodPost,
-		Path:        "/projects/{projectId}/statuses",
-		Summary:     "Create a status for a project",
-		Tags:        []string{"Status"},
-		Security:    []map[string][]string{{"bearer": {}}},
-	}, sr.create)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "status-update",
@@ -64,15 +63,6 @@ func (sr StatusResource) Routes(api huma.API) {
 	}, sr.delete)
 
 	huma.Register(api, huma.Operation{
-		OperationID: "status-reorder",
-		Method:      http.MethodPost,
-		Path:        "/projects/{projectId}/statuses/reorder",
-		Summary:     "Reorder statuses for a project",
-		Tags:        []string{"Status"},
-		Security:    []map[string][]string{{"bearer": {}}},
-	}, sr.reorder)
-
-	huma.Register(api, huma.Operation{
 		OperationID: "status-get-logs",
 		Method:      http.MethodGet,
 		Path:        "/statuses/{statusId}/logs",
@@ -80,12 +70,22 @@ func (sr StatusResource) Routes(api huma.API) {
 		Tags:        []string{"Status"},
 		Security:    []map[string][]string{{"bearer": {}}},
 	}, sr.getLogs)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "status-reorder",
+		Method:      http.MethodPost,
+		Path:        "/statuses/reorder",
+		Summary:     "Reorder statuses for a project",
+		Tags:        []string{"Status"},
+		Security:    []map[string][]string{{"bearer": {}}},
+	}, sr.reorder)
+
 }
 
 func (sr StatusResource) getByProject(ctx context.Context, input *struct {
-	Path string `path:"projectId"`
+	Data string `query:"projectId" format:"uuid" required:"true"`
 }) (*struct{ Body []models.StatusModel }, error) {
-	resp, err := sr.statusSrv.GetByProject(ctx, input.Path)
+	resp, err := sr.statusSrv.GetByProject(ctx, input.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (sr StatusResource) getByProject(ctx context.Context, input *struct {
 }
 
 func (sr StatusResource) get(ctx context.Context, input *struct {
-	Path string `path:"statusId"`
+	Path string `path:"statusId" format:"uuid"`
 }) (*struct{ Body models.StatusModel }, error) {
 	resp, err := sr.statusSrv.GetDetail(ctx, input.Path)
 	if err != nil {
@@ -103,10 +103,9 @@ func (sr StatusResource) get(ctx context.Context, input *struct {
 }
 
 func (sr StatusResource) create(ctx context.Context, input *struct {
-	Path string `path:"projectId"`
 	Body models.StatusCreateModel
 }) (*struct{ Body models.StatusModel }, error) {
-	resp, err := sr.statusSrv.Create(ctx, input.Path, input.Body)
+	resp, err := sr.statusSrv.Create(ctx, input.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +113,7 @@ func (sr StatusResource) create(ctx context.Context, input *struct {
 }
 
 func (sr StatusResource) update(ctx context.Context, input *struct {
-	Path string `path:"statusId"`
+	Path string `path:"statusId" format:"uuid"`
 	Body models.StatusUpdateModel
 }) (*struct{ Body models.StatusModel }, error) {
 	resp, err := sr.statusSrv.Update(ctx, input.Path, input.Body)
@@ -125,7 +124,7 @@ func (sr StatusResource) update(ctx context.Context, input *struct {
 }
 
 func (sr StatusResource) delete(ctx context.Context, input *struct {
-	Path string `path:"statusId"`
+	Path string `path:"statusId" format:"uuid"`
 }) (*struct{}, error) {
 	err := sr.statusSrv.Delete(ctx, input.Path)
 	if err != nil {
@@ -135,10 +134,9 @@ func (sr StatusResource) delete(ctx context.Context, input *struct {
 }
 
 func (sr StatusResource) reorder(ctx context.Context, input *struct {
-	Path string `path:"projectId"`
 	Body models.StatusReorderModel
 }) (*struct{ Body []models.StatusModel }, error) {
-	resp, err := sr.statusSrv.Reorder(ctx, input.Path, input.Body.IDs)
+	resp, err := sr.statusSrv.Reorder(ctx, input.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -146,18 +144,10 @@ func (sr StatusResource) reorder(ctx context.Context, input *struct {
 }
 
 func (sr StatusResource) getLogs(ctx context.Context, input *struct {
-	Path      string `path:"projectId"`
-	StatusKey string `path:"statusId"`
+	Path string `path:"statusId" format:"uuid"`
 	models.LogSearchModel
 }) (*struct{ Body models.LogPaginatedModel }, error) {
-	q := input.LogSearchModel
-	if q.StatusID == nil {
-		q.StatusID = []string{input.StatusKey}
-	} else {
-		q.StatusID = append(q.StatusID, input.StatusKey)
-	}
-
-	resp, err := sr.statusSrv.GetLogs(ctx, input.Path, q)
+	resp, err := sr.statusSrv.GetLogs(ctx, input.Path, input.LogSearchModel)
 	if err != nil {
 		return nil, err
 	}

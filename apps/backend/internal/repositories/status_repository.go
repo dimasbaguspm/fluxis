@@ -52,7 +52,7 @@ func (sr StatusRepository) GetByProject(ctx context.Context, projectId string) (
 	return items, nil
 }
 
-func (sr StatusRepository) Create(ctx context.Context, projectId string, payload models.StatusCreateModel) (models.StatusModel, error) {
+func (sr StatusRepository) Create(ctx context.Context, payload models.StatusCreateModel) (models.StatusModel, error) {
 	var data models.StatusModel
 
 	// generate slug in Go using helper
@@ -64,7 +64,7 @@ func (sr StatusRepository) Create(ctx context.Context, projectId string, payload
 			false)
 		RETURNING id, project_id, name, slug, position, is_default, created_at, updated_at`
 
-	err := sr.pgx.QueryRow(ctx, sql, projectId, payload.Name, slug).Scan(
+	err := sr.pgx.QueryRow(ctx, sql, payload.ProjectID, payload.Name, slug).Scan(
 		&data.ID, &data.ProjectID, &data.Name, &data.Slug, &data.Position, &data.IsDefault, &data.CreatedAt, &data.UpdatedAt)
 
 	if err != nil {
@@ -116,7 +116,7 @@ func (sr StatusRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (sr StatusRepository) Reorder(ctx context.Context, projectId string, ids []string) ([]models.StatusModel, error) {
+func (sr StatusRepository) Reorder(ctx context.Context, mod models.StatusReorderModel) ([]models.StatusModel, error) {
 	tx, err := sr.pgx.Begin(ctx)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Unable to start transaction", err)
@@ -140,7 +140,7 @@ func (sr StatusRepository) Reorder(ctx context.Context, projectId string, ids []
 	FROM upd
 	ORDER BY position ASC`
 
-	rows, err := tx.Query(ctx, sql, ids, projectId)
+	rows, err := tx.Query(ctx, sql, mod.IDs, mod.ProjectID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Unable to reorder statuses", err)
 	}
@@ -158,7 +158,7 @@ func (sr StatusRepository) Reorder(ctx context.Context, projectId string, ids []
 		return nil, huma.Error400BadRequest("Error reading reordered rows", err)
 	}
 
-	if int64(len(items)) != int64(len(ids)) {
+	if int64(len(items)) != int64(len(mod.IDs)) {
 		return nil, huma.Error400BadRequest("Unable to update status positions: invalid id or not in project")
 	}
 
@@ -171,13 +171,13 @@ func (sr StatusRepository) Reorder(ctx context.Context, projectId string, ids []
 
 // ValidateReorderCounts returns (total, matched) where total is number of non-deleted statuses
 // for the project, and matched is how many of the provided ids belong to that project.
-func (sr StatusRepository) ValidateReorderCounts(ctx context.Context, projectId string, ids []string) (int, int, error) {
+func (sr StatusRepository) ValidateReorderCounts(ctx context.Context, mod models.StatusReorderModel) (int, int, error) {
 	var total, matched int
 	sql := `SELECT
 		(SELECT COUNT(1) FROM statuses WHERE project_id = $1 AND deleted_at IS NULL) AS total,
 		(SELECT COUNT(1) FROM statuses WHERE project_id = $1 AND id = ANY($2::uuid[]) AND deleted_at IS NULL) AS matched`
 
-	err := sr.pgx.QueryRow(ctx, sql, projectId, ids).Scan(&total, &matched)
+	err := sr.pgx.QueryRow(ctx, sql, mod.ProjectID, mod.IDs).Scan(&total, &matched)
 	if err != nil {
 		return 0, 0, huma.Error400BadRequest("Unable to validate reorder payload", err)
 	}

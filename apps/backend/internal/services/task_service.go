@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/dimasbaguspm/fluxis/internal/common"
 	"github.com/dimasbaguspm/fluxis/internal/models"
 	"github.com/dimasbaguspm/fluxis/internal/repositories"
 	"github.com/dimasbaguspm/fluxis/internal/workers"
@@ -24,32 +23,14 @@ func NewTaskService(taskRepo repositories.TaskRepository, projectRepo repositori
 }
 
 func (ts *TaskService) GetPaginated(ctx context.Context, q models.TaskSearchModel) (models.TaskPaginatedModel, error) {
-	all := make([]string, 0, len(q.ID)+len(q.ProjectID)+len(q.StatusID))
-	all = append(all, q.ID...)
-	all = append(all, q.ProjectID...)
-	all = append(all, q.StatusID...)
-
-	for _, id := range all {
-		if !common.ValidateUUID(id) {
-			return models.TaskPaginatedModel{}, huma.Error400BadRequest("Must provide UUID format")
-		}
-	}
-
 	return ts.taskRepo.GetPaginated(ctx, q)
 }
 
 func (ts *TaskService) GetDetail(ctx context.Context, id string) (models.TaskModel, error) {
-	if !common.ValidateUUID(id) {
-		return models.TaskModel{}, huma.Error400BadRequest("Must provide UUID format")
-	}
 	return ts.taskRepo.GetDetail(ctx, id)
 }
 
 func (ts *TaskService) Create(ctx context.Context, payload models.TaskCreateModel) (models.TaskModel, error) {
-	if !(common.ValidateUUID(payload.ProjectID) && common.ValidateUUID(payload.StatusID)) {
-		return models.TaskModel{}, huma.Error400BadRequest("Must provide UUID format")
-	}
-
 	var pj models.ProjectModel
 	var st models.StatusModel
 	g, ctxg := errgroup.WithContext(ctx)
@@ -82,17 +63,12 @@ func (ts *TaskService) Create(ctx context.Context, payload models.TaskCreateMode
 	if err != nil {
 		return t, err
 	}
-	if ts.lw != nil {
-		ts.lw.Enqueue(workers.Trigger{Resource: "task", ID: t.ID, Action: "created"})
-	}
+
+	ts.lw.Enqueue(workers.Trigger{Resource: "task", ID: t.ID, Action: "created"})
 	return t, nil
 }
 
 func (ts *TaskService) Update(ctx context.Context, id string, payload models.TaskUpdateModel) (models.TaskModel, error) {
-	if !common.ValidateUUID(id) || (payload.StatusID != "" && !common.ValidateUUID(payload.StatusID)) {
-		return models.TaskModel{}, huma.Error400BadRequest("Must provide UUID format")
-	}
-
 	if payload.StatusID != "" {
 		var t models.TaskModel
 		var st models.StatusModel
@@ -125,28 +101,27 @@ func (ts *TaskService) Update(ctx context.Context, id string, payload models.Tas
 	if err != nil {
 		return res, err
 	}
-	if ts.lw != nil {
-		ts.lw.Enqueue(workers.Trigger{Resource: "task", ID: res.ID, Action: "updated"})
-	}
+
+	ts.lw.Enqueue(workers.Trigger{Resource: "task", ID: res.ID, Action: "updated"})
 	return res, nil
 }
 
 func (ts *TaskService) Delete(ctx context.Context, id string) error {
-	if !common.ValidateUUID(id) {
-		return huma.Error400BadRequest("Must provide UUID format")
-	}
 	if err := ts.taskRepo.Delete(ctx, id); err != nil {
 		return err
 	}
-	if ts.lw != nil {
-		ts.lw.Enqueue(workers.Trigger{Resource: "task", ID: id, Action: "deleted"})
-	}
+
+	ts.lw.Enqueue(workers.Trigger{Resource: "task", ID: id, Action: "deleted"})
 	return nil
 }
 
-func (ts *TaskService) GetLogs(ctx context.Context, projectID string, q models.LogSearchModel) (models.LogPaginatedModel, error) {
-	if !common.ValidateUUID(projectID) {
-		return models.LogPaginatedModel{}, huma.Error400BadRequest("Must provide UUID format")
+func (ts *TaskService) GetLogs(ctx context.Context, tId string, q models.LogSearchModel) (models.LogPaginatedModel, error) {
+	t, err := ts.GetDetail(ctx, tId)
+	if err != nil {
+		return models.LogPaginatedModel{}, err
 	}
-	return ts.lr.GetPaginated(ctx, projectID, q)
+
+	q.TaskID = []string{tId}
+	q.StatusID = []string{}
+	return ts.lr.GetPaginated(ctx, t.ProjectID, q)
 }
