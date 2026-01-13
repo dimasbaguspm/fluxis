@@ -22,41 +22,86 @@ apps/
 
 ### When Working on Backend (`apps/backend/`)
 
-**Always refer to:** `apps/backend/docs/`
+**DOCUMENTATION PATH:** `apps/backend/docs/`
 
-Available documentation:
+**CRITICAL: Always retrieve and read documentation from `apps/backend/docs/` before implementing any changes.**
 
-- `01-architecture.md` - System architecture, tech stack, and design decisions
-- `02-code-flow.md` - Request lifecycle and execution flow
-- `03-rsrm-pattern.md` - Resource-Service-Repository-Model pattern explanation
-- `04-middlewares.md` - Middleware system and JWT authentication
-- `05-main-and-handler.md` - Application entry point and route registration
-- `06-migrations-workflow.md` - Database migrations system and workflow
+**Available documentation files (in order of reference):**
 
-**Key Patterns:**
+1. **`01-architecture.md`** - System architecture, tech stack, and design decisions
+   - Reference when: Understanding overall system design, tech decisions
+2. **`02-code-flow.md`** - Request lifecycle and execution flow
+   - Reference when: Understanding how requests are processed end-to-end
+3. **`03-rsrm-pattern.md`** - Resource-Service-Repository-Model pattern explanation
+   - Reference when: Implementing new features, creating layers
+4. **`04-middlewares.md`** - Middleware system and JWT authentication
+   - Reference when: Adding authentication, cross-cutting concerns, middleware
+5. **`05-main-and-handler.md`** - Application entry point and route registration
+   - Reference when: Registering new routes, understanding initialization
+6. **`06-migrations-workflow.md`** - Database migrations system and workflow
+   - Reference when: Making database schema changes
+7. **`07-concurrency.md`** - Goroutine patterns and concurrency
+   - Reference when: Working with concurrent operations, workers
 
-- Follow the **RSRM** (Resource-Service-Repository-Model) pattern
-- All new features should implement: Model → Repository → Service → Resource
+**Key Implementation Patterns:**
+
+- Follow the **RSRM** (Resource-Service-Repository-Model) pattern strictly
+- Implementation order: Model → Repository → Service → Resource
 - Use constructor functions for dependency injection
 - Apply middleware for cross-cutting concerns
 
+**Code Structure Reference:**
+
+```
+apps/backend/internal/
+├── models/          # Data structures
+├── repositories/    # Database access layer
+├── services/        # Business logic layer
+├── resources/       # HTTP handlers layer
+├── handler.go       # Route registration
+└── middlewares/     # Middleware implementations
+```
+
 ### When Working on Backend E2E (`apps/backend-e2e/`)
 
-**Always refer to:** `apps/backend-e2e/docs/`
+**DOCUMENTATION PATH:** `apps/backend-e2e/docs/`
 
-This app contains end-to-end tests for the backend API.
+**CRITICAL: Always retrieve and read documentation from `apps/backend-e2e/docs/` before implementing tests.**
+
+**Available documentation files:**
+
+1. **`01-overview.md`** - E2E testing architecture and setup overview
+2. **`02-fixtures.md`** - Test fixtures and helper utilities
+3. **`03-test-organization.md`** - How tests are structured and organized
+4. **`04-type-generation.md`** - OpenAPI type generation for tests
+5. **`05-authentication.md`** - Testing authentication flows
+6. **`06-best-practices.md`** - E2E testing best practices
+
+**Test Structure Reference:**
+
+```
+apps/backend-e2e/
+├── fixtures/        # Test utilities and API clients
+├── specs/           # Test specifications organized by feature
+├── types/           # Generated OpenAPI types
+└── scripts/         # Utility scripts (type generation)
+```
 
 ### When Working on Frontend TUI (`apps/frontend-tui/`)
 
-**Always refer to:** `apps/frontend-tui/docs/`
+**DOCUMENTATION PATH:** `apps/frontend-tui/docs/`
 
-Terminal-based user interface for the project management system.
+**⚡ Always retrieve documentation from `apps/frontend-tui/docs/` before implementing features.**
+
+Terminal User Interface (TUI) frontend application.
 
 ### When Working on Frontend Web (`apps/frontend-web/`)
 
-**Always refer to:** `apps/frontend-web/docs/`
+**DOCUMENTATION PATH:** `apps/frontend-web/docs/`
 
-Web-based user interface for the project management system.
+**Always retrieve documentation from `apps/frontend-web/docs/` before implementing features.**
+
+Web-based user interface application.
 
 ---
 
@@ -92,69 +137,44 @@ Web-based user interface for the project management system.
 - **Fail Fast** - Validate early, return errors clearly
 - **Documentation** - Code should explain "why", comments explain "what"
 
----
+## Context-Aware Guidelines
 
-## Backend-Specific Instructions
+**BEFORE TAKING ANY ACTION - Always perform these steps:**
 
-### Adding New Endpoints
+1. **Identify the target application** - Which app are you working in?
 
-1. Create/update **Model** in `internal/models/`
-2. Implement **Repository** in `internal/repositories/`
-3. Implement **Service** in `internal/services/`
-4. Create **Resource** (HTTP handlers) in `internal/resources/`
-5. Register routes in `internal/handler.go`
+   - Backend? → Read from `apps/backend/docs/`
+   - Backend E2E? → Read from `apps/backend-e2e/docs/`
+   - Frontend TUI? → Read from `apps/frontend-tui/docs/`
+   - Frontend Web? → Read from `apps/frontend-web/docs/`
 
-### Database Changes
+2. **Retrieve relevant documentation** - Use semantic_search or read_file tools to pull context from the appropriate docs directory
 
-1. Create new migration files: `migrations/NNNN_name.{up,down}.sql`
-2. Write both UP and DOWN migrations
-3. Test migrations before committing
-4. Never edit existing migrations (create new ones instead)
+3. **Match existing patterns** - Look at similar implementations in the same app before suggesting changes
 
-### Authentication
+4. **Reference the docs in your reasoning** - Cite which documentation files support your approach
 
-- Public routes: Register in `RegisterPublicRoutes()`
-- Private routes: Register in `RegisterPrivateRoutes()` (auto-protected by SessionMiddleware)
-- JWT tokens managed in `repositories/auth_repository.go`
-
----
-
-## Quick Reference
-
-### Current Tech Stack (Backend)
-
-- **Language:** Go 1.25.5
-- **Framework:** Huma v2 (OpenAPI-first)
-- **Database:** PostgreSQL with pgx driver
-- **Authentication:** JWT (access + refresh tokens)
-- **Migrations:** golang-migrate
-- **API Docs:** Auto-generated OpenAPI at `/docs`
-
----
-
-## Context-Aware
-
-**When suggesting code:**
+### When Suggesting Code Changes:
 
 - ✅ Match the existing code style in the current app
-- ✅ Reference the appropriate documentation
-- ✅ Follow established patterns (especially RSRM for backend)
+- ✅ Explicitly reference which doc file supports the pattern
+- ✅ Follow established patterns (especially **RSRM for backend**)
 - ✅ Consider the monorepo structure
 - ✅ Suggest small, incremental changes for solo development
 
-**When explaining architecture:**
+### When Explaining Architecture:
 
 - ✅ Point to specific docs in `apps/*/docs/`
-- ✅ Show examples from existing code
+- ✅ Show examples from existing code in the same app
 - ✅ Explain trade-offs for solo vs team development
 - ✅ Keep explanations practical and actionable
 
-**When debugging:**
+### When Debugging Issues:
 
-- ✅ Check relevant docs first
-- ✅ Look at similar working implementations
-- ✅ Suggest adding logs for troubleshooting
-- ✅ Consider the data flow through layers
+- ✅ **First:** Read relevant docs from `apps/*/docs/` directory
+- ✅ **Second:** Look at similar working implementations in the same app
+- ✅ **Third:** Suggest adding logs for troubleshooting
+- ✅ **Fourth:** Consider the data flow through the layers
 
 ---
 
@@ -164,21 +184,3 @@ Web-based user interface for the project management system.
 - Tests, security hardening, and production features can be added incrementally
 - Focus on getting features working end-to-end before optimization
 - The architecture is solid - follow established patterns for consistency
-
----
-
-## Key Documentation Entry Points
-
-| Working On      | Read First                                    | Key Concepts               |
-| --------------- | --------------------------------------------- | -------------------------- |
-| Backend API     | `apps/backend/docs/01-architecture.md`        | Layers, RSRM pattern       |
-| Backend Routes  | `apps/backend/docs/05-main-and-handler.md`    | Route registration, DI     |
-| Backend Auth    | `apps/backend/docs/04-middlewares.md`         | JWT validation, middleware |
-| Database Schema | `apps/backend/docs/06-migrations-workflow.md` | Migration workflow         |
-| Request Flow    | `apps/backend/docs/02-code-flow.md`           | Full lifecycle             |
-| Design Patterns | `apps/backend/docs/03-rsrm-pattern.md`        | Layer responsibilities     |
-| Concurrency     | `apps/backend/docs/07-concurrency.md`         | Goroutine patterns         |
-
----
-
-**Remember:** The documentation is your friend! Check the relevant `apps/*/docs/` directory before suggesting changes or implementations.
