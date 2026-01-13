@@ -15,6 +15,7 @@ type Trigger struct {
 	Resource string
 	ID       string
 	Action   string
+	Meta     map[string]interface{}
 }
 
 type LogWorker struct {
@@ -273,6 +274,25 @@ func (lw *LogWorker) processTask(ctx context.Context, id string, action string) 
 		lw.taskCache[id] = cur
 		lw.mu.Unlock()
 		_ = lw.logRepo.Insert(ctx, models.LogCreateModel{ProjectID: cur.ProjectID, TaskID: &cur.ID, Entry: "task.created"})
+		return
+
+	case "status_changed":
+		cur, err := lw.taskRepo.GetDetail(ctx, id)
+		if err != nil {
+			return
+		}
+
+		lw.mu.Lock()
+		lw.taskCache[id] = cur
+		lw.mu.Unlock()
+
+		// Log status change
+		_ = lw.logRepo.Insert(ctx, models.LogCreateModel{
+			ProjectID: cur.ProjectID,
+			TaskID:    &cur.ID,
+			StatusID:  &cur.StatusID,
+			Entry:     "task.status_changed",
+		})
 		return
 
 	case "updated":

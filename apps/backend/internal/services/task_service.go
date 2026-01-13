@@ -69,6 +69,8 @@ func (ts *TaskService) Create(ctx context.Context, payload models.TaskCreateMode
 }
 
 func (ts *TaskService) Update(ctx context.Context, id string, payload models.TaskUpdateModel) (models.TaskModel, error) {
+	var statusChanged bool
+
 	if payload.StatusID != "" {
 		var t models.TaskModel
 		var st models.StatusModel
@@ -95,6 +97,10 @@ func (ts *TaskService) Update(ctx context.Context, id string, payload models.Tas
 		if st.ProjectID != t.ProjectID {
 			return models.TaskModel{}, huma.Error400BadRequest("Status does not belong to the project")
 		}
+
+		if t.StatusID != payload.StatusID {
+			statusChanged = true
+		}
 	}
 
 	res, err := ts.taskRepo.Update(ctx, id, payload)
@@ -102,7 +108,12 @@ func (ts *TaskService) Update(ctx context.Context, id string, payload models.Tas
 		return res, err
 	}
 
-	ts.lw.Enqueue(workers.Trigger{Resource: "task", ID: res.ID, Action: "updated"})
+	// Generate log entry
+	if statusChanged {
+		ts.lw.Enqueue(workers.Trigger{Resource: "task", ID: res.ID, Action: "status_changed"})
+	} else {
+		ts.lw.Enqueue(workers.Trigger{Resource: "task", ID: res.ID, Action: "updated"})
+	}
 	return res, nil
 }
 

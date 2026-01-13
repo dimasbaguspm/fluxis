@@ -40,10 +40,10 @@ components:
     AuthRefreshOutputModel:
       additionalProperties: false
       properties:
-        acessToken:
+        accessToken:
           type: string
       required:
-        - acessToken
+        - accessToken
       type: object
     ErrorDetail:
       additionalProperties: false
@@ -106,12 +106,18 @@ components:
         entry:
           type: string
         id:
+          format: uuid
           type: string
         projectId:
-          type: string
+          format: uuid
+          type:
+            - string
+            - "null"
         statusId:
+          format: uuid
           type: string
         taskId:
+          format: uuid
           type: string
       required:
         - id
@@ -183,6 +189,7 @@ components:
         description:
           type: string
         id:
+          format: uuid
           type: string
         name:
           type: string
@@ -252,7 +259,11 @@ components:
         name:
           minLength: 1
           type: string
+        projectId:
+          format: uuid
+          type: string
       required:
+        - projectId
         - name
       type: object
     StatusModel:
@@ -265,6 +276,7 @@ components:
           format: date-time
           type: string
         id:
+          format: uuid
           type: string
         isDefault:
           type: boolean
@@ -274,6 +286,7 @@ components:
           format: int64
           type: integer
         projectId:
+          format: uuid
           type: string
         slug:
           type: string
@@ -294,12 +307,17 @@ components:
       additionalProperties: false
       properties:
         ids:
+          format: uuid
           items:
             type: string
           type:
             - array
             - "null"
+        projectId:
+          format: uuid
+          type: string
       required:
+        - projectId
         - ids
       type: object
     StatusUpdateModel:
@@ -322,14 +340,18 @@ components:
         priority:
           default: 1
           format: int64
+          minimum: 1
           type: integer
         projectId:
+          format: uuid
           minLength: 1
           type: string
         statusId:
+          format: uuid
           type: string
         title:
           minLength: 1
+          pattern: ^.*\S.*$
           type: string
       required:
         - projectId
@@ -350,13 +372,16 @@ components:
           format: date-time
           type: string
         id:
+          format: uuid
           type: string
         priority:
           format: int64
           type: integer
         projectId:
+          format: uuid
           type: string
         statusId:
+          format: uuid
           type: string
         title:
           type: string
@@ -366,9 +391,9 @@ components:
       required:
         - id
         - projectId
+        - statusId
         - title
         - details
-        - statusId
         - priority
         - createdAt
         - updatedAt
@@ -411,11 +436,13 @@ components:
           type: string
         priority:
           format: int64
+          minimum: 1
           type: integer
         statusId:
           type: string
         title:
           minLength: 1
+          pattern: ^.*\S.*$
           type: string
       type: object
   securitySchemes:
@@ -488,6 +515,7 @@ paths:
           in: query
           name: id
           schema:
+            format: uuid
             items:
               type: string
             type:
@@ -596,6 +624,7 @@ paths:
           name: projectId
           required: true
           schema:
+            format: uuid
             type: string
       responses:
         "204":
@@ -618,6 +647,7 @@ paths:
           name: projectId
           required: true
           schema:
+            format: uuid
             type: string
       responses:
         "200":
@@ -644,6 +674,7 @@ paths:
           name: projectId
           required: true
           schema:
+            format: uuid
             type: string
       requestBody:
         content:
@@ -677,11 +708,13 @@ paths:
           name: projectId
           required: true
           schema:
+            format: uuid
             type: string
         - explode: false
           in: query
           name: taskId
           schema:
+            format: uuid
             items:
               type: string
             type:
@@ -691,6 +724,7 @@ paths:
           in: query
           name: statusId
           schema:
+            format: uuid
             items:
               type: string
             type:
@@ -733,14 +767,16 @@ paths:
       summary: Get Project logs
       tags:
         - Project
-  /projects/{projectId}/statuses:
+  /statuses:
     get:
       operationId: status-get-by-project
       parameters:
-        - in: path
+        - explode: false
+          in: query
           name: projectId
           required: true
           schema:
+            format: uuid
             type: string
       responses:
         "200":
@@ -766,12 +802,6 @@ paths:
         - Status
     post:
       operationId: status-create
-      parameters:
-        - in: path
-          name: projectId
-          required: true
-          schema:
-            type: string
       requestBody:
         content:
           application/json:
@@ -796,15 +826,9 @@ paths:
       summary: Create a status for a project
       tags:
         - Status
-  /projects/{projectId}/statuses/reorder:
+  /statuses/reorder:
     post:
       operationId: status-reorder
-      parameters:
-        - in: path
-          name: projectId
-          required: true
-          schema:
-            type: string
       requestBody:
         content:
           application/json:
@@ -841,6 +865,7 @@ paths:
           name: statusId
           required: true
           schema:
+            format: uuid
             type: string
       responses:
         "204":
@@ -863,6 +888,7 @@ paths:
           name: statusId
           required: true
           schema:
+            format: uuid
             type: string
       responses:
         "200":
@@ -889,6 +915,7 @@ paths:
           name: statusId
           required: true
           schema:
+            format: uuid
             type: string
       requestBody:
         content:
@@ -914,23 +941,21 @@ paths:
       summary: Update a status
       tags:
         - Status
-  /tasks:
+  /statuses/{statusId}/logs:
     get:
-      operationId: task-get-paginated
+      operationId: status-get-logs
       parameters:
+        - in: path
+          name: statusId
+          required: true
+          schema:
+            format: uuid
+            type: string
         - explode: false
           in: query
-          name: id
+          name: taskId
           schema:
-            items:
-              type: string
-            type:
-              - array
-              - "null"
-        - explode: false
-          in: query
-          name: projectId
-          schema:
+            format: uuid
             items:
               type: string
             type:
@@ -940,6 +965,78 @@ paths:
           in: query
           name: statusId
           schema:
+            format: uuid
+            items:
+              type: string
+            type:
+              - array
+              - "null"
+        - explode: false
+          in: query
+          name: query
+          schema:
+            type: string
+        - explode: false
+          in: query
+          name: pageNumber
+          schema:
+            default: 1
+            format: int64
+            type: integer
+        - explode: false
+          in: query
+          name: pageSize
+          schema:
+            default: 25
+            format: int64
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogPaginatedModel"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Error
+      security:
+        - bearer: []
+      summary: Get logs for a status
+      tags:
+        - Status
+  /tasks:
+    get:
+      operationId: task-get-paginated
+      parameters:
+        - explode: false
+          in: query
+          name: id
+          schema:
+            format: uuid
+            items:
+              type: string
+            type:
+              - array
+              - "null"
+        - explode: false
+          in: query
+          name: projectId
+          schema:
+            format: uuid
+            items:
+              type: string
+            type:
+              - array
+              - "null"
+        - explode: false
+          in: query
+          name: statusId
+          schema:
+            format: uuid
             items:
               type: string
             type:
@@ -999,7 +1096,7 @@ paths:
           description: Error
       security:
         - bearer: []
-      summary: Search tasks
+      summary: Get tasks
       tags:
         - Task
     post:
@@ -1036,6 +1133,7 @@ paths:
           name: taskId
           required: true
           schema:
+            format: uuid
             type: string
       responses:
         "204":
@@ -1084,6 +1182,7 @@ paths:
           name: taskId
           required: true
           schema:
+            format: uuid
             type: string
       requestBody:
         content:
@@ -1109,6 +1208,73 @@ paths:
       summary: Update a task
       tags:
         - Task
+  /tasks/{taskId}/logs:
+    get:
+      operationId: task-get-logs
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            format: uuid
+            type: string
+        - explode: false
+          in: query
+          name: taskId
+          schema:
+            format: uuid
+            items:
+              type: string
+            type:
+              - array
+              - "null"
+        - explode: false
+          in: query
+          name: statusId
+          schema:
+            format: uuid
+            items:
+              type: string
+            type:
+              - array
+              - "null"
+        - explode: false
+          in: query
+          name: query
+          schema:
+            type: string
+        - explode: false
+          in: query
+          name: pageNumber
+          schema:
+            default: 1
+            format: int64
+            type: integer
+        - explode: false
+          in: query
+          name: pageSize
+          schema:
+            default: 25
+            format: int64
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogPaginatedModel"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Error
+      security:
+        - bearer: []
+      summary: Get logs for a task
+      tags:
+        - Task
 servers:
   - description: Development server
-    url: http://localhost:8080
+    url: http://localhost:8081

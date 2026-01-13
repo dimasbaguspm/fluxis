@@ -1,0 +1,49 @@
+services:
+  fluxis-e2e-postgres:
+    image: postgres:16-alpine
+    container_name: fluxis-e2e-postgres
+    environment:
+      POSTGRES_USER: db_user
+      POSTGRES_PASSWORD: db_password
+      POSTGRES_DB: db_name
+    ports:
+      - "5432:5432"
+    volumes:
+      - fluxis_e2e_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U db_user -d db_name"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fluxis_e2e
+
+  fluxis-e2e-api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: fluxis-e2e-api
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: fluxis-e2e-postgres
+      DB_PORT: 5432
+      DB_USER: db_user
+      DB_PASSWORD: db_password
+      DB_NAME: db_name
+      APP_PORT: "8081"
+      IS_DEV_ENV: "true"
+      ADMIN_USERNAME: admin_username
+      ADMIN_PASSWORD: admin_password
+    depends_on:
+      fluxis-e2e-postgres:
+        condition: service_healthy
+    networks:
+      - fluxis_e2e
+
+volumes:
+  fluxis_e2e_postgres_data:
+
+networks:
+  fluxis_e2e:
+    driver: bridge

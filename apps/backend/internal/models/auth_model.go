@@ -16,5 +16,5 @@ type AuthRefreshInputModel struct {
 }
 
 type AuthRefreshOutputModel struct {
-	AccessToken string `json:"acessToken"`
+	AccessToken string `json:"accessToken"`
 }

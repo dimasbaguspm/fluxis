@@ -20,10 +20,11 @@ func NewStatusRepository(pgx *pgxpool.Pool) StatusRepository {
 }
 
 func (sr StatusRepository) GetByProject(ctx context.Context, projectId string) ([]models.StatusModel, error) {
-	sql := `SELECT id, project_id, name, slug, position, is_default, created_at, updated_at
-		FROM statuses
-		WHERE project_id = $1 AND deleted_at IS NULL
-		ORDER BY position ASC`
+	sql := `SELECT s.id, s.project_id, s.name, s.slug, s.position, s.is_default, s.created_at, s.updated_at
+		FROM statuses s
+		INNER JOIN projects p ON s.project_id = p.id AND p.deleted_at IS NULL
+		WHERE s.project_id = $1 AND s.deleted_at IS NULL
+		ORDER BY s.position ASC`
 
 	rows, err := sr.pgx.Query(ctx, sql, projectId)
 	if err != nil {
@@ -55,6 +56,17 @@ func (sr StatusRepository) GetByProject(ctx context.Context, projectId string) (
 func (sr StatusRepository) Create(ctx context.Context, payload models.StatusCreateModel) (models.StatusModel, error) {
 	var data models.StatusModel
 
+	// Check if parent project exists and is not soft-deleted
+	var projectExists bool
+	checkSql := `SELECT EXISTS(SELECT 1 FROM projects WHERE id = $1 AND deleted_at IS NULL)`
+	err := sr.pgx.QueryRow(ctx, checkSql, payload.ProjectID).Scan(&projectExists)
+	if err != nil {
+		return models.StatusModel{}, huma.Error400BadRequest("Unable to verify project", err)
+	}
+	if !projectExists {
+		return models.StatusModel{}, huma.Error404NotFound("Project not found or has been deleted")
+	}
+
 	// generate slug in Go using helper
 	slug := common.Slugify(payload.Name)
 
@@ -64,7 +76,7 @@ func (sr StatusRepository) Create(ctx context.Context, payload models.StatusCrea
 			false)
 		RETURNING id, project_id, name, slug, position, is_default, created_at, updated_at`
 
-	err := sr.pgx.QueryRow(ctx, sql, payload.ProjectID, payload.Name, slug).Scan(
+	err = sr.pgx.QueryRow(ctx, sql, payload.ProjectID, payload.Name, slug).Scan(
 		&data.ID, &data.ProjectID, &data.Name, &data.Slug, &data.Position, &data.IsDefault, &data.CreatedAt, &data.UpdatedAt)
 
 	if err != nil {
@@ -81,11 +93,13 @@ func (sr StatusRepository) Update(ctx context.Context, id string, payload models
 	slug := common.Slugify(payload.Name)
 
 	sql := `UPDATE statuses
-		SET name = COALESCE(NULLIF($1, ''), name),
+		SET name = COALESCE(NULLIF($1, ''), statuses.name),
 			slug = $2,
 			updated_at = CURRENT_TIMESTAMP
-		WHERE id = $3 AND deleted_at IS NULL
-		RETURNING id, project_id, name, slug, position, is_default, created_at, updated_at`
+		FROM projects p
+		WHERE statuses.id = $3 AND statuses.deleted_at IS NULL
+			AND statuses.project_id = p.id AND p.deleted_at IS NULL
+		RETURNING statuses.id, statuses.project_id, statuses.name, statuses.slug, statuses.position, statuses.is_default, statuses.created_at, statuses.updated_at`
 
 	err := sr.pgx.QueryRow(ctx, sql, payload.Name, slug, id).Scan(
 		&data.ID, &data.ProjectID, &data.Name, &data.Slug, &data.Position, &data.IsDefault, &data.CreatedAt, &data.UpdatedAt)
@@ -101,9 +115,11 @@ func (sr StatusRepository) Update(ctx context.Context, id string, payload models
 }
 
 func (sr StatusRepository) Delete(ctx context.Context, id string) error {
-	sql := `UPDATE statuses 
-		SET deleted_at = CURRENT_TIMESTAMP 
-		WHERE id = $1 AND deleted_at IS NULL`
+	sql := `UPDATE statuses
+		SET deleted_at = CURRENT_TIMESTAMP
+		FROM projects p
+		WHERE statuses.id = $1 AND statuses.deleted_at IS NULL
+			AND statuses.project_id = p.id AND p.deleted_at IS NULL`
 
 	cmdTag, err := sr.pgx.Exec(ctx, sql, id)
 	if err != nil {
@@ -117,6 +133,17 @@ func (sr StatusRepository) Delete(ctx context.Context, id string) error {
 }
 
 func (sr StatusRepository) Reorder(ctx context.Context, mod models.StatusReorderModel) ([]models.StatusModel, error) {
+	// Check if parent project exists and is not soft-deleted
+	var projectExists bool
+	checkSql := `SELECT EXISTS(SELECT 1 FROM projects WHERE id = $1 AND deleted_at IS NULL)`
+	err := sr.pgx.QueryRow(ctx, checkSql, mod.ProjectID).Scan(&projectExists)
+	if err != nil {
+		return nil, huma.Error400BadRequest("Unable to verify project", err)
+	}
+	if !projectExists {
+		return nil, huma.Error404NotFound("Project not found or has been deleted")
+	}
+
 	tx, err := sr.pgx.Begin(ctx)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Unable to start transaction", err)
@@ -186,8 +213,10 @@ func (sr StatusRepository) ValidateReorderCounts(ctx context.Context, mod models
 
 func (sr StatusRepository) GetDetail(ctx context.Context, id string) (models.StatusModel, error) {
 	var s models.StatusModel
-	sql := `SELECT id, project_id, name, slug, position, is_default, created_at, updated_at
-		FROM statuses WHERE id = $1::uuid AND deleted_at IS NULL`
+	sql := `SELECT s.id, s.project_id, s.name, s.slug, s.position, s.is_default, s.created_at, s.updated_at
+		FROM statuses s
+		INNER JOIN projects p ON s.project_id = p.id AND p.deleted_at IS NULL
+		WHERE s.id = $1::uuid AND s.deleted_at IS NULL`
 
 	err := sr.pgx.QueryRow(ctx, sql, id).Scan(&s.ID, &s.ProjectID, &s.Name, &s.Slug, &s.Position, &s.IsDefault, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {

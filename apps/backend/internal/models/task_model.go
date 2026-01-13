@@ -36,16 +36,16 @@ type TaskSearchModel struct {
 type TaskCreateModel struct {
 	ProjectID string     `json:"projectId" minLength:"1" format:"uuid"`
 	StatusID  string     `json:"statusId" required:"true" format:"uuid"`
-	Title     string     `json:"title" minLength:"1"`
+	Title     string     `json:"title" minLength:"1" pattern:"^.*\\S.*$"`
 	Details   string     `json:"details"`
-	Priority  int        `json:"priority" default:"1"`
+	Priority  int        `json:"priority" default:"1" minimum:"1"`
 	DueDate   *time.Time `json:"dueDate,omitempty"`
 }
 
 type TaskUpdateModel struct {
-	Title    string     `json:"title,omitempty" required:"false" minLength:"1"`
+	Title    string     `json:"title,omitempty" required:"false" minLength:"1" pattern:"^.*\\S.*$"`
 	Details  string     `json:"details,omitempty" required:"false"`
 	StatusID string     `json:"statusId,omitempty" required:"false"`
-	Priority *int       `json:"priority,omitempty" required:"false"`
+	Priority *int       `json:"priority,omitempty" required:"false" minimum:"1"`
 	DueDate  *time.Time `json:"dueDate,omitempty" required:"false"`
 }

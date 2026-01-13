@@ -41,13 +41,14 @@ func (tr TaskRepository) GetPaginated(ctx context.Context, q models.TaskSearchMo
 	}
 
 	query := `WITH filtered AS (
-        SELECT id, project_id, COALESCE(title, '') AS title, COALESCE(details, '') AS details, status_id, priority, due_date, created_at, updated_at
-        FROM tasks
-        WHERE deleted_at IS NULL
-            AND ($1::uuid[] IS NULL OR CARDINALITY($1::uuid[]) = 0 OR id = ANY($1))
-            AND ($2::uuid[] IS NULL OR CARDINALITY($2::uuid[]) = 0 OR project_id = ANY($2))
-            AND ($3::uuid[] IS NULL OR CARDINALITY($3::uuid[]) = 0 OR status_id = ANY($3))
-            AND ($4 = '' OR title ILIKE $4 OR details ILIKE $4)
+        SELECT t.id, t.project_id, COALESCE(t.title, '') AS title, COALESCE(t.details, '') AS details, t.status_id, t.priority, t.due_date, t.created_at, t.updated_at
+        FROM tasks t
+        INNER JOIN projects p ON t.project_id = p.id AND p.deleted_at IS NULL
+        WHERE t.deleted_at IS NULL
+            AND ($1::uuid[] IS NULL OR CARDINALITY($1::uuid[]) = 0 OR t.id = ANY($1))
+            AND ($2::uuid[] IS NULL OR CARDINALITY($2::uuid[]) = 0 OR t.project_id = ANY($2))
+            AND ($3::uuid[] IS NULL OR CARDINALITY($3::uuid[]) = 0 OR t.status_id = ANY($3))
+            AND ($4 = '' OR t.title ILIKE $4 OR t.details ILIKE $4)
     ), counted AS (
         SELECT COUNT(*) as total FROM filtered
     )
@@ -102,8 +103,10 @@ func (tr TaskRepository) GetDetail(ctx context.Context, id string) (models.TaskM
 	var statusID sql.NullString
 	var dueDate sql.NullTime
 
-	query := `SELECT id, project_id, title, details, status_id, priority, due_date, created_at, updated_at
-        FROM tasks WHERE id = $1::uuid AND deleted_at IS NULL`
+	query := `SELECT t.id, t.project_id, t.title, t.details, t.status_id, t.priority, t.due_date, t.created_at, t.updated_at
+        FROM tasks t
+        INNER JOIN projects p ON t.project_id = p.id AND p.deleted_at IS NULL
+        WHERE t.id = $1::uuid AND t.deleted_at IS NULL`
 
 	err := tr.pgx.QueryRow(ctx, query, id).Scan(&t.ID, &t.ProjectID, &t.Title, &t.Details, &statusID, &t.Priority, &dueDate, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
@@ -155,7 +158,7 @@ func (tr TaskRepository) Create(ctx context.Context, payload models.TaskCreateMo
 
 func (tr TaskRepository) Update(ctx context.Context, id string, payload models.TaskUpdateModel) (models.TaskModel, error) {
 	var t models.TaskModel
-	query := `UPDATE tasks SET title = COALESCE(NULLIF($1, ''), title), details = COALESCE(NULLIF($2, ''), details), status_id = $3, priority = COALESCE($4, priority), due_date = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6::uuid AND deleted_at IS NULL RETURNING id, project_id, title, details, status_id, priority, due_date, created_at, updated_at`
+	query := `UPDATE tasks t SET title = COALESCE(NULLIF($1, ''), t.title), details = COALESCE(NULLIF($2, ''), t.details), status_id = $3, priority = COALESCE($4, t.priority), due_date = $5, updated_at = CURRENT_TIMESTAMP FROM projects p WHERE t.id = $6::uuid AND t.deleted_at IS NULL AND t.project_id = p.id AND p.deleted_at IS NULL RETURNING t.id, t.project_id, t.title, t.details, t.status_id, t.priority, t.due_date, t.created_at, t.updated_at`
 
 	var statusParam interface{}
 	if payload.StatusID == "" {
@@ -192,7 +195,7 @@ func (tr TaskRepository) Update(ctx context.Context, id string, payload models.T
 }
 
 func (tr TaskRepository) Delete(ctx context.Context, id string) error {
-	sql := `UPDATE tasks SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1::uuid AND deleted_at IS NULL`
+	sql := `UPDATE tasks t SET deleted_at = CURRENT_TIMESTAMP FROM projects p WHERE t.id = $1::uuid AND t.deleted_at IS NULL AND t.project_id = p.id AND p.deleted_at IS NULL`
 	cmdTag, err := tr.pgx.Exec(ctx, sql, id)
 	if err != nil {
 		return huma.Error400BadRequest("Unable to delete task", err)
