@@ -71,6 +71,15 @@ func (sr StatusResource) Routes(api huma.API) {
 		Tags:        []string{"Status"},
 		Security:    []map[string][]string{{"bearer": {}}},
 	}, sr.reorder)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "status-get-logs",
+		Method:      http.MethodGet,
+		Path:        "/statuses/{statusId}/logs",
+		Summary:     "Get logs for a status",
+		Tags:        []string{"Status"},
+		Security:    []map[string][]string{{"bearer": {}}},
+	}, sr.getLogs)
 }
 
 func (sr StatusResource) getByProject(ctx context.Context, input *struct {
@@ -134,4 +143,23 @@ func (sr StatusResource) reorder(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return &struct{ Body []models.StatusModel }{Body: resp}, nil
+}
+
+func (sr StatusResource) getLogs(ctx context.Context, input *struct {
+	Path      string `path:"projectId"`
+	StatusKey string `path:"statusId"`
+	models.LogSearchModel
+}) (*struct{ Body models.LogPaginatedModel }, error) {
+	q := input.LogSearchModel
+	if q.StatusID == nil {
+		q.StatusID = []string{input.StatusKey}
+	} else {
+		q.StatusID = append(q.StatusID, input.StatusKey)
+	}
+
+	resp, err := sr.statusSrv.GetLogs(ctx, input.Path, q)
+	if err != nil {
+		return nil, err
+	}
+	return &struct{ Body models.LogPaginatedModel }{Body: resp}, nil
 }

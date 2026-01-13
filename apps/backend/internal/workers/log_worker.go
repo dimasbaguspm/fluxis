@@ -30,6 +30,8 @@ type LogWorker struct {
 
 	mu           sync.Mutex
 	projectCache map[string]models.ProjectModel
+	statusCache  map[string]models.StatusModel
+	taskCache    map[string]models.TaskModel
 	// atomic flag: 0 running, 1 stopping
 	stopping int32
 }
@@ -47,6 +49,8 @@ func NewLogWorker(projectRepo repositories.ProjectRepository, statusRepo reposit
 		stop:         make(chan struct{}),
 		interval:     interval,
 		projectCache: make(map[string]models.ProjectModel),
+		statusCache:  make(map[string]models.StatusModel),
+		taskCache:    make(map[string]models.TaskModel),
 	}
 	lw.wg.Add(1)
 	go lw.run()
@@ -91,6 +95,10 @@ func (lw *LogWorker) run() {
 			switch t.Resource {
 			case "project":
 				lw.processProject(context.Background(), t.ID, t.Action)
+			case "status":
+				lw.processStatus(context.Background(), t.ID, t.Action)
+			case "task":
+				lw.processTask(context.Background(), t.ID, t.Action)
 			default:
 				_ = key
 			}
@@ -180,6 +188,141 @@ func (lw *LogWorker) processProject(ctx context.Context, id string, action strin
 
 		entry := "project.updated:" + strings.Join(changed, ",")
 		_ = lw.logRepo.Insert(ctx, models.LogCreateModel{ProjectID: id, Entry: entry})
+		return
+	}
+}
+
+func (lw *LogWorker) processStatus(ctx context.Context, id string, action string) {
+	switch action {
+	case "deleted":
+		lw.mu.Lock()
+		delete(lw.statusCache, id)
+		lw.mu.Unlock()
+		_ = lw.logRepo.Insert(ctx, models.LogCreateModel{ProjectID: id, Entry: "status.deleted"})
+		return
+
+	case "created":
+		cur, err := lw.statusRepo.GetDetail(ctx, id)
+		if err != nil {
+			return
+		}
+		lw.mu.Lock()
+		lw.statusCache[id] = cur
+		lw.mu.Unlock()
+		_ = lw.logRepo.Insert(ctx, models.LogCreateModel{ProjectID: cur.ProjectID, StatusID: &cur.ID, Entry: "status.created"})
+		return
+
+	case "updated":
+		cur, err := lw.statusRepo.GetDetail(ctx, id)
+		if err != nil {
+			return
+		}
+
+		lw.mu.Lock()
+		prev, ok := lw.statusCache[id]
+		lw.mu.Unlock()
+
+		if !ok {
+			// warm cache and skip if no previous
+			lw.mu.Lock()
+			lw.statusCache[id] = cur
+			lw.mu.Unlock()
+			return
+		}
+
+		var changed []string
+		if cur.Name != prev.Name {
+			changed = append(changed, "name")
+		}
+		if cur.Position != prev.Position {
+			changed = append(changed, "position")
+		}
+		if cur.IsDefault != prev.IsDefault {
+			changed = append(changed, "isDefault")
+		}
+
+		lw.mu.Lock()
+		lw.statusCache[id] = cur
+		lw.mu.Unlock()
+
+		if len(changed) == 0 {
+			return
+		}
+
+		entry := "status.updated:" + strings.Join(changed, ",")
+		_ = lw.logRepo.Insert(ctx, models.LogCreateModel{ProjectID: cur.ProjectID, StatusID: &cur.ID, Entry: entry})
+		return
+	}
+}
+
+func (lw *LogWorker) processTask(ctx context.Context, id string, action string) {
+	switch action {
+	case "deleted":
+		lw.mu.Lock()
+		delete(lw.taskCache, id)
+		lw.mu.Unlock()
+		_ = lw.logRepo.Insert(ctx, models.LogCreateModel{ProjectID: id, Entry: "task.deleted"})
+		return
+
+	case "created":
+		cur, err := lw.taskRepo.GetDetail(ctx, id)
+		if err != nil {
+			return
+		}
+		lw.mu.Lock()
+		lw.taskCache[id] = cur
+		lw.mu.Unlock()
+		_ = lw.logRepo.Insert(ctx, models.LogCreateModel{ProjectID: cur.ProjectID, TaskID: &cur.ID, Entry: "task.created"})
+		return
+
+	case "updated":
+		cur, err := lw.taskRepo.GetDetail(ctx, id)
+		if err != nil {
+			return
+		}
+
+		lw.mu.Lock()
+		prev, ok := lw.taskCache[id]
+		lw.mu.Unlock()
+
+		if !ok {
+			// warm cache and skip if no previous
+			lw.mu.Lock()
+			lw.taskCache[id] = cur
+			lw.mu.Unlock()
+			return
+		}
+
+		var changed []string
+		if cur.Title != prev.Title {
+			changed = append(changed, "title")
+		}
+		if cur.Details != prev.Details {
+			changed = append(changed, "details")
+		}
+		if cur.StatusID != prev.StatusID {
+			changed = append(changed, "status")
+		}
+		if cur.Priority != prev.Priority {
+			changed = append(changed, "priority")
+		}
+		// compare due date
+		if (cur.DueDate == nil && prev.DueDate != nil) || (cur.DueDate != nil && prev.DueDate == nil) {
+			changed = append(changed, "dueDate")
+		} else if cur.DueDate != nil && prev.DueDate != nil && !cur.DueDate.Equal(*prev.DueDate) {
+			changed = append(changed, "dueDate")
+		}
+
+		lw.mu.Lock()
+		lw.taskCache[id] = cur
+		lw.mu.Unlock()
+
+		if len(changed) == 0 {
+			return
+		}
+
+		entry := "task.updated:" + strings.Join(changed, ",")
+		_ = lw.logRepo.Insert(ctx, models.LogCreateModel{ProjectID: cur.ProjectID, TaskID: &cur.ID, Entry: entry})
 		return
 	}
 }

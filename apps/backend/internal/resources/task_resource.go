@@ -62,6 +62,15 @@ func (tr TaskResource) Routes(api huma.API) {
 		Tags:        []string{"Task"},
 		Security:    []map[string][]string{{"bearer": {}}},
 	}, tr.delete)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "task-get-logs",
+		Method:      http.MethodGet,
+		Path:        "/tasks/{taskId}/logs",
+		Summary:     "Get logs for a task",
+		Tags:        []string{"Task"},
+		Security:    []map[string][]string{{"bearer": {}}},
+	}, tr.getLogs)
 }
 
 func (tr TaskResource) search(ctx context.Context, input *models.TaskSearchModel) (*struct{ Body models.TaskPaginatedModel }, error) {
@@ -109,4 +118,28 @@ func (tr TaskResource) delete(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
+}
+
+func (tr TaskResource) getLogs(ctx context.Context, input *struct {
+	Path string `path:"taskId"`
+	models.LogSearchModel
+}) (*struct{ Body models.LogPaginatedModel }, error) {
+	// need project id for repository query
+	t, err := tr.taskSrv.GetDetail(ctx, input.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	q := input.LogSearchModel
+	if q.TaskID == nil {
+		q.TaskID = []string{input.Path}
+	} else {
+		q.TaskID = append(q.TaskID, input.Path)
+	}
+
+	resp, err := tr.taskSrv.GetLogs(ctx, t.ProjectID, q)
+	if err != nil {
+		return nil, err
+	}
+	return &struct{ Body models.LogPaginatedModel }{Body: resp}, nil
 }

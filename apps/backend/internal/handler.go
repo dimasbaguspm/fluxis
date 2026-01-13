@@ -31,8 +31,8 @@ func RegisterPrivateRoutes(ctx context.Context, api huma.API, pgx *pgxpool.Pool)
 	lW := workers.NewLogWorker(prR, sR, tR, lr, 10*time.Second)
 
 	pS := services.NewProjectService(prR, lW, lr)
-	sS := services.NewStatusService(sR)
-	tS := services.NewTaskService(tR, prR, sR)
+	sS := services.NewStatusService(sR, lW, lr)
+	tS := services.NewTaskService(tR, prR, sR, lW, lr)
 
 	resources.NewProjectResource(pS).Routes(api)
 	resources.NewStatusResource(sS).Routes(api)

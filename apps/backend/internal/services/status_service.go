@@ -7,14 +7,17 @@ import (
 	"github.com/dimasbaguspm/fluxis/internal/common"
 	"github.com/dimasbaguspm/fluxis/internal/models"
 	"github.com/dimasbaguspm/fluxis/internal/repositories"
+	"github.com/dimasbaguspm/fluxis/internal/workers"
 )
 
 type StatusService struct {
 	statusRepo repositories.StatusRepository
+	lr         repositories.LogRepository
+	lw         *workers.LogWorker
 }
 
-func NewStatusService(statusRepo repositories.StatusRepository) StatusService {
-	return StatusService{statusRepo}
+func NewStatusService(statusRepo repositories.StatusRepository, lw *workers.LogWorker, lr repositories.LogRepository) StatusService {
+	return StatusService{statusRepo: statusRepo, lr: lr, lw: lw}
 }
 
 func (ss *StatusService) GetByProject(ctx context.Context, projectId string) ([]models.StatusModel, error) {
@@ -28,21 +31,41 @@ func (ss *StatusService) Create(ctx context.Context, projectId string, payload m
 	if !common.ValidateUUID(projectId) {
 		return models.StatusModel{}, huma.Error400BadRequest("Must provide UUID format")
 	}
-	return ss.statusRepo.Create(ctx, projectId, payload)
+	s, err := ss.statusRepo.Create(ctx, projectId, payload)
+	if err != nil {
+		return s, err
+	}
+	if ss.lw != nil {
+		ss.lw.Enqueue(workers.Trigger{Resource: "status", ID: s.ID, Action: "created"})
+	}
+	return s, nil
 }
 
 func (ss *StatusService) Update(ctx context.Context, id string, payload models.StatusUpdateModel) (models.StatusModel, error) {
 	if !common.ValidateUUID(id) {
 		return models.StatusModel{}, huma.Error400BadRequest("Must provide UUID format")
 	}
-	return ss.statusRepo.Update(ctx, id, payload)
+	s, err := ss.statusRepo.Update(ctx, id, payload)
+	if err != nil {
+		return s, err
+	}
+	if ss.lw != nil {
+		ss.lw.Enqueue(workers.Trigger{Resource: "status", ID: s.ID, Action: "updated"})
+	}
+	return s, nil
 }
 
 func (ss *StatusService) Delete(ctx context.Context, id string) error {
 	if !common.ValidateUUID(id) {
 		return huma.Error400BadRequest("Must provide UUID format")
 	}
-	return ss.statusRepo.Delete(ctx, id)
+	if err := ss.statusRepo.Delete(ctx, id); err != nil {
+		return err
+	}
+	if ss.lw != nil {
+		ss.lw.Enqueue(workers.Trigger{Resource: "status", ID: id, Action: "deleted"})
+	}
+	return nil
 }
 
 func (ss *StatusService) Reorder(ctx context.Context, projectId string, ids []string) ([]models.StatusModel, error) {
@@ -74,4 +97,11 @@ func (ss *StatusService) GetDetail(ctx context.Context, id string) (models.Statu
 		return models.StatusModel{}, huma.Error400BadRequest("Must provide UUID format")
 	}
 	return ss.statusRepo.GetDetail(ctx, id)
+}
+
+func (ss *StatusService) GetLogs(ctx context.Context, projectID string, q models.LogSearchModel) (models.LogPaginatedModel, error) {
+	if !common.ValidateUUID(projectID) {
+		return models.LogPaginatedModel{}, huma.Error400BadRequest("Must provide UUID format")
+	}
+	return ss.lr.GetPaginated(ctx, projectID, q)
 }
