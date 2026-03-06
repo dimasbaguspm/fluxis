@@ -12,9 +12,14 @@ import (
 	"github.com/dimasbaguspm/fluxis/internal/auth"
 	"github.com/dimasbaguspm/fluxis/internal/user"
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
+	"github.com/go-playground/validator/v10"
 )
 
+var validate *validator.Validate
+
 func main() {
+	validate = validator.New()
+
 	ctx, close := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT)
 	defer close()
 
