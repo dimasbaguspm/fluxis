@@ -21,6 +21,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = postgres.Migrator()
+	if err != nil {
+		os.Exit(1)
+	}
+
 	mut := http.NewServeMux()
 	svr := http.Server{
 		Addr:    ":8080",

@@ -23,8 +23,9 @@ FROM alpine:3.21
 
 WORKDIR /app
 
-COPY --from=builder /app/tmp/main ./main
+COPY --from=builder /app/tmp/main ./bin/main
+COPY --from=builder /app/migrations ./migrations
 
 EXPOSE 8080
 
-CMD ["./main"]
+CMD ["./bin/main"]
