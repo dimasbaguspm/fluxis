@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/dimasbaguspm/fluxis/internal/user"
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
 )
 
@@ -26,10 +27,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	mut := http.NewServeMux()
+	mux := http.NewServeMux()
+	user.Routes(mux)
+
 	svr := http.Server{
 		Addr:    ":8080",
-		Handler: mut,
+		Handler: mux,
 	}
 
 	slog.Info("Start to serve app into port :8080")
