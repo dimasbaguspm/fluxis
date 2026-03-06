@@ -8,14 +8,20 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/dimasbaguspm/fluxis/pkg/postgres"
 )
 
 func main() {
 	ctx, close := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT)
 	defer close()
 
-	mut := http.NewServeMux()
+	_, err := postgres.Pool(ctx)
+	if err != nil {
+		os.Exit(1)
+	}
 
+	mut := http.NewServeMux()
 	svr := http.Server{
 		Addr:    ":8080",
 		Handler: mut,
