@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/dimasbaguspm/fluxis/internal/auth"
 	"github.com/dimasbaguspm/fluxis/internal/user"
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
 )
@@ -28,6 +29,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	auth.Routes(mux)
 	user.Routes(mux)
 
 	svr := http.Server{
