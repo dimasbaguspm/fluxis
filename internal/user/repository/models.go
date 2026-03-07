@@ -3,17 +3,3 @@
 //   sqlc v1.30.0
 
 package repository
-
-import (
-	"github.com/jackc/pgx/v5/pgtype"
-)
-
-type User struct {
-	ID           pgtype.UUID        `db:"id" json:"id"`
-	Email        string             `db:"email" json:"email"`
-	DisplayName  string             `db:"display_name" json:"display_name"`
-	PasswordHash string             `db:"password_hash" json:"password_hash"`
-	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
-	DeletedAt    pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
-}

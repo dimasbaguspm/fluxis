@@ -10,12 +10,18 @@ import (
 	userrepo "github.com/dimasbaguspm/fluxis/internal/user/repository"
 	userservice "github.com/dimasbaguspm/fluxis/internal/user/service"
 
+	"github.com/dimasbaguspm/fluxis/internal/org"
+	orghandler "github.com/dimasbaguspm/fluxis/internal/org/handler"
+	orgrepo "github.com/dimasbaguspm/fluxis/internal/org/repository"
+	orgservice "github.com/dimasbaguspm/fluxis/internal/org/service"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type App struct {
 	Auth *auth.Module
 	User *user.Module
+	Org  *org.Module
 }
 
 type Deps struct {
@@ -25,9 +31,13 @@ type Deps struct {
 
 func Wire(d Deps) *App {
 	userRepo := userrepo.New(d.DB)
+	orgRepo := orgrepo.New(d.DB)
 
 	userSvc := userservice.New(userservice.Deps{
 		Repo: userRepo,
+	})
+	orgSvc := orgservice.New(orgservice.Deps{
+		Repo: orgRepo,
 	})
 	authSvc := authservice.New(authservice.Deps{
 		Users:  userSvc,
@@ -36,10 +46,12 @@ func Wire(d Deps) *App {
 
 	authH := authhandler.New(authSvc)
 	userH := userhandler.New(userSvc)
+	orgH := orghandler.New(orgSvc)
 
 	return &App{
 		Auth: auth.NewModule(authSvc, authH),
 		User: user.NewModule(userH),
+		Org:  org.NewModule(orgH),
 	}
 
 }

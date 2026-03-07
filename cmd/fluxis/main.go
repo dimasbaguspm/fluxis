@@ -66,6 +66,7 @@ func main() {
 	// each domain registers its own paths
 	app.Auth.Routes(mux)
 	app.User.Routes(mux)
+	app.Org.Routes(mux)
 
 	svr := http.Server{
 		Addr:         cfg.Server.addr(),

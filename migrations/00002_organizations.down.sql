@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS org_members;
+DROP TABLE IF EXISTS orgs;
+DROP TYPE IF EXISTS org_role;
