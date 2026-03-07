@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
 )
 
@@ -27,6 +28,8 @@ func main() {
 		DB:     db,
 		Config: cfg,
 	})
+
+	httpx.InitAuth(app.Auth.Service())
 
 	mux := http.NewServeMux()
 

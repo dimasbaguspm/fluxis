@@ -32,9 +32,10 @@ type AuthTokenClaimModel struct {
 }
 
 type AuthWrite interface {
-	Register(ctx context.Context, p UserCreateModel) (AuthModel, error)
+	Register(ctx context.Context, p AuthRegisterModel) (AuthModel, error)
 	Login(ctx context.Context, p AuthLoginModel) (AuthModel, error)
 	RotateAccessToken(ctx context.Context, p AuthRefreshModel) (AuthModel, error)
-	generateTokens(ctx context.Context, p UserModel) (AuthModel, error)
-	validateRefreshToken(ctx context.Context, tokenStr string) (AuthTokenClaimModel, error)
+	GenerateTokens(ctx context.Context, p UserModel) (AuthModel, error)
+	ValidateAccessToken(ctx context.Context, tokenStr string) (AuthTokenClaimModel, error)
+	ValidateRefreshToken(ctx context.Context, tokenStr string) (AuthTokenClaimModel, error)
 }

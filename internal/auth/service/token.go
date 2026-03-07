@@ -15,7 +15,7 @@ var (
 	ErrUnableToParseToken = httpx.Unauthorized("token unable to be parsed")
 )
 
-func (s *Service) generateTokens(_ context.Context, p domain.UserModel) (domain.AuthModel, error) {
+func (s *Service) GenerateTokens(_ context.Context, p domain.UserModel) (domain.AuthModel, error) {
 	now := time.Now()
 	accessExpiry := now.Add(s.Config.AccessTokenExpiry)
 	refreshExpiry := now.Add(s.Config.RefreshTokenExpiry)
@@ -54,7 +54,21 @@ func (s *Service) generateTokens(_ context.Context, p domain.UserModel) (domain.
 	}, nil
 }
 
-func (s *Service) validateRefreshToken(ctx context.Context, tokenstr string) (domain.AuthTokenClaimModel, error) {
+func (s *Service) ValidateAccessToken(_ context.Context, tokenstr string) (domain.AuthTokenClaimModel, error) {
+	var claims domain.AuthTokenClaimModel
+	_, err := jwt.ParseWithClaims(tokenstr, &claims, func(t *jwt.Token) (any, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+		return []byte(s.Config.AccessTokenSecret), nil
+	})
+	if err != nil {
+		return domain.AuthTokenClaimModel{}, ErrUnableToParseToken
+	}
+	return claims, nil
+}
+
+func (s *Service) ValidateRefreshToken(_ context.Context, tokenstr string) (domain.AuthTokenClaimModel, error) {
 	var claims domain.AuthTokenClaimModel
 	_, err := jwt.ParseWithClaims(tokenstr, &claims, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {

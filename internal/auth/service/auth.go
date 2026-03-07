@@ -32,7 +32,7 @@ func (s *Service) Register(ctx context.Context, p domain.AuthRegisterModel) (dom
 		return domain.AuthModel{}, err
 	}
 
-	tokens, err := s.generateTokens(ctx, user)
+	tokens, err := s.GenerateTokens(ctx, user)
 	if err != nil {
 		return domain.AuthModel{}, err
 	}
@@ -49,7 +49,7 @@ func (s *Service) Login(ctx context.Context, p domain.AuthLoginModel) (domain.Au
 		return domain.AuthModel{}, ErrInvalidCredentials
 	}
 
-	tokens, err := s.generateTokens(ctx, user)
+	tokens, err := s.GenerateTokens(ctx, user)
 	if err != nil {
 		return domain.AuthModel{}, err
 	}
@@ -59,7 +59,7 @@ func (s *Service) Login(ctx context.Context, p domain.AuthLoginModel) (domain.Au
 func (s *Service) RotateAccessToken(ctx context.Context, p domain.AuthRefreshModel) (domain.AuthModel, error) {
 	now := time.Now()
 
-	refreshClaim, err := s.validateRefreshToken(ctx, p.RefreshToken)
+	refreshClaim, err := s.ValidateRefreshToken(ctx, p.RefreshToken)
 	if err != nil {
 		return domain.AuthModel{}, ErrTokenInvalid
 	}
@@ -73,7 +73,7 @@ func (s *Service) RotateAccessToken(ctx context.Context, p domain.AuthRefreshMod
 		return domain.AuthModel{}, ErrInvalidCredentials
 	}
 
-	tokens, err := s.generateTokens(ctx, user)
+	tokens, err := s.GenerateTokens(ctx, user)
 	if err != nil {
 		return domain.AuthModel{}, err
 	}

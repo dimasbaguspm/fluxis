@@ -34,7 +34,7 @@ func Wire(d Deps) *App {
 	authH := authhandler.New(authSvc)
 
 	return &App{
-		Auth: auth.NewModule(authH),
+		Auth: auth.NewModule(authSvc, authH),
 	}
 
 }
