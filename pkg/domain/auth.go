@@ -8,8 +8,8 @@ import (
 )
 
 type AuthModel struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
+	AccessToken  string `json:"accessToken"  example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	RefreshToken string `json:"refreshToken" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 }
 
 type AuthRegisterModel struct {
@@ -17,13 +17,13 @@ type AuthRegisterModel struct {
 }
 
 type AuthLoginModel struct {
-	Email    string `json:"email" validate:"email,required"`
-	Password string `json:"password" validate:"required"`
+	Email    string `json:"email"    validate:"email,required" example:"user@example.com"`
+	Password string `json:"password" validate:"required"        example:"s3cr3tP@ssword"`
 }
 
 type AuthRefreshModel struct {
-	AccessToken  string `json:"accessToken" validate:"required"`
-	RefreshToken string `json:"refreshToken" validate:"required"`
+	AccessToken  string `json:"accessToken"  validate:"required" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	RefreshToken string `json:"refreshToken" validate:"required" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 }
 
 type AuthTokenClaimModel struct {

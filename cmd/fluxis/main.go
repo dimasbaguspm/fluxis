@@ -11,10 +11,26 @@ import (
 
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
-// @title           Fluxis API
-// @version         1.0
+// @title					Fluxis API
+// @version					1.0
+// @description				Personal finance management API
+//
+// @contact.name			Fluxis Support
+// @contact.url				https://github.com/dimasbaguspm/fluxis
+//
+// @license.name			MIT
+//
+// @host					localhost:8080
+// @BasePath				/
+// @schemes					http https
+//
+// @securityDefinitions.apikey	BearerAuth
+// @in							header
+// @name						Authorization
+// @description					Bearer token obtained from /auth/login or /auth/refresh
 func main() {
 	cfg := LoadEnv()
 
@@ -38,6 +54,13 @@ func main() {
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+
+	mux.HandleFunc("GET /swagger/doc.json", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./api/swagger.json")
+	})
+	mux.Handle("GET /swagger/", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
 
 	// mount domain routes onto the mux
 	// each domain registers its own paths
