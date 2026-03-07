@@ -5,6 +5,8 @@ import (
 	authhandler "github.com/dimasbaguspm/fluxis/internal/auth/handler"
 	authservice "github.com/dimasbaguspm/fluxis/internal/auth/service"
 
+	"github.com/dimasbaguspm/fluxis/internal/user"
+	userhandler "github.com/dimasbaguspm/fluxis/internal/user/handler"
 	userrepo "github.com/dimasbaguspm/fluxis/internal/user/repository"
 	userservice "github.com/dimasbaguspm/fluxis/internal/user/service"
 
@@ -13,6 +15,7 @@ import (
 
 type App struct {
 	Auth *auth.Module
+	User *user.Module
 }
 
 type Deps struct {
@@ -28,13 +31,15 @@ func Wire(d Deps) *App {
 	})
 	authSvc := authservice.New(authservice.Deps{
 		Users:  userSvc,
-		Config: &authservice.Config{},
+		Config: &d.Config.Auth,
 	})
 
 	authH := authhandler.New(authSvc)
+	userH := userhandler.New(userSvc)
 
 	return &App{
 		Auth: auth.NewModule(authSvc, authH),
+		User: user.NewModule(userH),
 	}
 
 }

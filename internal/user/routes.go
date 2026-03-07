@@ -1,12 +1,20 @@
 package user
 
 import (
-	"encoding/json"
 	"net/http"
+
+	"github.com/dimasbaguspm/fluxis/internal/user/handler"
+	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 )
 
-func Routes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /users/me", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode("hmm")
-	})
+type Module struct {
+	h *handler.Handler
+}
+
+func NewModule(h *handler.Handler) *Module {
+	return &Module{h}
+}
+
+func (m *Module) Routes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /users/me", httpx.RequireAuth(m.h.GetCurrentUser))
 }

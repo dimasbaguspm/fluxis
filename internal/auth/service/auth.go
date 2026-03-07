@@ -64,7 +64,7 @@ func (s *Service) RotateAccessToken(ctx context.Context, p domain.AuthRefreshMod
 		return domain.AuthModel{}, ErrTokenInvalid
 	}
 
-	if refreshClaim.ExpiresAt.After(now) {
+	if refreshClaim.ExpiresAt.Before(now) {
 		return domain.AuthModel{}, ErrTokenInvalid
 	}
 

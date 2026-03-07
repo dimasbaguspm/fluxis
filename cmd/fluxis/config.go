@@ -14,7 +14,7 @@ type Config struct {
 	Env    string
 	DB     DBConfig
 	Server ServerConfig
-	Auth   AuthConfig
+	Auth   authConfig.Config
 }
 
 type DBConfig struct {
@@ -35,8 +35,6 @@ func (c ServerConfig) addr() string {
 	return fmt.Sprintf("%s:%s", c.Host, c.Port)
 }
 
-type AuthConfig authConfig.Config
-
 func LoadEnv() *Config {
 	slog.Info("[Config]: Attempting to load few environment variables")
 
@@ -54,7 +52,7 @@ func LoadEnv() *Config {
 			MaxConns: getInt("DB_MAX_CONNS", 25),
 			MinConns: getInt("DB_MIN_CONNS", 5),
 		},
-		Auth: AuthConfig{
+		Auth: authConfig.Config{
 			AccessTokenSecret:  mustEnv("JWT_ACCESS_SECRET"),
 			RefreshTokenSecret: mustEnv("JWT_REFRESH_SECRET"),
 			AccessTokenExpiry:  getDuration("JWT_ACCESS_EXPIRY", 15*time.Minute),
