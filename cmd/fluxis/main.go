@@ -13,6 +13,8 @@ import (
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
 )
 
+// @title           Fluxis API
+// @version         1.0
 func main() {
 	cfg := LoadEnv()
 

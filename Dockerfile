@@ -2,10 +2,18 @@ FROM golang:1.25-alpine AS dev
 
 WORKDIR /app
 
-RUN go install github.com/air-verse/air@latest
+RUN apk add --no-cache make git
 
-COPY go.mod ./
+# Install dev tools — cached independently of application code
+RUN go install github.com/air-verse/air@latest \
+    && go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest \
+    && go install github.com/swaggo/swag/cmd/swag@latest
+
+# Download dependencies — only re-runs when go.mod/go.sum change
+COPY go.mod go.sum ./
 RUN go mod download
+
+COPY Makefile ./
 
 CMD ["air"]
 

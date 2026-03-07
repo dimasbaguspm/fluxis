@@ -1,10 +1,10 @@
-.PHONY: init dev build run down logs sqlc
+.PHONY: init dev build run down logs sqlc swagger
 
 init:
 	go mod download
 	go install github.com/air-verse/air@latest
 	go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
-
+	go install github.com/swaggo/swag/cmd/swag@latest
 
 build:
 	docker compose -f infra/docker-compose.yaml build
@@ -20,3 +20,6 @@ logs:
 
 sqlc:
 	sqlc generate
+
+swagger:
+	swag init --generalInfo cmd/fluxis/main.go --outputTypes json --output ./api
