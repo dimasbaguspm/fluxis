@@ -11,13 +11,13 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func Migrator() error {
+func RunMigration(dbUrl string) {
 	slog.Info("[Migrator]: trying to migrate tables into DB")
 
 	exe, err := os.Executable()
 	if err != nil {
 		slog.Error("[Migrator]: failed to resolve executable path", "error", err)
-		return err
+		os.Exit(1)
 	}
 	migrationsPath := filepath.Clean(filepath.Join(filepath.Dir(exe), "..", "migrations"))
 
@@ -25,7 +25,7 @@ func Migrator() error {
 
 	if err != nil {
 		slog.Error("[Migrator]: migration failed something odd while lookup the migrations file", "error", err)
-		return err
+		os.Exit(1)
 	}
 
 	err = m.Up()
@@ -33,13 +33,12 @@ func Migrator() error {
 	if err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
 			slog.Info("[Migrator]: migration success without no change!")
-			return nil
+			return
 		}
 
 		slog.Error("[Migrator]: unable to migrate the db", "error", err)
-		return err
+		os.Exit(1)
 	}
 
 	slog.Info("[Migrator]: success to migrate the latest version!")
-	return nil
 }

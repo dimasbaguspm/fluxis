@@ -1,0 +1,107 @@
+package main
+
+import (
+	"fmt"
+	"log/slog"
+	"os"
+	"strconv"
+	"time"
+
+	authConfig "github.com/dimasbaguspm/fluxis/internal/auth/service"
+)
+
+type Config struct {
+	Env    string
+	DB     DBConfig
+	Server ServerConfig
+	Auth   AuthConfig
+}
+
+type DBConfig struct {
+	Primary  string
+	MaxConns int
+	MinConns int
+}
+
+type ServerConfig struct {
+	Host         string
+	Port         string
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+	IdleTimeout  time.Duration
+}
+
+func (c ServerConfig) addr() string {
+	return fmt.Sprintf("%s:%s", c.Host, c.Port)
+}
+
+type AuthConfig authConfig.Config
+
+func LoadEnv() *Config {
+	slog.Info("[Config]: Attempting to load few environment variables")
+
+	cfg := &Config{
+		Env: getEnv("ENV", "development"),
+		Server: ServerConfig{
+			Host:         getEnv("HOST", "0.0.0.0"),
+			Port:         getEnv("PORT", "8080"),
+			ReadTimeout:  getDuration("SERVER_READ_TIMEOUT", 5*time.Second),
+			WriteTimeout: getDuration("SERVER_WRITE_TIMEOUT", 10*time.Second),
+			IdleTimeout:  getDuration("SERVER_IDLE_TIMEOUT", 60*time.Second),
+		},
+		DB: DBConfig{
+			Primary:  mustEnv("DATABASE_URL"),
+			MaxConns: getInt("DB_MAX_CONNS", 25),
+			MinConns: getInt("DB_MIN_CONNS", 5),
+		},
+		Auth: AuthConfig{
+			AccessTokenSecret:  mustEnv("JWT_ACCESS_SECRET"),
+			RefreshTokenSecret: mustEnv("JWT_REFRESH_SECRET"),
+			AccessTokenExpiry:  getDuration("JWT_ACCESS_EXPIRY", 15*time.Minute),
+			RefreshTokenExpiry: getDuration("JWT_REFRESH_EXPIRY", 7*24*time.Hour),
+			BcryptCost:         getInt("BCRYPT_COST", 12),
+		},
+	}
+
+	slog.Info(fmt.Sprintf("[Config]: Environment %s is established", cfg.Env))
+	return cfg
+}
+
+func mustEnv(key string) string {
+	v := os.Getenv(key)
+	if v == "" {
+		panic(fmt.Sprintf("required environment variable %q is not set", key))
+	}
+	return v
+}
+
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
+func getInt(key string, fallback int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		panic(fmt.Sprintf("env var %q must be an integer, got %q", key, v))
+	}
+	return n
+}
+
+func getDuration(key string, fallback time.Duration) time.Duration {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		panic(fmt.Sprintf("env var %q must be a duration (e.g. 15m, 7h), got %q", key, v))
+	}
+	return d
+}

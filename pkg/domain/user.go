@@ -4,15 +4,16 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type UserModel struct {
-	ID          string    `json:"id" validate:"required,uuid4"`
-	Email       string    `json:"email" validate:"email"`
-	DisplayName string    `json:"displayName"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID          pgtype.UUID `json:"id" validate:"required,uuid4"`
+	Email       string      `json:"email" validate:"email"`
+	Password    string      `json:"password"`
+	DisplayName string      `json:"displayName"`
+	CreatedAt   time.Time   `json:"createdAt"`
+	UpdatedAt   time.Time   `json:"updatedAt"`
 }
 
 type UserPagedModel struct {
@@ -24,14 +25,15 @@ type UserPagedModel struct {
 }
 
 type UserSearchModel struct {
-	IDs         string `json:"ids" validate:"dive,uuid4"`
-	Email       string `json:"email" validate:"email"`
-	DisplayName string `json:"displayName"`
+	IDs         []pgtype.UUID `json:"ids" validate:"dive,uuid4"`
+	Email       string        `json:"email" validate:"email"`
+	DisplayName string        `json:"displayName" validate:"min=1"`
 }
 
 type UserCreateModel struct {
-	Email    string `json:"email" validate:"email,required"`
-	Password string `json:"password" validate:"required"`
+	Email       string `json:"email" validate:"email,required"`
+	DisplayName string `json:"displayName" validate:"min=1"`
+	Password    string `json:"password" validate:"required"`
 }
 
 type UserUpdateModel struct {
@@ -40,13 +42,12 @@ type UserUpdateModel struct {
 }
 
 type UserRead interface {
-	GetPagedUsers(ctx context.Context, q UserSearchModel) (UserPagedModel, error)
-	GetSingleUserById(ctx context.Context, id uuid.UUID) (UserModel, error)
+	GetSingleUserById(ctx context.Context, id pgtype.UUID) (UserModel, error)
 	GetSingleUserByEmail(ctx context.Context, email string) (UserModel, error)
 }
 
 type UserWrite interface {
 	CreateUser(ctx context.Context, p UserCreateModel) (UserModel, error)
-	UpdateUser(ctx context.Context, p UserUpdateModel) (UserModel, error)
-	DeleteUser(ctx context.Context, id uuid.UUID) error
+	UpdateUser(ctx context.Context, id pgtype.UUID, p UserUpdateModel) (UserModel, error)
+	DeleteUser(ctx context.Context, id pgtype.UUID) error
 }
