@@ -1,0 +1,15 @@
+version: "2"
+
+sql:
+  - engine: "postgresql"
+    queries: "internal/user/sql/query.sql"
+    schema:  "migrations"
+    gen:
+      go:
+        package:                "repository"
+        out:                    "internal/user/repository"
+        sql_package:            "pgx/v5"
+        emit_json_tags:         true
+        emit_db_tags:           true
+        emit_empty_slices:      true
+        emit_prepared_queries:  true

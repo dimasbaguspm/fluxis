@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -50,7 +49,6 @@ func main() {
 		}
 	}()
 
-	fmt.Println("I am here")
 	<-ctx.Done()
 
 }

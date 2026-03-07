@@ -41,7 +41,8 @@ type UserUpdateModel struct {
 
 type UserRead interface {
 	GetPagedUsers(ctx context.Context, q UserSearchModel) (UserPagedModel, error)
-	GetSingleUser(ctx context.Context, id uuid.UUID) (UserModel, error)
+	GetSingleUserById(ctx context.Context, id uuid.UUID) (UserModel, error)
+	GetSingleUserByEmail(ctx context.Context, email string) (UserModel, error)
 }
 
 type UserWrite interface {
