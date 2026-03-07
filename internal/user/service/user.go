@@ -30,6 +30,7 @@ func (s *Service) GetSingleUserById(ctx context.Context, id pgtype.UUID) (domain
 		ID:          user.ID,
 		Email:       user.Email,
 		DisplayName: user.DisplayName,
+		Password:    user.PasswordHash,
 		CreatedAt:   user.CreatedAt.Time,
 		UpdatedAt:   user.UpdatedAt.Time,
 	}, nil
@@ -47,6 +48,7 @@ func (s *Service) GetSingleUserByEmail(ctx context.Context, email string) (domai
 		ID:          user.ID,
 		Email:       user.Email,
 		DisplayName: user.DisplayName,
+		Password:    user.PasswordHash,
 		CreatedAt:   user.CreatedAt.Time,
 		UpdatedAt:   user.UpdatedAt.Time,
 	}, nil
@@ -73,6 +75,7 @@ func (s *Service) CreateUser(ctx context.Context, p domain.UserCreateModel) (dom
 		ID:          user.ID,
 		Email:       user.Email,
 		DisplayName: user.DisplayName,
+		Password:    user.PasswordHash,
 		CreatedAt:   user.CreatedAt.Time,
 		UpdatedAt:   user.UpdatedAt.Time,
 	}, nil
@@ -96,6 +99,7 @@ func (s *Service) UpdateUser(ctx context.Context, id pgtype.UUID, p domain.UserU
 		ID:          user.ID,
 		Email:       user.Email,
 		DisplayName: user.DisplayName,
+		Password:    user.PasswordHash,
 		CreatedAt:   user.CreatedAt.Time,
 		UpdatedAt:   user.UpdatedAt.Time,
 	}, nil

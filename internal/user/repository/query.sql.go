@@ -40,7 +40,7 @@ INSERT INTO
 VALUES
     ($1, $2, $3)
 RETURNING
-    id, email, display_name, created_at, updated_at
+    id, email, display_name, password_hash, created_at, updated_at
 `
 
 type CreateUserParams struct {
@@ -50,11 +50,12 @@ type CreateUserParams struct {
 }
 
 type CreateUserRow struct {
-	ID          pgtype.UUID        `db:"id" json:"id"`
-	Email       string             `db:"email" json:"email"`
-	DisplayName string             `db:"display_name" json:"display_name"`
-	CreatedAt   pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	ID           pgtype.UUID        `db:"id" json:"id"`
+	Email        string             `db:"email" json:"email"`
+	DisplayName  string             `db:"display_name" json:"display_name"`
+	PasswordHash string             `db:"password_hash" json:"password_hash"`
+	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
@@ -64,6 +65,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		&i.ID,
 		&i.Email,
 		&i.DisplayName,
+		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -86,7 +88,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
 
 const getUser = `-- name: GetUser :one
 SELECT
-    id, email, display_name, created_at, updated_at
+    id, email, display_name, password_hash, created_at, updated_at
 FROM
     users
 WHERE
@@ -97,11 +99,12 @@ LIMIT
 `
 
 type GetUserRow struct {
-	ID          pgtype.UUID        `db:"id" json:"id"`
-	Email       string             `db:"email" json:"email"`
-	DisplayName string             `db:"display_name" json:"display_name"`
-	CreatedAt   pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	ID           pgtype.UUID        `db:"id" json:"id"`
+	Email        string             `db:"email" json:"email"`
+	DisplayName  string             `db:"display_name" json:"display_name"`
+	PasswordHash string             `db:"password_hash" json:"password_hash"`
+	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
 func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (GetUserRow, error) {
@@ -111,6 +114,7 @@ func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (GetUserRow, erro
 		&i.ID,
 		&i.Email,
 		&i.DisplayName,
+		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -119,7 +123,7 @@ func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (GetUserRow, erro
 
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT
-    id, email, display_name, created_at, updated_at
+    id, email, display_name, password_hash, created_at, updated_at
 FROM
     users
 WHERE
@@ -130,11 +134,12 @@ LIMIT
 `
 
 type GetUserByEmailRow struct {
-	ID          pgtype.UUID        `db:"id" json:"id"`
-	Email       string             `db:"email" json:"email"`
-	DisplayName string             `db:"display_name" json:"display_name"`
-	CreatedAt   pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	ID           pgtype.UUID        `db:"id" json:"id"`
+	Email        string             `db:"email" json:"email"`
+	DisplayName  string             `db:"display_name" json:"display_name"`
+	PasswordHash string             `db:"password_hash" json:"password_hash"`
+	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
@@ -144,6 +149,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 		&i.ID,
 		&i.Email,
 		&i.DisplayName,
+		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -152,7 +158,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 
 const listUsers = `-- name: ListUsers :many
 SELECT
-    id, email, display_name, created_at, updated_at
+    id, email, display_name, password_hash, created_at, updated_at
 FROM
     users
 WHERE
@@ -173,11 +179,12 @@ type ListUsersParams struct {
 }
 
 type ListUsersRow struct {
-	ID          pgtype.UUID        `db:"id" json:"id"`
-	Email       string             `db:"email" json:"email"`
-	DisplayName string             `db:"display_name" json:"display_name"`
-	CreatedAt   pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	ID           pgtype.UUID        `db:"id" json:"id"`
+	Email        string             `db:"email" json:"email"`
+	DisplayName  string             `db:"display_name" json:"display_name"`
+	PasswordHash string             `db:"password_hash" json:"password_hash"`
+	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
 func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error) {
@@ -198,6 +205,7 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUse
 			&i.ID,
 			&i.Email,
 			&i.DisplayName,
+			&i.PasswordHash,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -221,7 +229,7 @@ WHERE
     id = $3
     AND deleted_at IS NULL
 RETURNING
-    id, email, display_name, created_at, updated_at
+    id, email, display_name, password_hash, created_at, updated_at
 `
 
 type UpdateUserParams struct {
@@ -231,11 +239,12 @@ type UpdateUserParams struct {
 }
 
 type UpdateUserRow struct {
-	ID          pgtype.UUID        `db:"id" json:"id"`
-	Email       string             `db:"email" json:"email"`
-	DisplayName string             `db:"display_name" json:"display_name"`
-	CreatedAt   pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	ID           pgtype.UUID        `db:"id" json:"id"`
+	Email        string             `db:"email" json:"email"`
+	DisplayName  string             `db:"display_name" json:"display_name"`
+	PasswordHash string             `db:"password_hash" json:"password_hash"`
+	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error) {
@@ -245,6 +254,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateU
 		&i.ID,
 		&i.Email,
 		&i.DisplayName,
+		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

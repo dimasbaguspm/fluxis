@@ -1,6 +1,6 @@
 -- name: GetUser :one
 SELECT
-    id, email, display_name, created_at, updated_at
+    id, email, display_name, password_hash, created_at, updated_at
 FROM
     users
 WHERE
@@ -11,7 +11,7 @@ LIMIT
 
 -- name: GetUserByEmail :one
 SELECT
-    id, email, display_name, created_at, updated_at
+    id, email, display_name, password_hash, created_at, updated_at
 FROM
     users
 WHERE
@@ -22,7 +22,7 @@ LIMIT
 
 -- name: ListUsers :many
 SELECT
-    id, email, display_name, created_at, updated_at
+    id, email, display_name, password_hash, created_at, updated_at
 FROM
     users
 WHERE
@@ -50,7 +50,7 @@ INSERT INTO
 VALUES
     ($1, $2, $3)
 RETURNING
-    id, email, display_name, created_at, updated_at;
+    id, email, display_name, password_hash, created_at, updated_at;
 
 -- name: UpdateUser :one
 UPDATE users
@@ -62,7 +62,7 @@ WHERE
     id = $3
     AND deleted_at IS NULL
 RETURNING
-    id, email, display_name, created_at, updated_at;
+    id, email, display_name, password_hash, created_at, updated_at;
 
 -- name: DeleteUser :exec
 UPDATE users
