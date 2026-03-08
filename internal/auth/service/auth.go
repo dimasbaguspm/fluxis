@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	userservice "github.com/dimasbaguspm/fluxis/internal/user/service"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"golang.org/x/crypto/bcrypt"
@@ -29,6 +31,10 @@ func (s *Service) Register(ctx context.Context, p domain.AuthRegisterModel) (dom
 		DisplayName: p.DisplayName,
 	})
 	if err != nil {
+		// Convert user service errors to HTTP errors
+		if errors.Is(err, userservice.ErrEmailTaken) {
+			return domain.AuthModel{}, ErrUserAlreadyExists
+		}
 		return domain.AuthModel{}, err
 	}
 

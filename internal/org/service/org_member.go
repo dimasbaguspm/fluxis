@@ -13,7 +13,11 @@ import (
 
 func (s *Service) ListMembers(ctx context.Context, orgId pgtype.UUID) ([]domain.OrganisationMemberModel, error) {
 	members, err := s.Repo.ListOrgMembers(ctx, repository.ListOrgMembersParams{
-		OrgID: orgId,
+		OrgID:   orgId,
+		Column2: "",
+		Column3: "",
+		Limit:   1000,
+		Offset:  0,
 	})
 
 	if err != nil {
@@ -23,7 +27,7 @@ func (s *Service) ListMembers(ctx context.Context, orgId pgtype.UUID) ([]domain.
 		return []domain.OrganisationMemberModel{}, fmt.Errorf("get org members: %w", err)
 	}
 
-	data := make([]domain.OrganisationMemberModel, len(members))
+	data := make([]domain.OrganisationMemberModel, 0, len(members))
 
 	for _, member := range members {
 		data = append(data, domain.OrganisationMemberModel{
@@ -39,9 +43,14 @@ func (s *Service) ListMembers(ctx context.Context, orgId pgtype.UUID) ([]domain.
 }
 
 func (s *Service) AddMember(ctx context.Context, orgId pgtype.UUID, p domain.OrganisationMemberCreateModel) error {
+	var userId pgtype.UUID
+	if err := userId.Scan(p.UserId); err != nil {
+		return fmt.Errorf("invalid user id: %w", err)
+	}
+
 	_, err := s.Repo.CreateOrgMember(ctx, repository.CreateOrgMemberParams{
 		OrgID:  orgId,
-		UserID: p.UserId,
+		UserID: userId,
 		Role:   repository.OrgRole(p.Role),
 	})
 

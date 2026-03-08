@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -24,33 +25,9 @@ type apiError struct {
 	Message string `json:"message"`
 }
 
-// Auth response models
-type authTokens struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
-}
-
-// User response model
-type userModel struct {
-	ID          string `json:"id"`
-	Email       string `json:"email"`
-	DisplayName string `json:"displayName"`
-}
-
-// Org response model
-type orgModel struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	Slug         string `json:"slug"`
-	TotalMembers int64  `json:"totalMembers"`
-}
-
-// Org member response model
-type orgMemberModel struct {
-	UserID string `json:"userId"`
-	Name   string `json:"name"`
-	Email  string `json:"email"`
-	Role   string `json:"role"`
+func uuidToString(u pgtype.UUID) string {
+	bytes, _ := u.MarshalJSON()
+	return string(bytes[1 : len(bytes)-1])
 }
 
 // Generic request/response helper
@@ -86,17 +63,20 @@ func do[T any](tb testing.TB, method, path string, body interface{}, token strin
 	}
 
 	var result apiResponse[T]
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		tb.Logf("Response body: %s", string(respBody))
-		tb.Fatalf("failed to unmarshal response: %v", err)
+	// Skip unmarshaling for empty bodies (e.g., 204 No Content)
+	if len(respBody) > 0 {
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			tb.Logf("Response body: %s", string(respBody))
+			tb.Fatalf("failed to unmarshal response: %v", err)
+		}
 	}
 
 	return resp.StatusCode, result
 }
 
 // Auth helpers
-func register(tb testing.TB, email, displayName, password string) authTokens {
-	statusCode, resp := do[authTokens](tb, "POST", "/auth/register", map[string]string{
+func register(tb testing.TB, email, displayName, password string) domain.AuthModel {
+	statusCode, resp := do[domain.AuthModel](tb, "POST", "/auth/register", map[string]string{
 		"email":       email,
 		"displayName": displayName,
 		"password":    password,
@@ -113,23 +93,6 @@ func register(tb testing.TB, email, displayName, password string) authTokens {
 	return *resp.Data
 }
 
-func login(tb testing.TB, email, password string) authTokens {
-	statusCode, resp := do[authTokens](tb, "POST", "/auth/login", map[string]string{
-		"email":    email,
-		"password": password,
-	}, "")
-
-	if statusCode != http.StatusOK {
-		tb.Fatalf("login failed: got status %d, error: %v", statusCode, resp.Error)
-	}
-
-	if resp.Data == nil {
-		tb.Fatalf("login returned nil data")
-	}
-
-	return *resp.Data
-}
-
 // Random string generation
 func randomString(n int) string {
 	b := make([]byte, n)
@@ -141,13 +104,4 @@ func randomString(n int) string {
 
 func randomEmail() string {
 	return fmt.Sprintf("user_%s@example.com", randomString(8))
-}
-
-// Helper to extract UUID from string (for comparisons)
-func parseUUID(tb testing.TB, s string) pgtype.UUID {
-	var uuid pgtype.UUID
-	if err := uuid.Scan(s); err != nil {
-		tb.Fatalf("failed to parse UUID %s: %v", s, err)
-	}
-	return uuid
 }

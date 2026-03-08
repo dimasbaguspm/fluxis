@@ -38,8 +38,8 @@ type OrganisationMemberModel struct {
 }
 
 type OrganisationMemberCreateModel struct {
-	UserId pgtype.UUID `json:"userId" validate:"required,uuid4"`
-	Role   string      `json:"role" validate:"required,oneof=admin member viewer"`
+	UserId string `json:"userId" validate:"required,uuid4"`
+	Role   string `json:"role" validate:"required,oneof=admin member viewer"`
 }
 
 type OrganisationMemberUpdateModel struct {

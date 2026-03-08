@@ -7,14 +7,15 @@ import (
 
 	"github.com/dimasbaguspm/fluxis/internal/user/repository"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
+	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 var (
-	ErrEmailTaken   = errors.New("email already registerd")
-	ErrUserNotFound = errors.New("user not found")
+	ErrEmailTaken   = httpx.Conflict("email already registerd")
+	ErrUserNotFound = httpx.NotFound("user not found")
 )
 
 func (s *Service) GetSingleUserById(ctx context.Context, id pgtype.UUID) (domain.UserModel, error) {

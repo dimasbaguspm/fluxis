@@ -3,6 +3,8 @@ package apitest_test
 import (
 	"net/http"
 	"testing"
+
+	"github.com/dimasbaguspm/fluxis/pkg/domain"
 )
 
 func TestAuth_Register_Success(t *testing.T) {
@@ -10,7 +12,7 @@ func TestAuth_Register_Success(t *testing.T) {
 	displayName := "Test User"
 	password := "SecurePassword123!"
 
-	statusCode, resp := do[authTokens](t, "POST", "/auth/register", map[string]string{
+	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/register", map[string]string{
 		"email":       email,
 		"displayName": displayName,
 		"password":    password,
@@ -42,7 +44,7 @@ func TestAuth_Register_DuplicateEmail(t *testing.T) {
 	register(t, email, displayName, password)
 
 	// Second registration with same email should fail
-	statusCode, resp := do[authTokens](t, "POST", "/auth/register", map[string]string{
+	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/register", map[string]string{
 		"email":       email,
 		"displayName": "Another User",
 		"password":    password,
@@ -58,7 +60,7 @@ func TestAuth_Register_DuplicateEmail(t *testing.T) {
 }
 
 func TestAuth_Register_InvalidEmail(t *testing.T) {
-	statusCode, resp := do[authTokens](t, "POST", "/auth/register", map[string]string{
+	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/register", map[string]string{
 		"email":       "not-an-email",
 		"displayName": "Test User",
 		"password":    "SecurePassword123!",
@@ -74,7 +76,7 @@ func TestAuth_Register_InvalidEmail(t *testing.T) {
 }
 
 func TestAuth_Register_MissingPassword(t *testing.T) {
-	statusCode, resp := do[authTokens](t, "POST", "/auth/register", map[string]string{
+	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/register", map[string]string{
 		"email":       randomEmail(),
 		"displayName": "Test User",
 	}, "")
@@ -95,7 +97,7 @@ func TestAuth_Login_Success(t *testing.T) {
 
 	register(t, email, displayName, password)
 
-	statusCode, resp := do[authTokens](t, "POST", "/auth/login", map[string]string{
+	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/login", map[string]string{
 		"email":    email,
 		"password": password,
 	}, "")
@@ -116,7 +118,7 @@ func TestAuth_Login_WrongPassword(t *testing.T) {
 
 	register(t, email, displayName, password)
 
-	statusCode, _ := do[authTokens](t, "POST", "/auth/login", map[string]string{
+	statusCode, _ := do[domain.AuthModel](t, "POST", "/auth/login", map[string]string{
 		"email":    email,
 		"password": "WrongPassword123!",
 	}, "")
@@ -127,7 +129,7 @@ func TestAuth_Login_WrongPassword(t *testing.T) {
 }
 
 func TestAuth_Login_NonExistentUser(t *testing.T) {
-	statusCode, _ := do[authTokens](t, "POST", "/auth/login", map[string]string{
+	statusCode, _ := do[domain.AuthModel](t, "POST", "/auth/login", map[string]string{
 		"email":    randomEmail(),
 		"password": "SomePassword123!",
 	}, "")
@@ -144,7 +146,7 @@ func TestAuth_Refresh_Success(t *testing.T) {
 
 	tokens := register(t, email, displayName, password)
 
-	statusCode, resp := do[authTokens](t, "POST", "/auth/refresh", map[string]string{
+	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/refresh", map[string]string{
 		"accessToken":  tokens.AccessToken,
 		"refreshToken": tokens.RefreshToken,
 	}, "")
@@ -159,7 +161,7 @@ func TestAuth_Refresh_Success(t *testing.T) {
 }
 
 func TestAuth_Refresh_InvalidToken(t *testing.T) {
-	statusCode, _ := do[authTokens](t, "POST", "/auth/refresh", map[string]string{
+	statusCode, _ := do[domain.AuthModel](t, "POST", "/auth/refresh", map[string]string{
 		"accessToken":  "invalid.token.here",
 		"refreshToken": "invalid.refresh.here",
 	}, "")
@@ -176,7 +178,7 @@ func TestUsers_GetMe_Authenticated(t *testing.T) {
 
 	tokens := register(t, email, displayName, password)
 
-	statusCode, resp := do[userModel](t, "GET", "/users/me", nil, tokens.AccessToken)
+	statusCode, resp := do[domain.UserModel](t, "GET", "/users/me", nil, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
 		t.Fatalf("expected status 200, got %d: %v", statusCode, resp.Error)
@@ -196,7 +198,7 @@ func TestUsers_GetMe_Authenticated(t *testing.T) {
 }
 
 func TestUsers_GetMe_Unauthenticated(t *testing.T) {
-	statusCode, _ := do[userModel](t, "GET", "/users/me", nil, "")
+	statusCode, _ := do[domain.UserModel](t, "GET", "/users/me", nil, "")
 
 	if statusCode != http.StatusUnauthorized {
 		t.Fatalf("expected status 401, got %d", statusCode)
@@ -204,7 +206,7 @@ func TestUsers_GetMe_Unauthenticated(t *testing.T) {
 }
 
 func TestUsers_GetMe_InvalidToken(t *testing.T) {
-	statusCode, _ := do[userModel](t, "GET", "/users/me", nil, "invalid.token.here")
+	statusCode, _ := do[domain.UserModel](t, "GET", "/users/me", nil, "invalid.token.here")
 
 	if statusCode != http.StatusUnauthorized {
 		t.Fatalf("expected status 401, got %d", statusCode)
