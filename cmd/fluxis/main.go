@@ -73,6 +73,7 @@ func main() {
 	app.Org.Routes(mux)
 	app.Project.Routes(mux)
 	app.Sprint.Routes(mux)
+	app.Board.Routes(mux)
 
 	svr := http.Server{
 		Addr:         cfg.Server.addr(),

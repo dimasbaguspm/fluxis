@@ -150,3 +150,24 @@ func createSprint(tb testing.TB, projectID string, token string, name string) do
 func randomSprintName() string {
 	return "Sprint " + randomString(4)
 }
+
+// Board helpers
+func createBoard(tb testing.TB, sprintID string, token string, name string) domain.BoardModel {
+	statusCode, resp := do[domain.BoardModel](tb, "POST", "/boards?sprintId="+sprintID, map[string]string{
+		"name": name,
+	}, token)
+
+	if statusCode != http.StatusCreated {
+		tb.Fatalf("create board failed: got status %d, error: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil {
+		tb.Fatalf("create board returned nil data")
+	}
+
+	return *resp.Data
+}
+
+func randomBoardName() string {
+	return "Board " + randomString(4)
+}
