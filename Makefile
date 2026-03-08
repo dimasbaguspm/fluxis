@@ -1,4 +1,4 @@
-.PHONY: init dev build run down logs sqlc swagger
+.PHONY: init dev build run down logs sqlc swagger apitest
 
 init:
 	go mod download
@@ -23,3 +23,6 @@ sqlc:
 
 swagger:
 	swag init --generalInfo cmd/fluxis/main.go --outputTypes json --output ./api
+
+apitest:
+	go test -v -count=1 -timeout=120s ./cmd/apitest/...
