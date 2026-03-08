@@ -24,6 +24,11 @@ import (
 	projectrepo "github.com/dimasbaguspm/fluxis/internal/project/repository"
 	projectservice "github.com/dimasbaguspm/fluxis/internal/project/service"
 
+	"github.com/dimasbaguspm/fluxis/internal/sprint"
+	sprinthandler "github.com/dimasbaguspm/fluxis/internal/sprint/handler"
+	sprintrepo "github.com/dimasbaguspm/fluxis/internal/sprint/repository"
+	sprintservice "github.com/dimasbaguspm/fluxis/internal/sprint/service"
+
 	"github.com/dimasbaguspm/fluxis/internal/user"
 	userhandler "github.com/dimasbaguspm/fluxis/internal/user/handler"
 	userrepo "github.com/dimasbaguspm/fluxis/internal/user/repository"
@@ -82,6 +87,7 @@ func TestMain(m *testing.M) {
 	userRepo := userrepo.New(pool)
 	orgRepo := orgrepo.New(pool)
 	projectRepo := projectrepo.New(pool)
+	sprintRepo := sprintrepo.New(pool)
 
 	userSvc := userservice.New(userservice.Deps{
 		Repo: userRepo,
@@ -92,6 +98,9 @@ func TestMain(m *testing.M) {
 	projectSvc := projectservice.New(projectservice.Deps{
 		Repo: projectRepo,
 	})
+	sprintSvc := sprintservice.New(sprintservice.Deps{
+		Repo: sprintRepo,
+	})
 	authSvc := authservice.New(authservice.Deps{
 		Users:  userSvc,
 		Config: &authCfg,
@@ -101,11 +110,13 @@ func TestMain(m *testing.M) {
 	userH := userhandler.New(userSvc)
 	orgH := orghandler.New(orgSvc)
 	projectH := projecthandler.New(projectSvc)
+	sprintH := sprinthandler.New(sprintSvc)
 
 	authModule := auth.NewModule(authSvc, authH)
 	userModule := user.NewModule(userH)
 	orgModule := org.NewModule(orgH)
 	projectModule := project.NewModule(projectH)
+	sprintModule := sprint.NewModule(sprintH)
 
 	httpx.InitAuth(authModule.Service())
 
@@ -114,6 +125,7 @@ func TestMain(m *testing.M) {
 	userModule.Routes(mux)
 	orgModule.Routes(mux)
 	projectModule.Routes(mux)
+	sprintModule.Routes(mux)
 
 	testServer = httptest.NewServer(mux)
 	defer testServer.Close()

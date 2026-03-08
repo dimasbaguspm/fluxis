@@ -129,3 +129,24 @@ func createProject(tb testing.TB, orgID string, token string, key, name, visibil
 func randomProjectKey() string {
 	return "p" + randomString(4)
 }
+
+// Sprint helpers
+func createSprint(tb testing.TB, projectID string, token string, name string) domain.SprintModel {
+	statusCode, resp := do[domain.SprintModel](tb, "POST", "/sprints?projectId="+projectID, map[string]string{
+		"name": name,
+	}, token)
+
+	if statusCode != http.StatusCreated {
+		tb.Fatalf("create sprint failed: got status %d, error: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil {
+		tb.Fatalf("create sprint returned nil data")
+	}
+
+	return *resp.Data
+}
+
+func randomSprintName() string {
+	return "Sprint " + randomString(4)
+}
