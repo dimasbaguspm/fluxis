@@ -8,11 +8,13 @@ import (
 	"time"
 
 	authConfig "github.com/dimasbaguspm/fluxis/internal/auth/service"
+	"github.com/dimasbaguspm/fluxis/pkg/redis"
 )
 
 type Config struct {
 	Env    string
 	DB     DBConfig
+	Redis  redis.Config
 	Server ServerConfig
 	Auth   authConfig.Config
 }
@@ -52,6 +54,10 @@ func LoadEnv() *Config {
 			MaxConns: getInt("DB_MAX_CONNS", 25),
 			MinConns: getInt("DB_MIN_CONNS", 5),
 		},
+		Redis: redis.Config{
+			Addr:     getEnv("REDIS_ADDR", "redis:6379"),
+			Password: getEnv("REDIS_PASSWORD", ""),
+		},
 		Auth: authConfig.Config{
 			AccessTokenSecret:  mustEnv("JWT_ACCESS_SECRET"),
 			RefreshTokenSecret: mustEnv("JWT_REFRESH_SECRET"),
@@ -68,7 +74,7 @@ func LoadEnv() *Config {
 func mustEnv(key string) string {
 	v := os.Getenv(key)
 	if v == "" {
-		panic(fmt.Sprintf("required environment variable %q is not set", key))
+		panic(fmt.Sprintf("[Config]: Required environment variable %q is not set", key))
 	}
 	return v
 }
@@ -77,6 +83,7 @@ func getEnv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
 	}
+	slog.Info(fmt.Sprintf("[Config]: Env %s is missing, using '%s' as a fallback", key, fallback))
 	return fallback
 }
 
@@ -87,7 +94,7 @@ func getInt(key string, fallback int) int {
 	}
 	n, err := strconv.Atoi(v)
 	if err != nil {
-		panic(fmt.Sprintf("env var %q must be an integer, got %q", key, v))
+		panic(fmt.Sprintf("[Config]: Env var %q must be an integer, got %q", key, v))
 	}
 	return n
 }
@@ -99,7 +106,7 @@ func getDuration(key string, fallback time.Duration) time.Duration {
 	}
 	d, err := time.ParseDuration(v)
 	if err != nil {
-		panic(fmt.Sprintf("env var %q must be a duration (e.g. 15m, 7h), got %q", key, v))
+		panic(fmt.Sprintf("[Config]: Env var %q must be a duration (e.g. 15m, 7h), got %q", key, v))
 	}
 	return d
 }
