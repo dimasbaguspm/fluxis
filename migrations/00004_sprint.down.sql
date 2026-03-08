@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS sprints;
+DROP TYPE IF EXISTS sprint_status;
