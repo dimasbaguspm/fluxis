@@ -15,13 +15,19 @@ import (
 	orgrepo "github.com/dimasbaguspm/fluxis/internal/org/repository"
 	orgservice "github.com/dimasbaguspm/fluxis/internal/org/service"
 
+	"github.com/dimasbaguspm/fluxis/internal/project"
+	projecthandler "github.com/dimasbaguspm/fluxis/internal/project/handler"
+	projectrepo "github.com/dimasbaguspm/fluxis/internal/project/repository"
+	projectservice "github.com/dimasbaguspm/fluxis/internal/project/service"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type App struct {
-	Auth *auth.Module
-	User *user.Module
-	Org  *org.Module
+	Auth    *auth.Module
+	User    *user.Module
+	Org     *org.Module
+	Project *project.Module
 }
 
 type Deps struct {
@@ -32,12 +38,16 @@ type Deps struct {
 func Wire(d Deps) *App {
 	userRepo := userrepo.New(d.DB)
 	orgRepo := orgrepo.New(d.DB)
+	projectRepo := projectrepo.New(d.DB)
 
 	userSvc := userservice.New(userservice.Deps{
 		Repo: userRepo,
 	})
 	orgSvc := orgservice.New(orgservice.Deps{
 		Repo: orgRepo,
+	})
+	projectSvc := projectservice.New(projectservice.Deps{
+		Repo: projectRepo,
 	})
 	authSvc := authservice.New(authservice.Deps{
 		Users:  userSvc,
@@ -47,11 +57,13 @@ func Wire(d Deps) *App {
 	authH := authhandler.New(authSvc)
 	userH := userhandler.New(userSvc)
 	orgH := orghandler.New(orgSvc)
+	projectH := projecthandler.New(projectSvc)
 
 	return &App{
-		Auth: auth.NewModule(authSvc, authH),
-		User: user.NewModule(userH),
-		Org:  org.NewModule(orgH),
+		Auth:    auth.NewModule(authSvc, authH),
+		User:    user.NewModule(userH),
+		Org:     org.NewModule(orgH),
+		Project: project.NewModule(projectH),
 	}
 
 }

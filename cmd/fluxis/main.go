@@ -71,6 +71,7 @@ func main() {
 	app.Auth.Routes(mux)
 	app.User.Routes(mux)
 	app.Org.Routes(mux)
+	app.Project.Routes(mux)
 
 	svr := http.Server{
 		Addr:         cfg.Server.addr(),
