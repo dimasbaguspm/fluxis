@@ -25,7 +25,7 @@ func (h *Handler) ListOrgs(w http.ResponseWriter, r *http.Request) {
 		UserId: userID,
 	}
 
-	orgs, err := h.svc.GetListOrganisations(r.Context(), req)
+	orgs, err := h.svc.ListOrgs(r.Context(), req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return
@@ -55,7 +55,7 @@ func (h *Handler) CreateOrg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := h.svc.CreateOrganisation(r.Context(), req)
+	org, err := h.svc.CreateOrg(r.Context(), req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return
@@ -84,7 +84,7 @@ func (h *Handler) GetOrg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := h.svc.GetSingleOrganisationById(r.Context(), id)
+	org, err := h.svc.GetOrgById(r.Context(), id)
 	if err != nil {
 		httpx.Handle(w, err)
 		return
@@ -121,7 +121,7 @@ func (h *Handler) UpdateOrg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := h.svc.UpdateOrganisation(r.Context(), id, req)
+	org, err := h.svc.UpdateOrg(r.Context(), id, req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return
@@ -149,7 +149,7 @@ func (h *Handler) DeleteOrg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.svc.DeleteOrganisation(r.Context(), id); err != nil {
+	if err := h.svc.DeleteOrg(r.Context(), id); err != nil {
 		httpx.Handle(w, err)
 		return
 	}

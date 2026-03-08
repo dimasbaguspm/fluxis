@@ -510,7 +510,9 @@
                         }
                     }
                 }
-            },
+            }
+        },
+        "/orgs/{id}/members/{userId}": {
             "delete": {
                 "security": [
                     {
@@ -537,13 +539,11 @@
                         "required": true
                     },
                     {
-                        "description": "Update payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.OrganisationMemberRemoveModel"
-                        }
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -592,6 +592,13 @@
                         "type": "string",
                         "description": "Organisation ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
                         "in": "path",
                         "required": true
                     },
@@ -790,22 +797,10 @@
                 }
             }
         },
-        "domain.OrganisationMemberRemoveModel": {
-            "type": "object",
-            "required": [
-                "userId"
-            ],
-            "properties": {
-                "userId": {
-                    "type": "string"
-                }
-            }
-        },
         "domain.OrganisationMemberUpdateModel": {
             "type": "object",
             "required": [
-                "role",
-                "userId"
+                "role"
             ],
             "properties": {
                 "role": {
@@ -815,9 +810,6 @@
                         "member",
                         "viewer"
                     ]
-                },
-                "userId": {
-                    "type": "string"
                 }
             }
         },

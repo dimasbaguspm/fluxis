@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (s *Service) GetListOrganisationMembers(ctx context.Context, orgId pgtype.UUID) ([]domain.OrganisationMemberModel, error) {
+func (s *Service) ListMembers(ctx context.Context, orgId pgtype.UUID) ([]domain.OrganisationMemberModel, error) {
 	members, err := s.Repo.ListOrgMembers(ctx, repository.ListOrgMembersParams{
 		OrgID: orgId,
 	})
@@ -38,10 +38,10 @@ func (s *Service) GetListOrganisationMembers(ctx context.Context, orgId pgtype.U
 	return data, nil
 }
 
-func (s *Service) AddOrganisationMember(ctx context.Context, orgId pgtype.UUID, p domain.OrganisationMemberCreateModel) error {
+func (s *Service) AddMember(ctx context.Context, orgId pgtype.UUID, p domain.OrganisationMemberCreateModel) error {
 	_, err := s.Repo.CreateOrgMember(ctx, repository.CreateOrgMemberParams{
 		OrgID:  orgId,
-		UserID: p.UserID,
+		UserID: p.UserId,
 		Role:   repository.OrgRole(p.Role),
 	})
 
@@ -52,10 +52,10 @@ func (s *Service) AddOrganisationMember(ctx context.Context, orgId pgtype.UUID, 
 	return nil
 }
 
-func (s *Service) UpdateOrganisationMemberRole(ctx context.Context, orgId pgtype.UUID, p domain.OrganisationMemberUpdateModel) error {
+func (s *Service) UpdateMemberRole(ctx context.Context, orgId, userId pgtype.UUID, p domain.OrganisationMemberUpdateModel) error {
 	_, err := s.Repo.UpdateOrgMemberRole(ctx, repository.UpdateOrgMemberRoleParams{
 		OrgID:  orgId,
-		UserID: p.UserID,
+		UserID: userId,
 		Role:   repository.OrgRole(p.Role),
 	})
 
@@ -66,10 +66,10 @@ func (s *Service) UpdateOrganisationMemberRole(ctx context.Context, orgId pgtype
 	return nil
 }
 
-func (s *Service) RemoveOrganisationMember(ctx context.Context, orgId pgtype.UUID, p domain.OrganisationMemberRemoveModel) error {
+func (s *Service) RemoveMember(ctx context.Context, orgId, userId pgtype.UUID) error {
 	err := s.Repo.DeleteOrgMember(ctx, repository.DeleteOrgMemberParams{
 		OrgID:  orgId,
-		UserID: p.UserID,
+		UserID: userId,
 	})
 
 	if err != nil {

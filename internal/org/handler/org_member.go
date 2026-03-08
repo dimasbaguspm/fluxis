@@ -28,7 +28,7 @@ func (h *Handler) ListOrgMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	members, err := h.svc.GetListOrganisationMembers(r.Context(), orgID)
+	members, err := h.svc.ListMembers(r.Context(), orgID)
 	if err != nil {
 		httpx.Handle(w, err)
 		return
@@ -65,7 +65,7 @@ func (h *Handler) AddOrgMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.svc.AddOrganisationMember(r.Context(), orgID, req); err != nil {
+	if err := h.svc.AddMember(r.Context(), orgID, req); err != nil {
 		httpx.Handle(w, err)
 		return
 	}
@@ -80,14 +80,15 @@ func (h *Handler) AddOrgMember(w http.ResponseWriter, r *http.Request) {
 //	@Tags			org
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		string								true	"Organisation ID"
+//	@Param			id		path		string									true	"Organisation ID"
+//	@Param 			userId	path		string									true	"User ID"
 //	@Param			body	body		domain.OrganisationMemberUpdateModel	true	"Update payload"
 //	@Success		200
 //	@Failure		400	{object}	httpx.ErrBlock
 //	@Failure		401	{object}	httpx.ErrBlock
 //	@Failure		404	{object}	httpx.ErrBlock
 //	@Security		BearerAuth
-//	@Router			/orgs/{id}/members [patch]
+//	@Router			/orgs/{id}/members/{userId} [patch]
 func (h *Handler) UpdateOrgMember(w http.ResponseWriter, r *http.Request) {
 	var orgID pgtype.UUID
 	if err := orgID.Scan(r.PathValue("id")); err != nil {
@@ -95,13 +96,19 @@ func (h *Handler) UpdateOrgMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var userID pgtype.UUID
+	if err := userID.Scan(r.PathValue("userId")); err != nil {
+		httpx.Handle(w, httpx.BadRequest("invalid member id"))
+		return
+	}
+
 	var req domain.OrganisationMemberUpdateModel
 	if err := httpx.DecodeAndValidate(r, &req); err != nil {
 		httpx.Handle(w, httpx.BadRequest(err.Error()))
 		return
 	}
 
-	if err := h.svc.UpdateOrganisationMemberRole(r.Context(), orgID, req); err != nil {
+	if err := h.svc.UpdateMemberRole(r.Context(), orgID, userID, req); err != nil {
 		httpx.Handle(w, err)
 		return
 	}
@@ -109,21 +116,21 @@ func (h *Handler) UpdateOrgMember(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// UpdateOrgMember godoc
+// DeleteOrgMember godoc
 //
 //	@Summary		Delete a member from an organsiation
 //	@Description	Delete a user from an organisation
 //	@Tags			org
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		string								true	"Organisation ID"
-//	@Param			body	body		domain.OrganisationMemberRemoveModel	true	"Update payload"
+//	@Param			id		path		string									true	"Organisation ID"
+//	@Param 			userId	path		string									true	"User ID"
 //	@Success		200
 //	@Failure		400	{object}	httpx.ErrBlock
 //	@Failure		401	{object}	httpx.ErrBlock
 //	@Failure		404	{object}	httpx.ErrBlock
 //	@Security		BearerAuth
-//	@Router			/orgs/{id}/members [delete]
+//	@Router			/orgs/{id}/members/{userId} [delete]
 func (h *Handler) DeleteOrgMember(w http.ResponseWriter, r *http.Request) {
 	var orgID pgtype.UUID
 	if err := orgID.Scan(r.PathValue("id")); err != nil {
@@ -131,13 +138,13 @@ func (h *Handler) DeleteOrgMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req domain.OrganisationMemberUpdateModel
-	if err := httpx.DecodeAndValidate(r, &req); err != nil {
-		httpx.Handle(w, httpx.BadRequest(err.Error()))
+	var userID pgtype.UUID
+	if err := userID.Scan(r.PathValue("userId")); err != nil {
+		httpx.Handle(w, httpx.BadRequest("invalid member id"))
 		return
 	}
 
-	if err := h.svc.UpdateOrganisationMemberRole(r.Context(), orgID, req); err != nil {
+	if err := h.svc.RemoveMember(r.Context(), orgID, userID); err != nil {
 		httpx.Handle(w, err)
 		return
 	}

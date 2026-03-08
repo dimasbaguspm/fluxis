@@ -19,7 +19,7 @@ var (
 	ErrSlugIsTaken = httpx.Conflict("slug has been taken")
 )
 
-func (s *Service) GetListOrganisations(ctx context.Context, q domain.OrganisationSearchModel) ([]domain.OrganisationModel, error) {
+func (s *Service) ListOrgs(ctx context.Context, q domain.OrganisationSearchModel) ([]domain.OrganisationModel, error) {
 	orgs, err := s.Repo.ListOrg(ctx, repository.ListOrgParams{
 		Column1: q.OrgId,
 		Column2: q.UserId,
@@ -47,7 +47,7 @@ func (s *Service) GetListOrganisations(ctx context.Context, q domain.Organisatio
 	return data, nil
 }
 
-func (s *Service) GetSingleOrganisationById(ctx context.Context, id pgtype.UUID) (domain.OrganisationModel, error) {
+func (s *Service) GetOrgById(ctx context.Context, id pgtype.UUID) (domain.OrganisationModel, error) {
 	org, err := s.Repo.GetOrgById(ctx, id)
 
 	if err != nil {
@@ -71,7 +71,7 @@ func (s *Service) GetSingleOrganisationById(ctx context.Context, id pgtype.UUID)
 	}, nil
 }
 
-func (s *Service) GetSingleOrganisationBySlug(ctx context.Context, slug string) (domain.OrganisationModel, error) {
+func (s *Service) GetOrgBySlug(ctx context.Context, slug string) (domain.OrganisationModel, error) {
 	org, err := s.Repo.GetOrgBySlug(ctx, slug)
 
 	if err != nil {
@@ -95,7 +95,8 @@ func (s *Service) GetSingleOrganisationBySlug(ctx context.Context, slug string) 
 	}, nil
 }
 
-func (s *Service) CreateOrganisation(ctx context.Context, p domain.OrganisationCreateModel) (domain.OrganisationModel, error) {
+func (s *Service) CreateOrg(ctx context.Context, p domain.OrganisationCreateModel) (domain.OrganisationModel, error) {
+	userID := httpx.MustUserID(ctx)
 	org, err := s.Repo.CreateOrg(ctx, repository.CreateOrgParams{
 		Name: p.Name,
 		Slug: transformer.CreateSlug(p.Name),
@@ -107,6 +108,12 @@ func (s *Service) CreateOrganisation(ctx context.Context, p domain.OrganisationC
 		}
 		return domain.OrganisationModel{}, fmt.Errorf("create org: %w", err)
 	}
+
+	s.Repo.CreateOrgMember(ctx, repository.CreateOrgMemberParams{
+		OrgID:  org.ID,
+		UserID: userID,
+		Role:   repository.OrgRoleAdmin,
+	})
 
 	totalMembers, _ := s.Repo.CountOrgMembers(ctx, repository.CountOrgMembersParams{
 		OrgID: org.ID,
@@ -122,8 +129,9 @@ func (s *Service) CreateOrganisation(ctx context.Context, p domain.OrganisationC
 	}, nil
 }
 
-func (s *Service) UpdateOrganisation(ctx context.Context, id pgtype.UUID, p domain.OrganisationUpdateModel) (domain.OrganisationModel, error) {
+func (s *Service) UpdateOrg(ctx context.Context, id pgtype.UUID, p domain.OrganisationUpdateModel) (domain.OrganisationModel, error) {
 	org, err := s.Repo.UpdateOrg(ctx, repository.UpdateOrgParams{
+		ID:      id,
 		Column1: p.Name,
 		Column2: transformer.CreateSlug(p.Name),
 	})
@@ -148,7 +156,7 @@ func (s *Service) UpdateOrganisation(ctx context.Context, id pgtype.UUID, p doma
 	}, nil
 }
 
-func (s *Service) DeleteOrganisation(ctx context.Context, id pgtype.UUID) error {
+func (s *Service) DeleteOrg(ctx context.Context, id pgtype.UUID) error {
 	err := s.Repo.DeleteOrg(ctx, id)
 	if err != nil {
 		return fmt.Errorf("delete org: %w", err)

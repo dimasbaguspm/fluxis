@@ -38,31 +38,26 @@ type OrganisationMemberModel struct {
 }
 
 type OrganisationMemberCreateModel struct {
-	UserID pgtype.UUID `json:"userId" validate:"required,uuid4"`
+	UserId pgtype.UUID `json:"userId" validate:"required,uuid4"`
 	Role   string      `json:"role" validate:"required,oneof=admin member viewer"`
 }
 
 type OrganisationMemberUpdateModel struct {
-	UserID pgtype.UUID `json:"userId" validate:"required,uuid4"`
-	Role   string      `json:"role" validate:"required,oneof=admin member viewer"`
+	Role string `json:"role" validate:"required,oneof=admin member viewer"`
 }
 
-type OrganisationMemberRemoveModel struct {
-	UserID pgtype.UUID `json:"userId" validate:"required,uuid4"`
-}
-
-type OrganisationRead interface {
-	GetListOrganisations(ctx context.Context, q OrganisationSearchModel) ([]OrganisationModel, error)
-	GetSingleOrganisationById(ctx context.Context, id pgtype.UUID) (OrganisationModel, error)
-	GetSingleOrganisationBySlug(ctx context.Context, slug string) (OrganisationModel, error)
-	GetListOrganisationMembers(ctx context.Context, orgId pgtype.UUID) ([]OrganisationMemberModel, error)
+type OrgReader interface {
+	ListOrgs(ctx context.Context, q OrganisationSearchModel) ([]OrganisationModel, error)
+	GetOrgById(ctx context.Context, id pgtype.UUID) (OrganisationModel, error)
+	GetOrgBySlug(ctx context.Context, slug string) (OrganisationModel, error)
+	ListMembers(ctx context.Context, orgId pgtype.UUID) ([]OrganisationMemberModel, error)
 }
 
 type OrganisationWrite interface {
-	CreateOrganisation(ctx context.Context, p OrganisationCreateModel) (OrganisationModel, error)
-	UpdateOrganisation(ctx context.Context, id pgtype.UUID, p OrganisationUpdateModel) (OrganisationModel, error)
-	DeleteOrganisation(ctx context.Context, id pgtype.UUID) error
-	AddOrganisationMember(ctx context.Context, orgId pgtype.UUID, p OrganisationMemberCreateModel) error
-	UpdateOrganisationMemberRole(ctx context.Context, orgId pgtype.UUID, p OrganisationMemberUpdateModel) error
-	RemoveOrganisationMember(ctx context.Context, orgId pgtype.UUID, p OrganisationMemberRemoveModel) error
+	CreateOrg(ctx context.Context, p OrganisationCreateModel) (OrganisationModel, error)
+	UpdateOrg(ctx context.Context, id pgtype.UUID, p OrganisationUpdateModel) (OrganisationModel, error)
+	DeleteOrg(ctx context.Context, id pgtype.UUID) error
+	AddMember(ctx context.Context, orgId pgtype.UUID, p OrganisationMemberCreateModel) error
+	UpdateMemberRole(ctx context.Context, orgId, userId pgtype.UUID, p OrganisationMemberUpdateModel) error
+	RemoveMember(ctx context.Context, orgId, userId pgtype.UUID) error
 }
