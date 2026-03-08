@@ -105,3 +105,27 @@ func randomString(n int) string {
 func randomEmail() string {
 	return fmt.Sprintf("user_%s@example.com", randomString(8))
 }
+
+// Project helpers
+func createProject(tb testing.TB, orgID string, token string, key, name, visibility string) domain.ProjectModel {
+	statusCode, resp := do[domain.ProjectModel](tb, "POST", "/projects?orgId="+orgID, map[string]string{
+		"key":        key,
+		"name":       name,
+		"visibility": visibility,
+	}, token)
+
+	if statusCode != http.StatusCreated {
+		tb.Fatalf("create project failed: got status %d, error: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil {
+		tb.Fatalf("create project returned nil data")
+	}
+
+	return *resp.Data
+}
+
+// Generate unique project key with max 10 chars
+func randomProjectKey() string {
+	return "p" + randomString(4)
+}

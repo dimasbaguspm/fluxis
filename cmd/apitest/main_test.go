@@ -19,6 +19,11 @@ import (
 	orgrepo "github.com/dimasbaguspm/fluxis/internal/org/repository"
 	orgservice "github.com/dimasbaguspm/fluxis/internal/org/service"
 
+	"github.com/dimasbaguspm/fluxis/internal/project"
+	projecthandler "github.com/dimasbaguspm/fluxis/internal/project/handler"
+	projectrepo "github.com/dimasbaguspm/fluxis/internal/project/repository"
+	projectservice "github.com/dimasbaguspm/fluxis/internal/project/service"
+
 	"github.com/dimasbaguspm/fluxis/internal/user"
 	userhandler "github.com/dimasbaguspm/fluxis/internal/user/handler"
 	userrepo "github.com/dimasbaguspm/fluxis/internal/user/repository"
@@ -76,12 +81,16 @@ func TestMain(m *testing.M) {
 
 	userRepo := userrepo.New(pool)
 	orgRepo := orgrepo.New(pool)
+	projectRepo := projectrepo.New(pool)
 
 	userSvc := userservice.New(userservice.Deps{
 		Repo: userRepo,
 	})
 	orgSvc := orgservice.New(orgservice.Deps{
 		Repo: orgRepo,
+	})
+	projectSvc := projectservice.New(projectservice.Deps{
+		Repo: projectRepo,
 	})
 	authSvc := authservice.New(authservice.Deps{
 		Users:  userSvc,
@@ -91,10 +100,12 @@ func TestMain(m *testing.M) {
 	authH := authhandler.New(authSvc)
 	userH := userhandler.New(userSvc)
 	orgH := orghandler.New(orgSvc)
+	projectH := projecthandler.New(projectSvc)
 
 	authModule := auth.NewModule(authSvc, authH)
 	userModule := user.NewModule(userH)
 	orgModule := org.NewModule(orgH)
+	projectModule := project.NewModule(projectH)
 
 	httpx.InitAuth(authModule.Service())
 
@@ -102,6 +113,7 @@ func TestMain(m *testing.M) {
 	authModule.Routes(mux)
 	userModule.Routes(mux)
 	orgModule.Routes(mux)
+	projectModule.Routes(mux)
 
 	testServer = httptest.NewServer(mux)
 	defer testServer.Close()
