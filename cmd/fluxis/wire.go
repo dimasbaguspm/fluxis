@@ -4,6 +4,7 @@ import (
 	"github.com/dimasbaguspm/fluxis/internal/auth"
 	authhandler "github.com/dimasbaguspm/fluxis/internal/auth/handler"
 	authservice "github.com/dimasbaguspm/fluxis/internal/auth/service"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/dimasbaguspm/fluxis/internal/user"
 	userhandler "github.com/dimasbaguspm/fluxis/internal/user/handler"
@@ -32,6 +33,7 @@ type App struct {
 
 type Deps struct {
 	DB     *pgxpool.Pool
+	RDB    *redis.Client
 	Config *Config
 }
 

@@ -48,6 +48,7 @@ func main() {
 
 	app := Wire(Deps{
 		DB:     db,
+		RDB:    rdb,
 		Config: cfg,
 	})
 
@@ -58,7 +59,6 @@ func main() {
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-
 	mux.HandleFunc("GET /swagger/doc.json", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./api/swagger.json")
 	})
