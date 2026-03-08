@@ -8,21 +8,16 @@ import (
 	"time"
 
 	authConfig "github.com/dimasbaguspm/fluxis/internal/auth/service"
+	"github.com/dimasbaguspm/fluxis/pkg/postgres"
 	"github.com/dimasbaguspm/fluxis/pkg/redis"
 )
 
 type Config struct {
 	Env    string
-	DB     DBConfig
+	DB     postgres.Config
 	Redis  redis.Config
 	Server ServerConfig
 	Auth   authConfig.Config
-}
-
-type DBConfig struct {
-	Primary  string
-	MaxConns int
-	MinConns int
 }
 
 type ServerConfig struct {
@@ -49,7 +44,7 @@ func LoadEnv() *Config {
 			WriteTimeout: getDuration("SERVER_WRITE_TIMEOUT", 10*time.Second),
 			IdleTimeout:  getDuration("SERVER_IDLE_TIMEOUT", 60*time.Second),
 		},
-		DB: DBConfig{
+		DB: postgres.Config{
 			Primary:  mustEnv("DATABASE_URL"),
 			MaxConns: getInt("DB_MAX_CONNS", 25),
 			MinConns: getInt("DB_MIN_CONNS", 5),

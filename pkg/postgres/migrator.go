@@ -11,7 +11,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func RunMigration(dbUrl string) {
+func RunMigration(cfg Config) {
 	slog.Info("[Migrator]: trying to migrate tables into DB")
 
 	exe, err := os.Executable()
@@ -21,7 +21,7 @@ func RunMigration(dbUrl string) {
 	}
 	migrationsPath := filepath.Clean(filepath.Join(filepath.Dir(exe), "..", "migrations"))
 
-	m, err := migrate.New("file://"+migrationsPath, dbUrl)
+	m, err := migrate.New("file://"+migrationsPath, cfg.Primary)
 
 	if err != nil {
 		slog.Error("[Migrator]: migration failed something odd while lookup the migrations file", "error", err)

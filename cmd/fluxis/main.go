@@ -38,8 +38,8 @@ func main() {
 	ctx, close := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT)
 	defer close()
 
-	db := postgres.MustConnect(ctx, cfg.DB.Primary)
-	postgres.RunMigration(cfg.DB.Primary)
+	db := postgres.MustConnect(ctx, cfg.DB)
+	postgres.RunMigration(cfg.DB)
 
 	rdb := redis.MustConnect(ctx, cfg.Redis)
 
@@ -81,9 +81,9 @@ func main() {
 	}
 
 	go func() {
-		slog.Info(fmt.Sprintf("Server started in port %s", cfg.Server.Port))
+		slog.Info(fmt.Sprintf("[Core]: Server started in port %s", cfg.Server.Port))
 		if err := svr.ListenAndServe(); err != http.ErrServerClosed {
-			slog.Error("Failed to start the serve", "error", err)
+			slog.Error("[Core]: Failed to start the serve", "error", err)
 		}
 	}()
 
