@@ -117,6 +117,15 @@ func (s *Service) CreateTicket(ctx context.Context, projectID pgtype.UUID, p dom
 }
 
 func (s *Service) UpdateTicket(ctx context.Context, id pgtype.UUID, p domain.TicketUpdateModel) (domain.TicketModel, error) {
+	// Fetch current ticket to preserve values for optional fields
+	currentTicket, err := s.Repo.GetTicket(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.TicketModel{}, ErrTicketNotFound
+		}
+		return domain.TicketModel{}, fmt.Errorf("get ticket: %w", err)
+	}
+
 	// Convert DueDate to pgtype.Date if provided
 	var dueDate pgtype.Date
 	if p.DueDate != nil {
@@ -132,12 +141,23 @@ func (s *Service) UpdateTicket(ctx context.Context, id pgtype.UUID, p domain.Tic
 		assigneeID = p.AssigneeID
 	}
 
+	// Use current values for empty optional enum fields
+	ticketType := p.Type
+	if ticketType == "" {
+		ticketType = string(currentTicket.Type)
+	}
+
+	priority := p.Priority
+	if priority == "" {
+		priority = string(currentTicket.Priority)
+	}
+
 	ticket, err := s.Repo.UpdateTicketDetails(ctx, repository.UpdateTicketDetailsParams{
 		ID:          id,
 		Title:       p.Title,
 		Description: pgtype.Text{String: p.Description, Valid: p.Description != ""},
-		Type:        repository.TicketType(p.Type),
-		Priority:    repository.TicketPriority(p.Priority),
+		Type:        repository.TicketType(ticketType),
+		Priority:    repository.TicketPriority(priority),
 		AssigneeID:  assigneeID,
 		StoryPoints: pgtype.Int4{Int32: p.StoryPoints, Valid: p.StoryPoints > 0},
 		DueDate:     dueDate,

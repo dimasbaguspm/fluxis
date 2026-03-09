@@ -171,3 +171,40 @@ func createBoard(tb testing.TB, sprintID string, token string, name string) doma
 func randomBoardName() string {
 	return "Board " + randomString(4)
 }
+
+// Ticket helpers
+func createTicket(tb testing.TB, projectID string, token string, title, ticketType, priority string) domain.TicketModel {
+	statusCode, resp := do[domain.TicketModel](tb, "POST", "/tickets?projectId="+projectID, map[string]string{
+		"title":    title,
+		"type":     ticketType,
+		"priority": priority,
+	}, token)
+
+	if statusCode != http.StatusCreated {
+		tb.Fatalf("create ticket failed: got status %d, error: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil {
+		tb.Fatalf("create ticket returned nil data")
+	}
+
+	return *resp.Data
+}
+
+func getTicket(tb testing.TB, ticketID string, token string) domain.TicketModel {
+	statusCode, resp := do[domain.TicketModel](tb, "GET", "/tickets/"+ticketID, nil, token)
+
+	if statusCode != http.StatusOK {
+		tb.Fatalf("get ticket failed: got status %d, error: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil {
+		tb.Fatalf("get ticket returned nil data")
+	}
+
+	return *resp.Data
+}
+
+func randomTicketTitle() string {
+	return "Ticket " + randomString(8)
+}

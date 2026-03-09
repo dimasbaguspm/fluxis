@@ -34,6 +34,11 @@ import (
 	boardrepo "github.com/dimasbaguspm/fluxis/internal/board/repository"
 	boardservice "github.com/dimasbaguspm/fluxis/internal/board/service"
 
+	"github.com/dimasbaguspm/fluxis/internal/ticket"
+	tickethandler "github.com/dimasbaguspm/fluxis/internal/ticket/handler"
+	ticketrepo "github.com/dimasbaguspm/fluxis/internal/ticket/repository"
+	ticketservice "github.com/dimasbaguspm/fluxis/internal/ticket/service"
+
 	"github.com/dimasbaguspm/fluxis/internal/user"
 	userhandler "github.com/dimasbaguspm/fluxis/internal/user/handler"
 	userrepo "github.com/dimasbaguspm/fluxis/internal/user/repository"
@@ -94,6 +99,7 @@ func TestMain(m *testing.M) {
 	projectRepo := projectrepo.New(pool)
 	sprintRepo := sprintrepo.New(pool)
 	boardRepo := boardrepo.New(pool)
+	ticketRepo := ticketrepo.New(pool)
 
 	userSvc := userservice.New(userservice.Deps{
 		Repo: userRepo,
@@ -110,6 +116,12 @@ func TestMain(m *testing.M) {
 	boardSvc := boardservice.New(boardservice.Deps{
 		Repo: boardRepo,
 	})
+	ticketSvc := ticketservice.New(ticketservice.Deps{
+		Repo:    ticketRepo,
+		Project: projectSvc,
+		Board:   boardSvc,
+		Sprint:  sprintSvc,
+	})
 	authSvc := authservice.New(authservice.Deps{
 		Users:  userSvc,
 		Config: &authCfg,
@@ -121,6 +133,7 @@ func TestMain(m *testing.M) {
 	projectH := projecthandler.New(projectSvc)
 	sprintH := sprinthandler.New(sprintSvc)
 	boardH := boardhandler.New(boardSvc)
+	ticketH := tickethandler.New(ticketSvc)
 
 	authModule := auth.NewModule(authSvc, authH)
 	userModule := user.NewModule(userH)
@@ -128,6 +141,7 @@ func TestMain(m *testing.M) {
 	projectModule := project.NewModule(projectH)
 	sprintModule := sprint.NewModule(sprintH)
 	boardModule := board.NewModule(boardH)
+	ticketModule := ticket.NewModule(ticketH)
 
 	httpx.InitAuth(authModule.Service())
 
@@ -138,6 +152,7 @@ func TestMain(m *testing.M) {
 	projectModule.Routes(mux)
 	sprintModule.Routes(mux)
 	boardModule.Routes(mux)
+	ticketModule.Routes(mux)
 
 	testServer = httptest.NewServer(mux)
 	defer testServer.Close()
