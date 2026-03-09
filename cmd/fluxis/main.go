@@ -74,6 +74,7 @@ func main() {
 	app.Project.Routes(mux)
 	app.Sprint.Routes(mux)
 	app.Board.Routes(mux)
+	app.Ticket.Routes(mux)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Handle(w, httpx.NotImplemented("endpoint is not implemented"))

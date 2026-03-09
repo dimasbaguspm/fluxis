@@ -31,6 +31,11 @@ import (
 	boardrepo "github.com/dimasbaguspm/fluxis/internal/board/repository"
 	boardservice "github.com/dimasbaguspm/fluxis/internal/board/service"
 
+	"github.com/dimasbaguspm/fluxis/internal/ticket"
+	tickethandler "github.com/dimasbaguspm/fluxis/internal/ticket/handler"
+	ticketrepo "github.com/dimasbaguspm/fluxis/internal/ticket/repository"
+	ticketservice "github.com/dimasbaguspm/fluxis/internal/ticket/service"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -41,6 +46,7 @@ type App struct {
 	Project *project.Module
 	Sprint  *sprint.Module
 	Board   *board.Module
+	Ticket  *ticket.Module
 }
 
 type Deps struct {
@@ -55,6 +61,7 @@ func Wire(d Deps) *App {
 	projectRepo := projectrepo.New(d.DB)
 	sprintRepo := sprintrepo.New(d.DB)
 	boardRepo := boardrepo.New(d.DB)
+	ticketRepo := ticketrepo.New(d.DB)
 
 	userSvc := userservice.New(userservice.Deps{
 		Repo: userRepo,
@@ -71,6 +78,12 @@ func Wire(d Deps) *App {
 	boardSvc := boardservice.New(boardservice.Deps{
 		Repo: boardRepo,
 	})
+	ticketSvc := ticketservice.New(ticketservice.Deps{
+		Repo:    ticketRepo,
+		Project: projectSvc,
+		Board:   boardSvc,
+		Sprint:  sprintSvc,
+	})
 	authSvc := authservice.New(authservice.Deps{
 		Users:  userSvc,
 		Config: &d.Config.Auth,
@@ -82,6 +95,7 @@ func Wire(d Deps) *App {
 	projectH := projecthandler.New(projectSvc)
 	sprintH := sprinthandler.New(sprintSvc)
 	boardH := boardhandler.New(boardSvc)
+	ticketH := tickethandler.New(ticketSvc)
 
 	return &App{
 		Auth:    auth.NewModule(authSvc, authH),
@@ -90,6 +104,7 @@ func Wire(d Deps) *App {
 		Project: project.NewModule(projectH),
 		Sprint:  sprint.NewModule(sprintH),
 		Board:   board.NewModule(boardH),
+		Ticket:  ticket.NewModule(ticketH),
 	}
 
 }
