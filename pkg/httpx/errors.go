@@ -52,6 +52,10 @@ func Unprocessable(msg string) *AppError {
 	return &AppError{Status: http.StatusUnprocessableEntity, Message: msg}
 }
 
+func NotImplemented(msg string) *AppError {
+	return &AppError{Status: http.StatusNotImplemented, Message: msg}
+}
+
 func (e *AppError) WithCode(code string) *AppError {
 	e.Code = code
 	return e

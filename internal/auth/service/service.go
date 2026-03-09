@@ -7,7 +7,10 @@ import (
 )
 
 type Deps struct {
-	Users  UserDeps
+	Users interface {
+		domain.UserRead
+		domain.UserWrite
+	}
 	Config *Config
 }
 
@@ -22,11 +25,6 @@ type Config struct {
 	RefreshTokenExpiry time.Duration // default 7d
 
 	BcryptCost int
-}
-
-type UserDeps interface {
-	domain.UserRead
-	domain.UserWrite
 }
 
 func New(d Deps) *Service {
