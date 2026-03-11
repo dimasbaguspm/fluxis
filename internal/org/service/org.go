@@ -32,7 +32,7 @@ func (s *Service) ListOrgs(ctx context.Context, q domain.OrganisationSearchModel
 		return []domain.OrganisationModel{}, fmt.Errorf("list orgs: %w", err)
 	}
 
-	data := make([]domain.OrganisationModel, len(orgs))
+	data := make([]domain.OrganisationModel, 0, len(orgs))
 
 	for _, org := range orgs {
 		data = append(data, domain.OrganisationModel{
@@ -109,11 +109,13 @@ func (s *Service) CreateOrg(ctx context.Context, p domain.OrganisationCreateMode
 		return domain.OrganisationModel{}, fmt.Errorf("create org: %w", err)
 	}
 
-	s.Repo.CreateOrgMember(ctx, repository.CreateOrgMemberParams{
+	if _, err := s.Repo.CreateOrgMember(ctx, repository.CreateOrgMemberParams{
 		OrgID:  org.ID,
 		UserID: userID,
 		Role:   repository.OrgRoleAdmin,
-	})
+	}); err != nil {
+		return domain.OrganisationModel{}, fmt.Errorf("create org member: %w", err)
+	}
 
 	totalMembers, _ := s.Repo.CountOrgMembers(ctx, repository.CountOrgMembersParams{
 		OrgID: org.ID,
