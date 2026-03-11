@@ -65,4 +65,6 @@ type BoardWriter interface {
 	UpdateBoard(ctx context.Context, id pgtype.UUID, b BoardUpdateModel) (BoardModel, error)
 	ReorderBoard(ctx context.Context, id pgtype.UUID, position int32) (BoardModel, error)
 	DeleteBoard(ctx context.Context, id pgtype.UUID) error
+	UpdateBoardColumn(ctx context.Context, boardID, columnID pgtype.UUID, b BoardColumnUpdateModel) (BoardColumnModel, error)
+	DeleteBoardColumn(ctx context.Context, boardID, columnID pgtype.UUID) error
 }

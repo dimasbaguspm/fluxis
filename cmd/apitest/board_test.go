@@ -465,3 +465,245 @@ func TestBoards_Create_MultipleInSprint_AutoPosition(t *testing.T) {
 		t.Fatalf("expected third board position 2, got %d", board3.Position)
 	}
 }
+
+func TestBoardColumns_List_Success(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
+	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
+
+	// Create multiple columns
+	col1 := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, "Column 1", 0)
+	col2 := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, "Column 2", 1)
+
+	statusCode, resp := do[[]domain.BoardColumnModel](t, "GET", "/boards/"+uuidToString(board.ID)+"/columns", nil, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil {
+		t.Fatal("expected columns data")
+	}
+
+	if len(*resp.Data) != 2 {
+		t.Fatalf("expected 2 columns, got %d", len(*resp.Data))
+	}
+
+	// Verify columns are in order
+	if (*resp.Data)[0].ID != col1.ID {
+		t.Fatalf("expected first column to be col1")
+	}
+	if (*resp.Data)[1].ID != col2.ID {
+		t.Fatalf("expected second column to be col2")
+	}
+}
+
+func TestBoardColumns_Create_Success(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
+	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
+
+	columnName := randomBoardColumnName()
+	position := int32(0)
+	statusCode, resp := do[domain.BoardColumnModel](t, "POST", "/boards/"+uuidToString(board.ID)+"/columns", domain.BoardColumnCreateModel{
+		Name:     &columnName,
+		Position: &position,
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil {
+		t.Fatal("expected column data")
+	}
+
+	if resp.Data.Name != columnName {
+		t.Fatalf("expected name '%s', got '%s'", columnName, resp.Data.Name)
+	}
+
+	if resp.Data.Position != position {
+		t.Fatalf("expected position %d, got %d", position, resp.Data.Position)
+	}
+
+	if uuidToString(resp.Data.ID) == "" {
+		t.Fatal("expected non-empty ID")
+	}
+}
+
+func TestBoardColumns_Update_Success(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
+	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
+	column := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, randomBoardColumnName(), 0)
+
+	newName := "Updated Column"
+	statusCode, resp := do[domain.BoardColumnModel](t, "PATCH", "/boards/"+uuidToString(board.ID)+"/columns/"+uuidToString(column.ID), domain.BoardColumnUpdateModel{
+		Name: &newName,
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil {
+		t.Fatal("expected column data")
+	}
+
+	if resp.Data.Name != newName {
+		t.Fatalf("expected name '%s', got '%s'", newName, resp.Data.Name)
+	}
+}
+
+func TestBoardColumns_Update_Position(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
+	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
+	column := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, randomBoardColumnName(), 0)
+
+	newPosition := int32(5)
+	statusCode, resp := do[domain.BoardColumnModel](t, "PATCH", "/boards/"+uuidToString(board.ID)+"/columns/"+uuidToString(column.ID), domain.BoardColumnUpdateModel{
+		Position: &newPosition,
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil {
+		t.Fatal("expected column data")
+	}
+
+	if resp.Data.Position != newPosition {
+		t.Fatalf("expected position %d, got %d", newPosition, resp.Data.Position)
+	}
+}
+
+func TestBoardColumns_Update_NotFound(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
+	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
+
+	invalidColumnID := "550e8400-e29b-41d4-a716-446655440000"
+	newName := "Updated Column"
+	code, _ := do[domain.BoardColumnModel](t, "PATCH", "/boards/"+uuidToString(board.ID)+"/columns/"+invalidColumnID, domain.BoardColumnUpdateModel{
+		Name: &newName,
+	}, tokens.AccessToken)
+
+	if code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d", code)
+	}
+}
+
+func TestBoardColumns_Delete_Success(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
+	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
+	column := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, randomBoardColumnName(), 0)
+
+	code, _ := do[interface{}](t, "DELETE", "/boards/"+uuidToString(board.ID)+"/columns/"+uuidToString(column.ID), nil, tokens.AccessToken)
+
+	if code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", code)
+	}
+}
+
+func TestBoardColumns_Delete_NotFound(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
+	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
+
+	invalidColumnID := "550e8400-e29b-41d4-a716-446655440000"
+	code, _ := do[interface{}](t, "DELETE", "/boards/"+uuidToString(board.ID)+"/columns/"+invalidColumnID, nil, tokens.AccessToken)
+
+	if code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d", code)
+	}
+}
+
+func TestBoardColumns_Delete_InvalidBoard(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
+	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
+	column := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, randomBoardColumnName(), 0)
+
+	// Try to delete column with wrong board ID
+	wrongBoardID := "550e8400-e29b-41d4-a716-446655440000"
+	code, _ := do[interface{}](t, "DELETE", "/boards/"+wrongBoardID+"/columns/"+uuidToString(column.ID), nil, tokens.AccessToken)
+
+	if code != http.StatusNotFound {
+		t.Fatalf("expected status 404 for column not in board, got %d", code)
+	}
+}
