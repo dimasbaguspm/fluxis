@@ -1,4 +1,4 @@
-package testutil
+package apitest_test
 
 import (
 	"context"

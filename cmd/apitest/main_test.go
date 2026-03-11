@@ -43,7 +43,6 @@ import (
 	userhandler "github.com/dimasbaguspm/fluxis/internal/user/handler"
 	userrepo "github.com/dimasbaguspm/fluxis/internal/user/repository"
 	userservice "github.com/dimasbaguspm/fluxis/internal/user/service"
-	"github.com/dimasbaguspm/fluxis/pkg/testutil"
 
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 )
@@ -53,14 +52,14 @@ var testServer *httptest.Server
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
-	pgContainer, err := testutil.NewPostgresContainer(ctx)
+	pgContainer, err := NewPostgresContainer(ctx)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start postgres container: %v\n", err)
 		os.Exit(1)
 	}
 	defer pgContainer.Terminate(ctx)
 
-	pool := testutil.MustPool(ctx, pgContainer.DSN)
+	pool := MustPool(ctx, pgContainer.DSN)
 	defer pool.Close()
 
 	var migrationsPath string
@@ -81,7 +80,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err := testutil.RunMigrations(pgContainer.DSN, migrationsPath); err != nil {
+	if err := RunMigrations(pgContainer.DSN, migrationsPath); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to run migrations: %v\n", err)
 		os.Exit(1)
 	}
