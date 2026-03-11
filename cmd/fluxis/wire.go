@@ -66,6 +66,10 @@ func Wire(d Deps) *App {
 	userSvc := userservice.New(userservice.Deps{
 		Repo: userRepo,
 	})
+	authSvc := authservice.New(authservice.Deps{
+		Users:  userSvc,
+		Config: &d.Config.Auth,
+	})
 	orgSvc := orgservice.New(orgservice.Deps{
 		Repo: orgRepo,
 	})
@@ -73,7 +77,8 @@ func Wire(d Deps) *App {
 		Repo: projectRepo,
 	})
 	sprintSvc := sprintservice.New(sprintservice.Deps{
-		Repo: sprintRepo,
+		Repo:    sprintRepo,
+		Project: projectSvc,
 	})
 	boardSvc := boardservice.New(boardservice.Deps{
 		Repo:   boardRepo,
@@ -84,10 +89,6 @@ func Wire(d Deps) *App {
 		Project: projectSvc,
 		Board:   boardSvc,
 		Sprint:  sprintSvc,
-	})
-	authSvc := authservice.New(authservice.Deps{
-		Users:  userSvc,
-		Config: &d.Config.Auth,
 	})
 
 	authH := authhandler.New(authSvc)

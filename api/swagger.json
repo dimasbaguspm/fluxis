@@ -1598,13 +1598,6 @@
                 "summary": "Create a sprint",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Project ID",
-                        "name": "projectId",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
                         "description": "Sprint payload",
                         "name": "body",
                         "in": "body",
@@ -2788,7 +2781,8 @@
         "domain.SprintCreateModel": {
             "type": "object",
             "required": [
-                "name"
+                "name",
+                "projectId"
             ],
             "properties": {
                 "goal": {
@@ -2802,6 +2796,9 @@
                     "type": "string"
                 },
                 "plannedStartedAt": {
+                    "type": "string"
+                },
+                "projectId": {
                     "type": "string"
                 },
                 "status": {
@@ -2871,6 +2868,12 @@
                 "name": {
                     "type": "string",
                     "minLength": 1
+                },
+                "plannedCompletedAt": {
+                    "type": "string"
+                },
+                "plannedStartedAt": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "string",

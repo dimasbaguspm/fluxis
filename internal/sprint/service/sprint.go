@@ -59,7 +59,12 @@ func toSprintModel(sprint repository.Sprint) domain.SprintModel {
 }
 
 // CreateSprint creates a new sprint
-func (s *Service) CreateSprint(ctx context.Context, projectID pgtype.UUID, req domain.SprintCreateModel) (domain.SprintModel, error) {
+func (s *Service) CreateSprint(ctx context.Context, req domain.SprintCreateModel) (domain.SprintModel, error) {
+	project, err := s.Project.GetProjectById(ctx, req.ProjectID)
+	if err != nil {
+		return domain.SprintModel{}, fmt.Errorf("get project: %w", err)
+	}
+
 	sprintStatus := repository.SprintStatusPlanned
 	if req.Status != nil {
 		sprintStatus = repository.SprintStatus(*req.Status)
@@ -83,7 +88,7 @@ func (s *Service) CreateSprint(ctx context.Context, projectID pgtype.UUID, req d
 	}
 
 	sprint, err := s.Repo.CreateSprint(ctx, repository.CreateSprintParams{
-		ProjectID:          projectID,
+		ProjectID:          project.ID,
 		Name:               *req.Name,
 		Goal:               goalText,
 		Status:             sprintStatus,

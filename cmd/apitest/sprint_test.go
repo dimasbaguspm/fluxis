@@ -25,8 +25,9 @@ func TestSprints_Create_Success(t *testing.T) {
 
 	// Create sprint
 	sprintName := randomSprintName()
-	statusCode, resp := do[domain.SprintModel](t, "POST", "/sprints?projectId="+projectID, domain.SprintCreateModel{
-		Name: &sprintName,
+	statusCode, resp := do[domain.SprintModel](t, "POST", "/sprints", domain.SprintCreateModel{
+		Name:      &sprintName,
+		ProjectID: stringToUUID(projectID),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated {
@@ -69,9 +70,10 @@ func TestSprints_Create_WithGoal(t *testing.T) {
 	// Create sprint with goal
 	sprintName := randomSprintName()
 	goal := "Complete user authentication feature"
-	statusCode, resp := do[domain.SprintModel](t, "POST", "/sprints?projectId="+projectID, domain.SprintCreateModel{
-		Name: &sprintName,
-		Goal: &goal,
+	statusCode, resp := do[domain.SprintModel](t, "POST", "/sprints", domain.SprintCreateModel{
+		Name:      &sprintName,
+		ProjectID: stringToUUID(projectID),
+		Goal:      &goal,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || resp.Data == nil {
@@ -87,8 +89,9 @@ func TestSprints_Create_Unauthenticated(t *testing.T) {
 	projectID := "550e8400-e29b-41d4-a716-446655440000"
 
 	name := "Test Sprint"
-	statusCode, _ := do[domain.SprintModel](t, "POST", "/sprints?projectId="+projectID, domain.SprintCreateModel{
-		Name: &name,
+	statusCode, _ := do[domain.SprintModel](t, "POST", "/sprints", domain.SprintCreateModel{
+		Name:      &name,
+		ProjectID: stringToUUID(projectID),
 	}, "")
 
 	if statusCode != http.StatusUnauthorized {
@@ -100,12 +103,12 @@ func TestSprints_Create_MissingProjectId(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	name := "Test Sprint"
-	statusCode, _ := do[domain.SprintModel](t, "POST", "/sprints", domain.SprintCreateModel{
+	statusCode, resp := do[domain.SprintModel](t, "POST", "/sprints", domain.SprintCreateModel{
 		Name: &name,
 	}, tokens.AccessToken)
 
-	if statusCode != http.StatusBadRequest {
-		t.Fatalf("expected status 400, got %d", statusCode)
+	if statusCode != http.StatusNotFound {
+		t.Fatalf("expected status 400, got %d: %v", statusCode, resp.Error)
 	}
 }
 

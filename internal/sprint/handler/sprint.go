@@ -14,7 +14,6 @@ import (
 //	@Tags			sprint
 //	@Accept			json
 //	@Produce		json
-//	@Param			projectId	query		string	true	"Project ID"
 //	@Param			body		body		domain.SprintCreateModel	true	"Sprint payload"
 //	@Success		201			{object}	domain.SprintModel
 //	@Failure		400			{object}	httpx.ErrBlock
@@ -23,12 +22,6 @@ import (
 //	@Security		BearerAuth
 //	@Router			/sprints [post]
 func (h *Handler) CreateSprint(w http.ResponseWriter, r *http.Request) {
-	projectID, err := httpx.QueryUUID(r, "projectId")
-	if err != nil {
-		httpx.Handle(w, err)
-		return
-	}
-
 	var req domain.SprintCreateModel
 
 	if err := httpx.DecodeAndValidate(r, &req); err != nil {
@@ -36,7 +29,7 @@ func (h *Handler) CreateSprint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sprint, err := h.svc.CreateSprint(r.Context(), projectID, req)
+	sprint, err := h.svc.CreateSprint(r.Context(), req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return

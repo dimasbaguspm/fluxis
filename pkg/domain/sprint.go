@@ -8,31 +8,34 @@ import (
 )
 
 type SprintModel struct {
-	ID                   pgtype.UUID `json:"id"`
-	ProjectID            pgtype.UUID `json:"projectId"`
-	Name                 string      `json:"name" validate:"required,min=1"`
-	Goal                 string      `json:"goal"`
-	Status               string      `json:"status" validate:"required,oneof=planned active completed"`
-	PlannedStartedAt     *time.Time  `json:"plannedStartedAt"`
-	PlannedCompletedAt   *time.Time  `json:"plannedCompletedAt"`
-	StartedAt            *time.Time  `json:"startedAt"`
-	CompletedAt          *time.Time  `json:"completedAt"`
-	CreatedAt            time.Time   `json:"createdAt"`
-	UpdatedAt            time.Time   `json:"updatedAt"`
+	ID                 pgtype.UUID `json:"id"`
+	ProjectID          pgtype.UUID `json:"projectId"`
+	Name               string      `json:"name" validate:"required,min=1"`
+	Goal               string      `json:"goal"`
+	Status             string      `json:"status" validate:"required,oneof=planned active completed"`
+	PlannedStartedAt   *time.Time  `json:"plannedStartedAt"`
+	PlannedCompletedAt *time.Time  `json:"plannedCompletedAt"`
+	StartedAt          *time.Time  `json:"startedAt"`
+	CompletedAt        *time.Time  `json:"completedAt"`
+	CreatedAt          time.Time   `json:"createdAt"`
+	UpdatedAt          time.Time   `json:"updatedAt"`
 }
 
 type SprintCreateModel struct {
-	Name                *string `json:"name" validate:"required,min=1"`
-	Goal                *string `json:"goal"`
-	Status              *string `json:"status" validate:"omitempty,oneof=planned active completed"`
-	PlannedStartedAt    *string `json:"plannedStartedAt"`
-	PlannedCompletedAt  *string `json:"plannedCompletedAt"`
+	Name               *string     `json:"name" validate:"required,min=1"`
+	ProjectID          pgtype.UUID `json:"projectId" validate:"required"`
+	Goal               *string     `json:"goal"`
+	Status             *string     `json:"status" validate:"omitempty,oneof=planned active completed"`
+	PlannedStartedAt   *string     `json:"plannedStartedAt" validate:"omitempty,datetime"`
+	PlannedCompletedAt *string     `json:"plannedCompletedAt" validate:"omitempty,datetime"`
 }
 
 type SprintUpdateModel struct {
-	Name   *string `json:"name" validate:"omitempty,min=1"`
-	Goal   *string `json:"goal"`
-	Status *string `json:"status" validate:"omitempty,oneof=planned active completed"`
+	Name               *string `json:"name" validate:"omitempty,min=1"`
+	Goal               *string `json:"goal"`
+	Status             *string `json:"status" validate:"omitempty,oneof=planned active completed"`
+	PlannedStartedAt   *string `json:"plannedStartedAt" validate:"omitempty,datetime"`
+	PlannedCompletedAt *string `json:"plannedCompletedAt" validate:"omitempty,datetime"`
 }
 
 type SprintReader interface {
@@ -41,7 +44,7 @@ type SprintReader interface {
 }
 
 type SprintWriter interface {
-	CreateSprint(ctx context.Context, projectID pgtype.UUID, p SprintCreateModel) (SprintModel, error)
+	CreateSprint(ctx context.Context, p SprintCreateModel) (SprintModel, error)
 	UpdateSprint(ctx context.Context, id pgtype.UUID, p SprintUpdateModel) (SprintModel, error)
 	StartSprint(ctx context.Context, id pgtype.UUID) (SprintModel, error)
 	CompleteSprint(ctx context.Context, id pgtype.UUID) (SprintModel, error)

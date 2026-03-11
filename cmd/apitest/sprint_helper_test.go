@@ -8,8 +8,9 @@ import (
 )
 
 func createSprint(tb testing.TB, projectID string, token string, name string) domain.SprintModel {
-	statusCode, resp := do[domain.SprintModel](tb, "POST", "/sprints?projectId="+projectID, domain.SprintCreateModel{
-		Name: &name,
+	statusCode, resp := do[domain.SprintModel](tb, "POST", "/sprints", domain.SprintCreateModel{
+		Name:      &name,
+		ProjectID: stringToUUID(projectID),
 	}, token)
 
 	if statusCode != http.StatusCreated {
