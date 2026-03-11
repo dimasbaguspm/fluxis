@@ -258,16 +258,15 @@ func TestBoards_Reorder_Success(t *testing.T) {
 	board1 := createBoard(t, sprintID, tokens.AccessToken, randomBoardName())
 	board2 := createBoard(t, sprintID, tokens.AccessToken, randomBoardName())
 
-	// Reorder boards
-	statusCode, resp := do[[]domain.BoardModel](t, "PATCH", "/boards/reorder", map[string]interface{}{
-		"boards": []map[string]interface{}{
+	statusCode, resp := do[[]domain.BoardModel](t, "PATCH", "/boards/reorder", domain.BoardReorderModel{
+		Boards: []domain.BoardPositionUpdate{
 			{
-				"id":       uuidToString(board1.ID),
-				"position": 1,
+				ID:       board1.ID,
+				Position: 1,
 			},
 			{
-				"id":       uuidToString(board2.ID),
-				"position": 0,
+				ID:       board2.ID,
+				Position: 0,
 			},
 		},
 	}, tokens.AccessToken)
