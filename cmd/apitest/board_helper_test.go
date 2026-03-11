@@ -8,8 +8,9 @@ import (
 )
 
 func createBoard(tb testing.TB, sprintID string, token string, name string) domain.BoardModel {
-	statusCode, resp := do[domain.BoardModel](tb, "POST", "/boards?sprintId="+sprintID, domain.BoardCreateModel{
-		Name: &name,
+	statusCode, resp := do[domain.BoardModel](tb, "POST", "/boards", domain.BoardCreateModel{
+		Name:     &name,
+		SprintID: stringToUUID(sprintID),
 	}, token)
 
 	if statusCode != http.StatusCreated {

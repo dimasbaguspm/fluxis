@@ -13,7 +13,7 @@ import (
 )
 
 func (s *Service) GetBoardColumn(ctx context.Context, id pgtype.UUID) (domain.BoardColumnModel, error) {
-	col, err := s.repo.GetBoardColumn(ctx, id)
+	col, err := s.Repo.GetBoardColumn(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return domain.BoardColumnModel{}, httpx.NotFound("board column not found")
@@ -32,7 +32,6 @@ func (s *Service) GetBoardColumn(ctx context.Context, id pgtype.UUID) (domain.Bo
 }
 
 func (s *Service) CreateBoardColumn(ctx context.Context, boardID pgtype.UUID, b domain.BoardColumnCreateModel) (domain.BoardColumnModel, error) {
-	// Validate board exists
 	if _, err := s.GetBoard(ctx, boardID); err != nil {
 		return domain.BoardColumnModel{}, fmt.Errorf("validate board: %w", err)
 	}
@@ -45,7 +44,7 @@ func (s *Service) CreateBoardColumn(ctx context.Context, boardID pgtype.UUID, b 
 		return domain.BoardColumnModel{}, httpx.BadRequest("position is required")
 	}
 
-	col, err := s.repo.CreateBoardColumn(ctx, repository.CreateBoardColumnParams{
+	col, err := s.Repo.CreateBoardColumn(ctx, repository.CreateBoardColumnParams{
 		BoardID:  boardID,
 		Name:     *b.Name,
 		Position: *b.Position,

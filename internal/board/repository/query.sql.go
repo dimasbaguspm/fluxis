@@ -253,16 +253,20 @@ func (q *Queries) ReorderBoardColumn(ctx context.Context, arg ReorderBoardColumn
 }
 
 const updateBoard = `-- name: UpdateBoard :one
-UPDATE boards SET name = $2, updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, sprint_id, name, position, created_at, updated_at, deleted_at
+UPDATE boards
+SET name = $2, sprint_id =$3, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, sprint_id, name, position, created_at, updated_at, deleted_at
 `
 
 type UpdateBoardParams struct {
-	ID   pgtype.UUID `db:"id" json:"id"`
-	Name string      `db:"name" json:"name"`
+	ID       pgtype.UUID `db:"id" json:"id"`
+	Name     string      `db:"name" json:"name"`
+	SprintID pgtype.UUID `db:"sprint_id" json:"sprint_id"`
 }
 
 func (q *Queries) UpdateBoard(ctx context.Context, arg UpdateBoardParams) (Board, error) {
-	row := q.db.QueryRow(ctx, updateBoard, arg.ID, arg.Name)
+	row := q.db.QueryRow(ctx, updateBoard, arg.ID, arg.Name, arg.SprintID)
 	var i Board
 	err := row.Scan(
 		&i.ID,

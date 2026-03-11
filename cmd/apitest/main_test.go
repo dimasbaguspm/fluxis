@@ -113,7 +113,8 @@ func TestMain(m *testing.M) {
 		Repo: sprintRepo,
 	})
 	boardSvc := boardservice.New(boardservice.Deps{
-		Repo: boardRepo,
+		Repo:   boardRepo,
+		Sprint: sprintSvc,
 	})
 	ticketSvc := ticketservice.New(ticketservice.Deps{
 		Repo:    ticketRepo,

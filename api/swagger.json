@@ -218,13 +218,6 @@
                 "summary": "Create a board",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Sprint ID",
-                        "name": "sprintId",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
                         "description": "Board payload",
                         "name": "body",
                         "in": "body",
@@ -2315,12 +2308,16 @@
         "domain.BoardCreateModel": {
             "type": "object",
             "required": [
-                "name"
+                "name",
+                "sprintId"
             ],
             "properties": {
                 "name": {
                     "type": "string",
                     "minLength": 1
+                },
+                "sprintId": {
+                    "type": "string"
                 }
             }
         },
@@ -2387,6 +2384,9 @@
                 "name": {
                     "type": "string",
                     "minLength": 1
+                },
+                "sprintId": {
+                    "type": "string"
                 }
             }
         },

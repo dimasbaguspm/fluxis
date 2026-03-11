@@ -28,8 +28,9 @@ func TestBoards_Create_Success(t *testing.T) {
 
 	// Create board
 	boardName := randomBoardName()
-	statusCode, resp := do[domain.BoardModel](t, "POST", "/boards?sprintId="+sprintID, domain.BoardCreateModel{
-		Name: &boardName,
+	statusCode, resp := do[domain.BoardModel](t, "POST", "/boards", domain.BoardCreateModel{
+		Name:     &boardName,
+		SprintID: stringToUUID(sprintID),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated {
@@ -57,8 +58,9 @@ func TestBoards_Create_Unauthenticated(t *testing.T) {
 	sprintID := "550e8400-e29b-41d4-a716-446655440000"
 
 	name := "Test Board"
-	statusCode, _ := do[domain.BoardModel](t, "POST", "/boards?sprintId="+sprintID, domain.BoardCreateModel{
-		Name: &name,
+	statusCode, _ := do[domain.BoardModel](t, "POST", "/boards", domain.BoardCreateModel{
+		Name:     &name,
+		SprintID: stringToUUID(sprintID),
 	}, "")
 
 	if statusCode != http.StatusUnauthorized {
@@ -69,13 +71,12 @@ func TestBoards_Create_Unauthenticated(t *testing.T) {
 func TestBoards_Create_MissingSprintId(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	name := "Test Board"
-	statusCode, _ := do[domain.BoardModel](t, "POST", "/boards", domain.BoardCreateModel{
-		Name: &name,
+	code, _ := do[domain.BoardModel](t, "POST", "/boards", map[string]interface{}{
+		"name": "Test Board",
 	}, tokens.AccessToken)
 
-	if statusCode != http.StatusBadRequest {
-		t.Fatalf("expected status 400, got %d", statusCode)
+	if code != http.StatusNotFound {
+		t.Fatalf("expected status 404 (sprint not found), got %d", code)
 	}
 }
 
@@ -100,6 +101,26 @@ func TestBoards_Create_MissingName(t *testing.T) {
 
 	if code != http.StatusBadRequest {
 		t.Fatalf("expected status 400, got %d", code)
+	}
+}
+
+func TestBoards_Create_InvalidSprintID(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	invalidSprintID := "550e8400-e29b-41d4-a716-446655440000"
+	boardName := randomBoardName()
+
+	statusCode, resp := do[domain.BoardModel](t, "POST", "/boards", domain.BoardCreateModel{
+		Name:     &boardName,
+		SprintID: stringToUUID(invalidSprintID),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusNotFound {
+		t.Fatalf("expected status 404 for non-existent sprint, got %d", statusCode)
+	}
+
+	if resp.Error == nil {
+		t.Fatalf("expected error response for invalid sprint")
 	}
 }
 
@@ -234,6 +255,89 @@ func TestBoards_Update_Success(t *testing.T) {
 
 	if resp.Data == nil || resp.Data.Name != updatedName {
 		t.Fatalf("expected name '%s', got %v", updatedName, resp.Data)
+	}
+}
+
+func TestBoards_Update_WithSprintChange_Success(t *testing.T) {
+	// Create org, project, and multiple sprints
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	projectID := uuidToString(project.ID)
+
+	sprint1 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	sprintID1 := uuidToString(sprint1.ID)
+	sprint2 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	sprintID2 := uuidToString(sprint2.ID)
+
+	board := createBoard(t, sprintID1, tokens.AccessToken, "Original Board")
+	boardID := uuidToString(board.ID)
+
+	// Update board to move to different sprint (concurrent validation)
+	updatedName := "Updated Board Name"
+	newSprintID := stringToUUID(sprintID2)
+	statusCode, resp := do[domain.BoardModel](t, "PATCH", "/boards/"+boardID, domain.BoardUpdateModel{
+		Name:     &updatedName,
+		SprintID: &newSprintID,
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil || resp.Data.Name != updatedName {
+		t.Fatalf("expected name '%s', got '%s'", updatedName, resp.Data.Name)
+	}
+
+	if uuidToString(resp.Data.SprintID) != sprintID2 {
+		t.Fatalf("expected sprint ID '%s', got '%s'", sprintID2, uuidToString(resp.Data.SprintID))
+	}
+}
+
+func TestBoards_Update_InvalidSprintID(t *testing.T) {
+	// Create org, project, sprint, and board
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	projectID := uuidToString(project.ID)
+	sprint := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	sprintID := uuidToString(sprint.ID)
+
+	board := createBoard(t, sprintID, tokens.AccessToken, "Original Board")
+	boardID := uuidToString(board.ID)
+
+	// Try to update with non-existent sprint ID
+	invalidSprintID := stringToUUID("550e8400-e29b-41d4-a716-446655440000")
+	updatedName := "Updated Board"
+	statusCode, resp := do[domain.BoardModel](t, "PATCH", "/boards/"+boardID, domain.BoardUpdateModel{
+		Name:     &updatedName,
+		SprintID: &invalidSprintID,
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusNotFound {
+		t.Fatalf("expected status 404 for non-existent sprint, got %d", statusCode)
+	}
+
+	if resp.Error == nil {
+		t.Fatalf("expected error response for invalid sprint")
 	}
 }
 

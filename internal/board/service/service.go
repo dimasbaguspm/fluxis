@@ -2,18 +2,18 @@ package service
 
 import (
 	"github.com/dimasbaguspm/fluxis/internal/board/repository"
+	"github.com/dimasbaguspm/fluxis/pkg/domain"
 )
 
 type Deps struct {
-	Repo *repository.Queries
+	Repo   *repository.Queries
+	Sprint domain.SprintReader
 }
 
 type Service struct {
-	repo *repository.Queries
+	Deps
 }
 
 func New(d Deps) *Service {
-	return &Service{
-		repo: d.Repo,
-	}
+	return &Service{d}
 }

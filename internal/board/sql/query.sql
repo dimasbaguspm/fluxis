@@ -10,7 +10,10 @@ SELECT * FROM boards WHERE id = $1 AND deleted_at IS NULL;
 SELECT * FROM boards WHERE sprint_id = $1 AND deleted_at IS NULL ORDER BY position ASC;
 
 -- name: UpdateBoard :one
-UPDATE boards SET name = $2, updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *;
+UPDATE boards
+SET name = $2, sprint_id = $3, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
 
 -- name: ReorderBoard :one
 UPDATE boards SET position = $2, updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *;

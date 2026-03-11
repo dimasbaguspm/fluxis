@@ -17,11 +17,13 @@ type BoardModel struct {
 }
 
 type BoardCreateModel struct {
-	Name *string `json:"name" validate:"required,min=1"`
+	Name     *string     `json:"name" validate:"required,min=1"`
+	SprintID pgtype.UUID `json:"sprintId" validate:"required"`
 }
 
 type BoardUpdateModel struct {
-	Name *string `json:"name" validate:"omitempty,min=1"`
+	Name     *string      `json:"name" validate:"omitempty,min=1"`
+	SprintID *pgtype.UUID `json:"sprintId,omitempty"`
 }
 
 type BoardReorderModel struct {

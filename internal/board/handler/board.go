@@ -14,7 +14,6 @@ import (
 //	@Tags			board
 //	@Accept			json
 //	@Produce		json
-//	@Param			sprintId	query		string							true	"Sprint ID"
 //	@Param			body		body		domain.BoardCreateModel		true	"Board payload"
 //	@Success		201			{object}	domain.BoardModel
 //	@Failure		400			{object}	httpx.ErrBlock
@@ -23,12 +22,6 @@ import (
 //	@Security		BearerAuth
 //	@Router			/boards [post]
 func (h *Handler) CreateBoard(w http.ResponseWriter, r *http.Request) {
-	sprintID, err := httpx.QueryUUID(r, "sprintId")
-	if err != nil {
-		httpx.Handle(w, err)
-		return
-	}
-
 	var req domain.BoardCreateModel
 
 	if err := httpx.DecodeAndValidate(r, &req); err != nil {
@@ -36,7 +29,7 @@ func (h *Handler) CreateBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	board, err := h.svc.CreateBoard(r.Context(), sprintID, req)
+	board, err := h.svc.CreateBoard(r.Context(), req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return

@@ -76,7 +76,8 @@ func Wire(d Deps) *App {
 		Repo: sprintRepo,
 	})
 	boardSvc := boardservice.New(boardservice.Deps{
-		Repo: boardRepo,
+		Repo:   boardRepo,
+		Sprint: sprintSvc,
 	})
 	ticketSvc := ticketservice.New(ticketservice.Deps{
 		Repo:    ticketRepo,

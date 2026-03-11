@@ -8,6 +8,7 @@ import (
 	"github.com/dimasbaguspm/fluxis/internal/board/repository"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
+	"github.com/dimasbaguspm/fluxis/pkg/syncx"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -27,13 +28,14 @@ func toBoardModel(board repository.Board) domain.BoardModel {
 	}
 }
 
-func (s *Service) CreateBoard(ctx context.Context, sprintID pgtype.UUID, b domain.BoardCreateModel) (domain.BoardModel, error) {
-	if b.Name == nil {
-		return domain.BoardModel{}, httpx.BadRequest("name is required")
+func (s *Service) CreateBoard(ctx context.Context, b domain.BoardCreateModel) (domain.BoardModel, error) {
+	sprint, err := s.Sprint.GetSprint(ctx, b.SprintID)
+	if err != nil {
+		return domain.BoardModel{}, fmt.Errorf("get sprint: %w", err)
 	}
 
-	board, err := s.repo.CreateBoard(ctx, repository.CreateBoardParams{
-		SprintID: sprintID,
+	board, err := s.Repo.CreateBoard(ctx, repository.CreateBoardParams{
+		SprintID: sprint.ID,
 		Name:     *b.Name,
 	})
 	if err != nil {
@@ -44,7 +46,7 @@ func (s *Service) CreateBoard(ctx context.Context, sprintID pgtype.UUID, b domai
 }
 
 func (s *Service) GetBoard(ctx context.Context, id pgtype.UUID) (domain.BoardModel, error) {
-	board, err := s.repo.GetBoard(ctx, id)
+	board, err := s.Repo.GetBoard(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return domain.BoardModel{}, ErrBoardNotFound
@@ -56,7 +58,7 @@ func (s *Service) GetBoard(ctx context.Context, id pgtype.UUID) (domain.BoardMod
 }
 
 func (s *Service) ListBoardsBySprint(ctx context.Context, sprintID pgtype.UUID) ([]domain.BoardModel, error) {
-	boards, err := s.repo.ListBoardsBySprint(ctx, sprintID)
+	boards, err := s.Repo.ListBoardsBySprint(ctx, sprintID)
 	if err != nil {
 		return nil, fmt.Errorf("list boards: %w", err)
 	}
@@ -74,13 +76,32 @@ func (s *Service) ListBoardsBySprint(ctx context.Context, sprintID pgtype.UUID) 
 }
 
 func (s *Service) UpdateBoard(ctx context.Context, id pgtype.UUID, b domain.BoardUpdateModel) (domain.BoardModel, error) {
-	// Get existing board first
-	existing, err := s.repo.GetBoard(ctx, id)
+	var existing domain.BoardModel
+	var sprint domain.SprintModel
+
+	err := syncx.Run(ctx,
+		func(ctx context.Context) error {
+			b, err := s.GetBoard(ctx, id)
+			if err != nil {
+				return fmt.Errorf("validate board: %w", err)
+			}
+			existing = b
+			return nil
+		},
+		func(ctx context.Context) error {
+			if b.SprintID != nil {
+				s, err := s.Sprint.GetSprint(ctx, *b.SprintID)
+				if err != nil {
+					return fmt.Errorf("validate sprint: %w", err)
+				}
+				sprint = s
+			}
+			return nil
+		},
+	)
+
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return domain.BoardModel{}, ErrBoardNotFound
-		}
-		return domain.BoardModel{}, fmt.Errorf("get board: %w", err)
+		return domain.BoardModel{}, err
 	}
 
 	// Use existing value if not provided
@@ -89,10 +110,17 @@ func (s *Service) UpdateBoard(ctx context.Context, id pgtype.UUID, b domain.Boar
 		name = *b.Name
 	}
 
-	board, err := s.repo.UpdateBoard(ctx, repository.UpdateBoardParams{
-		ID:   id,
-		Name: name,
+	sprintID := existing.SprintID
+	if b.SprintID != nil {
+		sprintID = sprint.ID
+	}
+
+	board, err := s.Repo.UpdateBoard(ctx, repository.UpdateBoardParams{
+		ID:       id,
+		Name:     name,
+		SprintID: sprintID,
 	})
+
 	if err != nil {
 		return domain.BoardModel{}, fmt.Errorf("update board: %w", err)
 	}
@@ -101,7 +129,7 @@ func (s *Service) UpdateBoard(ctx context.Context, id pgtype.UUID, b domain.Boar
 }
 
 func (s *Service) ReorderBoard(ctx context.Context, id pgtype.UUID, position int32) (domain.BoardModel, error) {
-	board, err := s.repo.ReorderBoard(ctx, repository.ReorderBoardParams{
+	board, err := s.Repo.ReorderBoard(ctx, repository.ReorderBoardParams{
 		ID:       id,
 		Position: position,
 	})
@@ -116,7 +144,7 @@ func (s *Service) ReorderBoard(ctx context.Context, id pgtype.UUID, position int
 }
 
 func (s *Service) DeleteBoard(ctx context.Context, id pgtype.UUID) error {
-	_, err := s.repo.DeleteBoard(ctx, id)
+	_, err := s.Repo.DeleteBoard(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrBoardNotFound
