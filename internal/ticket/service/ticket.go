@@ -8,6 +8,7 @@ import (
 	"github.com/dimasbaguspm/fluxis/internal/ticket/repository"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
+	"github.com/dimasbaguspm/fluxis/pkg/syncx"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -173,15 +174,39 @@ func (s *Service) UpdateTicket(ctx context.Context, id pgtype.UUID, p domain.Tic
 }
 
 func (s *Service) MoveTicketToBoard(ctx context.Context, id pgtype.UUID, p domain.TicketBoardMoveModel) (domain.TicketModel, error) {
-	// Validate board exists
-	if _, err := s.Board.GetBoard(ctx, p.BoardID); err != nil {
-		return domain.TicketModel{}, fmt.Errorf("validate board: %w", err)
+	var board domain.BoardModel
+	var boardColumn domain.BoardColumnModel
+
+	err := syncx.Run(ctx,
+		func(ctx context.Context) error {
+			b, err := s.Board.GetBoard(ctx, p.BoardID)
+			if err != nil {
+				return fmt.Errorf("validate board: %w", err)
+			}
+			board = b
+			return nil
+		},
+		func(ctx context.Context) error {
+			bc, err := s.Board.GetBoardColumn(ctx, p.BoardColumnID)
+			if err != nil {
+				return fmt.Errorf("validate board column: %w", err)
+			}
+			boardColumn = bc
+			return nil
+		},
+	)
+	if err != nil {
+		return domain.TicketModel{}, err
+	}
+
+	if boardColumn.BoardID != board.ID {
+		return domain.TicketModel{}, httpx.BadRequest("board column does not belong to the board")
 	}
 
 	ticket, err := s.Repo.UpdateTicketBoard(ctx, repository.UpdateTicketBoardParams{
 		ID:            id,
-		BoardID:       p.BoardID,
-		BoardColumnID: p.BoardColumnID,
+		BoardID:       board.ID,
+		BoardColumnID: boardColumn.ID,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -214,18 +239,39 @@ func (s *Service) MoveTicketToSprint(ctx context.Context, id pgtype.UUID, sprint
 }
 
 func (s *Service) MoveTicketToBoardColumn(ctx context.Context, id pgtype.UUID, p domain.TicketBoardMoveModel) (domain.TicketModel, error) {
-	// Validate board exists
-	if _, err := s.Board.GetBoard(ctx, p.BoardID); err != nil {
-		return domain.TicketModel{}, fmt.Errorf("validate board: %w", err)
+	var board domain.BoardModel
+	var boardColumn domain.BoardColumnModel
+
+	err := syncx.Run(ctx,
+		func(ctx context.Context) error {
+			b, err := s.Board.GetBoard(ctx, p.BoardID)
+			if err != nil {
+				return fmt.Errorf("validate board: %w", err)
+			}
+			board = b
+			return nil
+		},
+		func(ctx context.Context) error {
+			bc, err := s.Board.GetBoardColumn(ctx, p.BoardColumnID)
+			if err != nil {
+				return fmt.Errorf("validate board column: %w", err)
+			}
+			boardColumn = bc
+			return nil
+		},
+	)
+	if err != nil {
+		return domain.TicketModel{}, err
 	}
 
-	// Validate board column exists (by fetching the ticket and checking the column is in the board)
-	// This is implicitly validated by the database constraint
+	if boardColumn.BoardID != board.ID {
+		return domain.TicketModel{}, httpx.BadRequest("board column does not belong to the board")
+	}
 
 	ticket, err := s.Repo.UpdateTicketBoard(ctx, repository.UpdateTicketBoardParams{
 		ID:            id,
-		BoardID:       p.BoardID,
-		BoardColumnID: p.BoardColumnID,
+		BoardID:       board.ID,
+		BoardColumnID: boardColumn.ID,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

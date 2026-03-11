@@ -58,8 +58,8 @@ type TicketUpdateModel struct {
 }
 
 type TicketBoardMoveModel struct {
-	BoardID       pgtype.UUID `json:"boardId" validate:"required,uuid4"`
-	BoardColumnID pgtype.UUID `json:"boardColumnId" validate:"required,uuid4"`
+	BoardID       pgtype.UUID `json:"boardId" validate:"required"`
+	BoardColumnID pgtype.UUID `json:"boardColumnId" validate:"required"`
 }
 
 type TicketReader interface {

@@ -55,6 +55,7 @@ type BoardColumnUpdateModel struct {
 type BoardReader interface {
 	GetBoard(ctx context.Context, id pgtype.UUID) (BoardModel, error)
 	ListBoardsBySprint(ctx context.Context, sprintID pgtype.UUID) ([]BoardModel, error)
+	GetBoardColumn(ctx context.Context, id pgtype.UUID) (BoardColumnModel, error)
 }
 
 type BoardWriter interface {
