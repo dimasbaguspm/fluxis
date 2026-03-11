@@ -11,8 +11,8 @@ func TestProjects_Create_Success(t *testing.T) {
 	// Create org first
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -24,10 +24,10 @@ func TestProjects_Create_Success(t *testing.T) {
 	// Create project
 	projectKey := randomProjectKey()
 	projectName := "Test Project " + randomString(8)
-	statusCode, resp := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, map[string]string{
-		"key":        projectKey,
-		"name":       projectName,
-		"visibility": "private",
+	statusCode, resp := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+		Key:        projectKey,
+		Name:       projectName,
+		Visibility: "private",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated {
@@ -58,10 +58,10 @@ func TestProjects_Create_Success(t *testing.T) {
 func TestProjects_Create_Unauthenticated(t *testing.T) {
 	orgID := "550e8400-e29b-41d4-a716-446655440000"
 
-	statusCode, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, map[string]string{
-		"key":        randomProjectKey(),
-		"name":       "Test Project",
-		"visibility": "private",
+	statusCode, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+		Key:        randomProjectKey(),
+		Name:       "Test Project",
+		Visibility: "private",
 	}, "")
 
 	if statusCode != http.StatusUnauthorized {
@@ -72,10 +72,10 @@ func TestProjects_Create_Unauthenticated(t *testing.T) {
 func TestProjects_Create_MissingOrgId(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, _ := do[domain.ProjectModel](t, "POST", "/projects", map[string]string{
-		"key":        randomProjectKey(),
-		"name":       "Test Project",
-		"visibility": "private",
+	statusCode, _ := do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		Key:        randomProjectKey(),
+		Name:       "Test Project",
+		Visibility: "private",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusBadRequest {
@@ -87,8 +87,8 @@ func TestProjects_Create_DuplicateKey(t *testing.T) {
 	// Create org and first project
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -102,10 +102,10 @@ func TestProjects_Create_DuplicateKey(t *testing.T) {
 	createProject(t, orgID, tokens.AccessToken, projectKey, "Project 1", "private")
 
 	// Try to create another project with the same key
-	statusCode, _ = do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, map[string]string{
-		"key":        projectKey,
-		"name":       "Project 2",
-		"visibility": "private",
+	statusCode, _ = do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+		Key:        projectKey,
+		Name:       "Project 2",
+		Visibility: "private",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusConflict {
@@ -117,8 +117,8 @@ func TestProjects_List_ByOrg(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	// Create org
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -151,8 +151,8 @@ func TestProjects_GetByID_Success(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	// Create org and project
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -207,8 +207,8 @@ func TestProjects_Update_Success(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	// Create org and project
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -221,9 +221,9 @@ func TestProjects_Update_Success(t *testing.T) {
 
 	// Update the project
 	updatedName := "Updated Name " + randomString(8)
-	statusCode, resp := do[domain.ProjectModel](t, "PATCH", "/projects/"+projectID, map[string]string{
-		"name":        updatedName,
-		"description": "New description",
+	statusCode, resp := do[domain.ProjectModel](t, "PATCH", "/projects/"+projectID, domain.ProjectUpdateModel{
+		Name:        updatedName,
+		Description: "New description",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
@@ -243,8 +243,8 @@ func TestProjects_UpdateVisibility_Success(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	// Create org and project
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -256,8 +256,8 @@ func TestProjects_UpdateVisibility_Success(t *testing.T) {
 	projectID := uuidToString(projResp.ID)
 
 	// Update visibility to public
-	statusCode, resp := do[domain.ProjectModel](t, "PATCH", "/projects/"+projectID+"/visibility", map[string]string{
-		"visibility": "public",
+	statusCode, resp := do[domain.ProjectModel](t, "PATCH", "/projects/"+projectID+"/visibility", domain.ProjectVisibilityModel{
+		Visibility: "public",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
@@ -273,8 +273,8 @@ func TestProjects_UpdateVisibility_InvalidValue(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	// Create org and project
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -286,8 +286,8 @@ func TestProjects_UpdateVisibility_InvalidValue(t *testing.T) {
 	projectID := uuidToString(projResp.ID)
 
 	// Try to update with invalid visibility
-	statusCode, _ = do[domain.ProjectModel](t, "PATCH", "/projects/"+projectID+"/visibility", map[string]string{
-		"visibility": "protected",
+	statusCode, _ = do[domain.ProjectModel](t, "PATCH", "/projects/"+projectID+"/visibility", domain.ProjectVisibilityModel{
+		Visibility: "protected",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusBadRequest {
@@ -299,8 +299,8 @@ func TestProjects_Delete_Success(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	// Create org and project
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -330,8 +330,8 @@ func TestProjects_Create_WithDescription(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	// Create org
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -342,11 +342,11 @@ func TestProjects_Create_WithDescription(t *testing.T) {
 
 	// Create project with description
 	description := "This is a test project description"
-	statusCode, resp := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, map[string]string{
-		"key":         randomProjectKey(),
-		"name":        "Project with Desc",
-		"description": description,
-		"visibility":  "public",
+	statusCode, resp := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+		Key:         randomProjectKey(),
+		Name:        "Project with Desc",
+		Description: description,
+		Visibility:  "public",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || resp.Data == nil {

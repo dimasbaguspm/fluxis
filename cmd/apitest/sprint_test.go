@@ -11,8 +11,8 @@ func TestSprints_Create_Success(t *testing.T) {
 	// Create org and project first
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -25,8 +25,8 @@ func TestSprints_Create_Success(t *testing.T) {
 
 	// Create sprint
 	sprintName := randomSprintName()
-	statusCode, resp := do[domain.SprintModel](t, "POST", "/sprints?projectId="+projectID, map[string]string{
-		"name": sprintName,
+	statusCode, resp := do[domain.SprintModel](t, "POST", "/sprints?projectId="+projectID, domain.SprintCreateModel{
+		Name: &sprintName,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated {
@@ -69,9 +69,9 @@ func TestSprints_Create_WithGoal(t *testing.T) {
 	// Create sprint with goal
 	sprintName := randomSprintName()
 	goal := "Complete user authentication feature"
-	statusCode, resp := do[domain.SprintModel](t, "POST", "/sprints?projectId="+projectID, map[string]string{
-		"name": sprintName,
-		"goal": goal,
+	statusCode, resp := do[domain.SprintModel](t, "POST", "/sprints?projectId="+projectID, domain.SprintCreateModel{
+		Name: &sprintName,
+		Goal: &goal,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || resp.Data == nil {
@@ -86,8 +86,9 @@ func TestSprints_Create_WithGoal(t *testing.T) {
 func TestSprints_Create_Unauthenticated(t *testing.T) {
 	projectID := "550e8400-e29b-41d4-a716-446655440000"
 
-	statusCode, _ := do[domain.SprintModel](t, "POST", "/sprints?projectId="+projectID, map[string]string{
-		"name": "Test Sprint",
+	name := "Test Sprint"
+	statusCode, _ := do[domain.SprintModel](t, "POST", "/sprints?projectId="+projectID, domain.SprintCreateModel{
+		Name: &name,
 	}, "")
 
 	if statusCode != http.StatusUnauthorized {
@@ -98,8 +99,9 @@ func TestSprints_Create_Unauthenticated(t *testing.T) {
 func TestSprints_Create_MissingProjectId(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, _ := do[domain.SprintModel](t, "POST", "/sprints", map[string]string{
-		"name": "Test Sprint",
+	name := "Test Sprint"
+	statusCode, _ := do[domain.SprintModel](t, "POST", "/sprints", domain.SprintCreateModel{
+		Name: &name,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusBadRequest {
@@ -147,8 +149,8 @@ func TestSprints_GetByID_Success(t *testing.T) {
 	// Create org, project, and sprint
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -205,8 +207,8 @@ func TestSprints_Update_Success(t *testing.T) {
 	// Create org, project, and sprint
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -223,9 +225,9 @@ func TestSprints_Update_Success(t *testing.T) {
 	// Update the sprint
 	updatedName := "Updated Sprint Name " + randomString(4)
 	updatedGoal := "New sprint goal"
-	statusCode, resp := do[domain.SprintModel](t, "PATCH", "/sprints/"+sprintID, map[string]string{
-		"name": updatedName,
-		"goal": updatedGoal,
+	statusCode, resp := do[domain.SprintModel](t, "PATCH", "/sprints/"+sprintID, domain.SprintUpdateModel{
+		Name: &updatedName,
+		Goal: &updatedGoal,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
@@ -245,8 +247,8 @@ func TestSprints_Start_Success(t *testing.T) {
 	// Create org, project, and sprint
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -280,8 +282,8 @@ func TestSprints_Complete_Success(t *testing.T) {
 	// Create org, project, and sprint
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -318,8 +320,8 @@ func TestSprints_Update_PartialFields(t *testing.T) {
 	// Create org, project, and sprint
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -336,8 +338,8 @@ func TestSprints_Update_PartialFields(t *testing.T) {
 
 	// Update only the goal (name should remain unchanged)
 	updatedGoal := "Only goal changed"
-	statusCode, resp := do[domain.SprintModel](t, "PATCH", "/sprints/"+sprintID, map[string]string{
-		"goal": updatedGoal,
+	statusCode, resp := do[domain.SprintModel](t, "PATCH", "/sprints/"+sprintID, domain.SprintUpdateModel{
+		Goal: &updatedGoal,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {

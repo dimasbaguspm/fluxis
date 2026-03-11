@@ -28,8 +28,8 @@ func TestBoards_Create_Success(t *testing.T) {
 
 	// Create board
 	boardName := randomBoardName()
-	statusCode, resp := do[domain.BoardModel](t, "POST", "/boards?sprintId="+sprintID, map[string]string{
-		"name": boardName,
+	statusCode, resp := do[domain.BoardModel](t, "POST", "/boards?sprintId="+sprintID, domain.BoardCreateModel{
+		Name: &boardName,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated {
@@ -56,8 +56,9 @@ func TestBoards_Create_Success(t *testing.T) {
 func TestBoards_Create_Unauthenticated(t *testing.T) {
 	sprintID := "550e8400-e29b-41d4-a716-446655440000"
 
-	statusCode, _ := do[domain.BoardModel](t, "POST", "/boards?sprintId="+sprintID, map[string]string{
-		"name": "Test Board",
+	name := "Test Board"
+	statusCode, _ := do[domain.BoardModel](t, "POST", "/boards?sprintId="+sprintID, domain.BoardCreateModel{
+		Name: &name,
 	}, "")
 
 	if statusCode != http.StatusUnauthorized {
@@ -68,8 +69,9 @@ func TestBoards_Create_Unauthenticated(t *testing.T) {
 func TestBoards_Create_MissingSprintId(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, _ := do[domain.BoardModel](t, "POST", "/boards", map[string]string{
-		"name": "Test Board",
+	name := "Test Board"
+	statusCode, _ := do[domain.BoardModel](t, "POST", "/boards", domain.BoardCreateModel{
+		Name: &name,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusBadRequest {
@@ -105,8 +107,8 @@ func TestBoards_List_BySprint(t *testing.T) {
 	// Create org, project, sprint, and boards
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -143,8 +145,8 @@ func TestBoards_GetByID_Success(t *testing.T) {
 	// Create org, project, sprint, and board
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -203,8 +205,8 @@ func TestBoards_Update_Success(t *testing.T) {
 	// Create org, project, sprint, and board
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -222,8 +224,8 @@ func TestBoards_Update_Success(t *testing.T) {
 
 	// Update the board
 	updatedName := "Updated Board Name " + randomString(4)
-	statusCode, resp := do[domain.BoardModel](t, "PATCH", "/boards/"+boardID, map[string]string{
-		"name": updatedName,
+	statusCode, resp := do[domain.BoardModel](t, "PATCH", "/boards/"+boardID, domain.BoardUpdateModel{
+		Name: &updatedName,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
@@ -239,8 +241,8 @@ func TestBoards_Reorder_Success(t *testing.T) {
 	// Create org, project, sprint, and boards
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -283,8 +285,8 @@ func TestBoards_Delete_Success(t *testing.T) {
 	// Create org, project, sprint, and board
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -330,8 +332,8 @@ func TestBoards_Create_MultipleInSprint_AutoPosition(t *testing.T) {
 	// Create org, project, and sprint
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {

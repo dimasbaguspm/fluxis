@@ -30,6 +30,12 @@ func uuidToString(u pgtype.UUID) string {
 	return string(bytes[1 : len(bytes)-1])
 }
 
+func stringToUUID(s string) pgtype.UUID {
+	var u pgtype.UUID
+	u.Scan(s)
+	return u
+}
+
 // Generic request/response helper
 func do[T any](tb testing.TB, method, path string, body interface{}, token string) (int, apiResponse[T]) {
 	var bodyReader io.Reader
@@ -76,10 +82,12 @@ func do[T any](tb testing.TB, method, path string, body interface{}, token strin
 
 // Auth helpers
 func register(tb testing.TB, email, displayName, password string) domain.AuthModel {
-	statusCode, resp := do[domain.AuthModel](tb, "POST", "/auth/register", map[string]string{
-		"email":       email,
-		"displayName": displayName,
-		"password":    password,
+	statusCode, resp := do[domain.AuthModel](tb, "POST", "/auth/register", domain.AuthRegisterModel{
+		UserCreateModel: domain.UserCreateModel{
+			Email:       email,
+			DisplayName: displayName,
+			Password:    password,
+		},
 	}, "")
 
 	if statusCode != http.StatusCreated {
@@ -104,107 +112,4 @@ func randomString(n int) string {
 
 func randomEmail() string {
 	return fmt.Sprintf("user_%s@example.com", randomString(8))
-}
-
-// Project helpers
-func createProject(tb testing.TB, orgID string, token string, key, name, visibility string) domain.ProjectModel {
-	statusCode, resp := do[domain.ProjectModel](tb, "POST", "/projects?orgId="+orgID, map[string]string{
-		"key":        key,
-		"name":       name,
-		"visibility": visibility,
-	}, token)
-
-	if statusCode != http.StatusCreated {
-		tb.Fatalf("create project failed: got status %d, error: %v", statusCode, resp.Error)
-	}
-
-	if resp.Data == nil {
-		tb.Fatalf("create project returned nil data")
-	}
-
-	return *resp.Data
-}
-
-// Generate unique project key with max 10 chars
-func randomProjectKey() string {
-	return "p" + randomString(4)
-}
-
-// Sprint helpers
-func createSprint(tb testing.TB, projectID string, token string, name string) domain.SprintModel {
-	statusCode, resp := do[domain.SprintModel](tb, "POST", "/sprints?projectId="+projectID, map[string]string{
-		"name": name,
-	}, token)
-
-	if statusCode != http.StatusCreated {
-		tb.Fatalf("create sprint failed: got status %d, error: %v", statusCode, resp.Error)
-	}
-
-	if resp.Data == nil {
-		tb.Fatalf("create sprint returned nil data")
-	}
-
-	return *resp.Data
-}
-
-func randomSprintName() string {
-	return "Sprint " + randomString(4)
-}
-
-// Board helpers
-func createBoard(tb testing.TB, sprintID string, token string, name string) domain.BoardModel {
-	statusCode, resp := do[domain.BoardModel](tb, "POST", "/boards?sprintId="+sprintID, map[string]string{
-		"name": name,
-	}, token)
-
-	if statusCode != http.StatusCreated {
-		tb.Fatalf("create board failed: got status %d, error: %v", statusCode, resp.Error)
-	}
-
-	if resp.Data == nil {
-		tb.Fatalf("create board returned nil data")
-	}
-
-	return *resp.Data
-}
-
-func randomBoardName() string {
-	return "Board " + randomString(4)
-}
-
-// Ticket helpers
-func createTicket(tb testing.TB, projectID string, token string, title, ticketType, priority string) domain.TicketModel {
-	statusCode, resp := do[domain.TicketModel](tb, "POST", "/tickets?projectId="+projectID, map[string]string{
-		"title":    title,
-		"type":     ticketType,
-		"priority": priority,
-	}, token)
-
-	if statusCode != http.StatusCreated {
-		tb.Fatalf("create ticket failed: got status %d, error: %v", statusCode, resp.Error)
-	}
-
-	if resp.Data == nil {
-		tb.Fatalf("create ticket returned nil data")
-	}
-
-	return *resp.Data
-}
-
-func getTicket(tb testing.TB, ticketID string, token string) domain.TicketModel {
-	statusCode, resp := do[domain.TicketModel](tb, "GET", "/tickets/"+ticketID, nil, token)
-
-	if statusCode != http.StatusOK {
-		tb.Fatalf("get ticket failed: got status %d, error: %v", statusCode, resp.Error)
-	}
-
-	if resp.Data == nil {
-		tb.Fatalf("get ticket returned nil data")
-	}
-
-	return *resp.Data
-}
-
-func randomTicketTitle() string {
-	return "Ticket " + randomString(8)
 }

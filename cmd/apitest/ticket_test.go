@@ -8,7 +8,6 @@ import (
 )
 
 func TestTickets_Create_Success(t *testing.T) {
-	// Setup: Create user, org, project
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
@@ -25,10 +24,10 @@ func TestTickets_Create_Success(t *testing.T) {
 
 	// Create ticket
 	title := randomTicketTitle()
-	statusCode, resp := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, map[string]string{
-		"title":    title,
-		"type":     "story",
-		"priority": "high",
+	statusCode, resp := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
+		Title:    title,
+		Type:     "story",
+		Priority: "high",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated {
@@ -63,7 +62,6 @@ func TestTickets_Create_Success(t *testing.T) {
 }
 
 func TestTickets_Get_Success(t *testing.T) {
-	// Setup
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
@@ -103,11 +101,10 @@ func TestTickets_Get_Success(t *testing.T) {
 }
 
 func TestTickets_List_Success(t *testing.T) {
-	// Setup
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -140,11 +137,10 @@ func TestTickets_List_Success(t *testing.T) {
 }
 
 func TestTickets_Update_Success(t *testing.T) {
-	// Setup
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -161,9 +157,9 @@ func TestTickets_Update_Success(t *testing.T) {
 
 	// Update ticket
 	newTitle := "Updated Title " + randomString(8)
-	statusCode, resp := do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID, map[string]string{
-		"title":    newTitle,
-		"priority": "critical",
+	statusCode, resp := do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID, domain.TicketUpdateModel{
+		Title:    newTitle,
+		Priority: "critical",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
@@ -184,11 +180,10 @@ func TestTickets_Update_Success(t *testing.T) {
 }
 
 func TestTickets_MoveToSprint_Success(t *testing.T) {
-	// Setup
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -223,11 +218,10 @@ func TestTickets_MoveToSprint_Success(t *testing.T) {
 }
 
 func TestTickets_Delete_Success(t *testing.T) {
-	// Setup
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -260,10 +254,10 @@ func TestTickets_Delete_Success(t *testing.T) {
 func TestTickets_Create_Unauthenticated(t *testing.T) {
 	projectID := "550e8400-e29b-41d4-a716-446655440000"
 
-	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, map[string]string{
-		"title":    "Test Ticket",
-		"type":     "story",
-		"priority": "medium",
+	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
+		Title:    "Test Ticket",
+		Type:     "story",
+		Priority: "medium",
 	}, "")
 
 	if statusCode != http.StatusUnauthorized {
@@ -274,10 +268,10 @@ func TestTickets_Create_Unauthenticated(t *testing.T) {
 func TestTickets_Create_InvalidProjectId(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId=invalid-uuid", map[string]string{
-		"title":    "Test Ticket",
-		"type":     "story",
-		"priority": "medium",
+	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId=invalid-uuid", domain.TicketCreateModel{
+		Title:    "Test Ticket",
+		Type:     "story",
+		Priority: "medium",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusBadRequest {
@@ -288,8 +282,8 @@ func TestTickets_Create_InvalidProjectId(t *testing.T) {
 func TestTickets_Create_InvalidTicketType(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	status, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	status, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if status != http.StatusCreated || orgResp.Data == nil {
@@ -300,13 +294,189 @@ func TestTickets_Create_InvalidTicketType(t *testing.T) {
 	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
 	projectID := uuidToString(project.ID)
 
-	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, map[string]string{
-		"title":    "Test Ticket",
-		"type":     "invalid",
-		"priority": "medium",
+	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
+		Title:    "Test Ticket",
+		Type:     "invalid",
+		Priority: "medium",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusBadRequest {
 		t.Fatalf("expected status 400, got %d", statusCode)
+	}
+}
+
+func TestTickets_MoveToBoard_Success(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
+	projectID := uuidToString(project.ID)
+
+	sprint := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	sprintID := uuidToString(sprint.ID)
+
+	board := createBoard(t, sprintID, tokens.AccessToken, randomBoardName())
+	boardID := uuidToString(board.ID)
+
+	boardColumn := createBoardColumn(t, boardID, tokens.AccessToken, randomBoardColumnName(), 0)
+	boardColumnID := uuidToString(boardColumn.ID)
+
+	ticket := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "story", "medium")
+	ticketID := uuidToString(ticket.ID)
+
+	statusCode, resp := do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID+"/move-to-board", domain.TicketBoardMoveModel{
+		BoardID:       stringToUUID(boardID),
+		BoardColumnID: stringToUUID(boardColumnID),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil {
+		t.Fatal("expected ticket data")
+	}
+
+	if uuidToString(resp.Data.BoardID) != boardID {
+		t.Fatalf("expected board ID '%s', got '%s'", boardID, uuidToString(resp.Data.BoardID))
+	}
+
+	if uuidToString(resp.Data.BoardColumnID) != boardColumnID {
+		t.Fatalf("expected board column ID '%s', got '%s'", boardColumnID, uuidToString(resp.Data.BoardColumnID))
+	}
+}
+
+func TestTickets_MoveToBoard_InvalidBoardColumn(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
+	projectID := uuidToString(project.ID)
+
+	// Create sprint, board, and ticket
+	sprint := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	sprintID := uuidToString(sprint.ID)
+
+	board := createBoard(t, sprintID, tokens.AccessToken, randomBoardName())
+	boardID := uuidToString(board.ID)
+
+	ticket := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "story", "medium")
+	ticketID := uuidToString(ticket.ID)
+
+	// Try to move ticket to board with invalid board column
+	invalidColumnID := "550e8400-e29b-41d4-a716-446655440000"
+	statusCode, resp := do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID+"/move-to-board", domain.TicketBoardMoveModel{
+		BoardID:       stringToUUID(boardID),
+		BoardColumnID: stringToUUID(invalidColumnID),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d: %v", statusCode, resp.Error)
+	}
+}
+
+func TestTickets_MoveToBoardColumn_Success(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
+	projectID := uuidToString(project.ID)
+
+	// Create sprint, board, board column, and ticket
+	sprint := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	sprintID := uuidToString(sprint.ID)
+
+	board := createBoard(t, sprintID, tokens.AccessToken, randomBoardName())
+	boardID := uuidToString(board.ID)
+
+	boardColumn := createBoardColumn(t, boardID, tokens.AccessToken, randomBoardColumnName(), 0)
+	boardColumnID := uuidToString(boardColumn.ID)
+
+	ticket := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "story", "medium")
+	ticketID := uuidToString(ticket.ID)
+
+	// Move ticket to board column
+	statusCode, resp := do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID+"/move-board-column", domain.TicketBoardMoveModel{
+		BoardID:       stringToUUID(boardID),
+		BoardColumnID: stringToUUID(boardColumnID),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil {
+		t.Fatal("expected ticket data")
+	}
+
+	if uuidToString(resp.Data.BoardColumnID) != boardColumnID {
+		t.Fatalf("expected board column ID '%s', got '%s'", boardColumnID, uuidToString(resp.Data.BoardColumnID))
+	}
+}
+
+func TestTickets_MoveToBoardColumn_MismatchedColumn(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
+	projectID := uuidToString(project.ID)
+
+	// Create sprint, boards, board columns, and ticket
+	sprint := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	sprintID := uuidToString(sprint.ID)
+
+	board1 := createBoard(t, sprintID, tokens.AccessToken, randomBoardName())
+	boardID1 := uuidToString(board1.ID)
+
+	board2 := createBoard(t, sprintID, tokens.AccessToken, randomBoardName())
+	boardID2 := uuidToString(board2.ID)
+
+	// Create column in board2
+	boardColumn2 := createBoardColumn(t, boardID2, tokens.AccessToken, randomBoardColumnName(), 0)
+	boardColumnID2 := uuidToString(boardColumn2.ID)
+
+	ticket := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "story", "medium")
+	ticketID := uuidToString(ticket.ID)
+
+	// Try to move ticket to board1 with column from board2
+	statusCode, resp := do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID+"/move-board-column", domain.TicketBoardMoveModel{
+		BoardID:       stringToUUID(boardID1),
+		BoardColumnID: stringToUUID(boardColumnID2),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusBadRequest {
+		t.Fatalf("expected status 400 for mismatched column, got %d: %v", statusCode, resp.Error)
 	}
 }

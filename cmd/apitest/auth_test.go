@@ -12,10 +12,12 @@ func TestAuth_Register_Success(t *testing.T) {
 	displayName := "Test User"
 	password := "SecurePassword123!"
 
-	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/register", map[string]string{
-		"email":       email,
-		"displayName": displayName,
-		"password":    password,
+	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/register", domain.AuthRegisterModel{
+		UserCreateModel: domain.UserCreateModel{
+			Email:       email,
+			DisplayName: displayName,
+			Password:    password,
+		},
 	}, "")
 
 	if statusCode != http.StatusCreated {
@@ -44,10 +46,12 @@ func TestAuth_Register_DuplicateEmail(t *testing.T) {
 	register(t, email, displayName, password)
 
 	// Second registration with same email should fail
-	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/register", map[string]string{
-		"email":       email,
-		"displayName": "Another User",
-		"password":    password,
+	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/register", domain.AuthRegisterModel{
+		UserCreateModel: domain.UserCreateModel{
+			Email:       email,
+			DisplayName: "Another User",
+			Password:    password,
+		},
 	}, "")
 
 	if statusCode != http.StatusConflict {
@@ -60,10 +64,12 @@ func TestAuth_Register_DuplicateEmail(t *testing.T) {
 }
 
 func TestAuth_Register_InvalidEmail(t *testing.T) {
-	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/register", map[string]string{
-		"email":       "not-an-email",
-		"displayName": "Test User",
-		"password":    "SecurePassword123!",
+	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/register", domain.AuthRegisterModel{
+		UserCreateModel: domain.UserCreateModel{
+			Email:       "not-an-email",
+			DisplayName: "Test User",
+			Password:    "SecurePassword123!",
+		},
 	}, "")
 
 	if statusCode != http.StatusBadRequest {
@@ -76,9 +82,12 @@ func TestAuth_Register_InvalidEmail(t *testing.T) {
 }
 
 func TestAuth_Register_MissingPassword(t *testing.T) {
-	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/register", map[string]string{
-		"email":       randomEmail(),
-		"displayName": "Test User",
+	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/register", domain.AuthRegisterModel{
+		UserCreateModel: domain.UserCreateModel{
+			Email:       randomEmail(),
+			DisplayName: "Test User",
+			Password:    "",
+		},
 	}, "")
 
 	if statusCode != http.StatusBadRequest {
@@ -97,9 +106,9 @@ func TestAuth_Login_Success(t *testing.T) {
 
 	register(t, email, displayName, password)
 
-	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/login", map[string]string{
-		"email":    email,
-		"password": password,
+	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/login", domain.AuthLoginModel{
+		Email:    email,
+		Password: password,
 	}, "")
 
 	if statusCode != http.StatusOK {
@@ -118,9 +127,9 @@ func TestAuth_Login_WrongPassword(t *testing.T) {
 
 	register(t, email, displayName, password)
 
-	statusCode, _ := do[domain.AuthModel](t, "POST", "/auth/login", map[string]string{
-		"email":    email,
-		"password": "WrongPassword123!",
+	statusCode, _ := do[domain.AuthModel](t, "POST", "/auth/login", domain.AuthLoginModel{
+		Email:    email,
+		Password: "WrongPassword123!",
 	}, "")
 
 	if statusCode != http.StatusUnauthorized {
@@ -129,9 +138,9 @@ func TestAuth_Login_WrongPassword(t *testing.T) {
 }
 
 func TestAuth_Login_NonExistentUser(t *testing.T) {
-	statusCode, _ := do[domain.AuthModel](t, "POST", "/auth/login", map[string]string{
-		"email":    randomEmail(),
-		"password": "SomePassword123!",
+	statusCode, _ := do[domain.AuthModel](t, "POST", "/auth/login", domain.AuthLoginModel{
+		Email:    randomEmail(),
+		Password: "SomePassword123!",
 	}, "")
 
 	if statusCode != http.StatusUnauthorized {
@@ -146,9 +155,9 @@ func TestAuth_Refresh_Success(t *testing.T) {
 
 	tokens := register(t, email, displayName, password)
 
-	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/refresh", map[string]string{
-		"accessToken":  tokens.AccessToken,
-		"refreshToken": tokens.RefreshToken,
+	statusCode, resp := do[domain.AuthModel](t, "POST", "/auth/refresh", domain.AuthRefreshModel{
+		AccessToken:  tokens.AccessToken,
+		RefreshToken: tokens.RefreshToken,
 	}, "")
 
 	if statusCode != http.StatusOK {
@@ -161,9 +170,9 @@ func TestAuth_Refresh_Success(t *testing.T) {
 }
 
 func TestAuth_Refresh_InvalidToken(t *testing.T) {
-	statusCode, _ := do[domain.AuthModel](t, "POST", "/auth/refresh", map[string]string{
-		"accessToken":  "invalid.token.here",
-		"refreshToken": "invalid.refresh.here",
+	statusCode, _ := do[domain.AuthModel](t, "POST", "/auth/refresh", domain.AuthRefreshModel{
+		AccessToken:  "invalid.token.here",
+		RefreshToken: "invalid.refresh.here",
 	}, "")
 
 	if statusCode != http.StatusUnauthorized {

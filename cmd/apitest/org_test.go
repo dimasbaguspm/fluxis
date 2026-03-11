@@ -11,8 +11,8 @@ func TestOrgs_Create_Success(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	orgName := "Test Organization " + randomString(8)
-	statusCode, resp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": orgName,
+	statusCode, resp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: orgName,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated {
@@ -37,8 +37,8 @@ func TestOrgs_Create_Success(t *testing.T) {
 }
 
 func TestOrgs_Create_Unauthenticated(t *testing.T) {
-	statusCode, _ := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Organization " + randomString(8),
+	statusCode, _ := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Organization " + randomString(8),
 	}, "")
 
 	if statusCode != http.StatusUnauthorized {
@@ -60,8 +60,8 @@ func TestOrgs_List(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	// Create an org first
-	do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	statusCode, resp := do[[]domain.OrganisationModel](t, "GET", "/orgs", nil, tokens.AccessToken)
@@ -83,8 +83,8 @@ func TestOrgs_GetByID_Success(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	// Create an org
-	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Organization " + randomString(8),
+	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Organization " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || createResp.Data == nil {
@@ -131,8 +131,8 @@ func TestOrgs_Update_Success(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	// Create an org
-	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Original Name " + randomString(8),
+	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Original Name " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || createResp.Data == nil {
@@ -143,8 +143,8 @@ func TestOrgs_Update_Success(t *testing.T) {
 
 	// Update the org
 	updatedName := "Updated Name " + randomString(8)
-	statusCode, resp := do[domain.OrganisationModel](t, "PATCH", "/orgs/"+uuidToString(orgID), map[string]string{
-		"name": updatedName,
+	statusCode, resp := do[domain.OrganisationModel](t, "PATCH", "/orgs/"+uuidToString(orgID), domain.OrganisationUpdateModel{
+		Name: updatedName,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
@@ -160,8 +160,8 @@ func TestOrgs_Delete_Success(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	// Create an org
-	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Organization " + randomString(8),
+	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Organization " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || createResp.Data == nil {
@@ -185,8 +185,8 @@ func TestOrgs_Members_AddAndList(t *testing.T) {
 	tokens2 := register(t, email2, "User Two", "SecurePassword123!")
 
 	// User1 creates an org
-	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Organization " + randomString(8),
+	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Organization " + randomString(8),
 	}, tokens1.AccessToken)
 
 	if statusCode != http.StatusCreated || createResp.Data == nil {
@@ -236,8 +236,8 @@ func TestOrgs_Members_UpdateRole(t *testing.T) {
 	tokens2 := register(t, email2, "User Two", "SecurePassword123!")
 
 	// User1 creates an org
-	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Organization " + randomString(8),
+	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Organization " + randomString(8),
 	}, tokens1.AccessToken)
 
 	if statusCode != http.StatusCreated || createResp.Data == nil {
@@ -277,8 +277,8 @@ func TestOrgs_Members_Delete(t *testing.T) {
 	tokens2 := register(t, email2, "User Two", "SecurePassword123!")
 
 	// User1 creates an org
-	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Organization " + randomString(8),
+	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Organization " + randomString(8),
 	}, tokens1.AccessToken)
 
 	if statusCode != http.StatusCreated || createResp.Data == nil {
@@ -296,9 +296,9 @@ func TestOrgs_Members_Delete(t *testing.T) {
 	user2ID := userResp.Data.ID
 
 	// User1 adds User2
-	do[struct{}](t, "POST", "/orgs/"+uuidToString(orgID)+"/members", map[string]string{
-		"userId": uuidToString(user2ID),
-		"role":   "member",
+	do[struct{}](t, "POST", "/orgs/"+uuidToString(orgID)+"/members", domain.OrganisationMemberCreateModel{
+		UserId: uuidToString(user2ID),
+		Role:   "member",
 	}, tokens1.AccessToken)
 
 	// User1 removes User2
@@ -316,8 +316,8 @@ func TestOrgs_Members_InvalidRole(t *testing.T) {
 	tokens2 := register(t, email2, "User Two", "SecurePassword123!")
 
 	// User1 creates an org
-	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Organization " + randomString(8),
+	statusCode, createResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Organization " + randomString(8),
 	}, tokens1.AccessToken)
 
 	if statusCode != http.StatusCreated || createResp.Data == nil {
