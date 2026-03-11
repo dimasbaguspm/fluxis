@@ -10,8 +10,8 @@ import (
 func TestTickets_Create_Success(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -64,8 +64,8 @@ func TestTickets_Create_Success(t *testing.T) {
 func TestTickets_Get_Success(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {

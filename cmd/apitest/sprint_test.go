@@ -54,8 +54,8 @@ func TestSprints_Create_WithGoal(t *testing.T) {
 	// Create org and project
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -113,8 +113,8 @@ func TestSprints_List_ByProject(t *testing.T) {
 	// Create org, project, and sprints
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {

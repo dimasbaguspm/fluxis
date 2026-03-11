@@ -11,8 +11,8 @@ func TestBoards_Create_Success(t *testing.T) {
 	// Create org, project, and sprint first
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
@@ -82,8 +82,8 @@ func TestBoards_Create_MissingSprintId(t *testing.T) {
 func TestBoards_Create_MissingName(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
-	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", map[string]string{
-		"name": "Test Org " + randomString(8),
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || orgResp.Data == nil {
