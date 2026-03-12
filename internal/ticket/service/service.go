@@ -16,6 +16,9 @@ type Service struct {
 	Deps
 }
 
+var _ domain.TicketReader = (*Service)(nil)
+var _ domain.TicketWriter = (*Service)(nil)
+
 func New(d Deps) *Service {
 	return &Service{d}
 }

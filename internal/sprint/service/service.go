@@ -14,6 +14,9 @@ type Service struct {
 	Deps
 }
 
+var _ domain.SprintReader = (*Service)(nil)
+var _ domain.SprintWriter = (*Service)(nil)
+
 func New(d Deps) *Service {
 	return &Service{d}
 }

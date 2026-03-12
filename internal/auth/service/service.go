@@ -18,6 +18,8 @@ type Service struct {
 	Deps
 }
 
+var _ domain.AuthWrite = (*Service)(nil)
+
 type Config struct {
 	AccessTokenSecret  string        // H256
 	RefreshTokenSecret string        // H256

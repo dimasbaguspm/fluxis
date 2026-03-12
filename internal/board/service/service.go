@@ -14,6 +14,9 @@ type Service struct {
 	Deps
 }
 
+var _ domain.BoardReader = (*Service)(nil)
+var _ domain.BoardWriter = (*Service)(nil)
+
 func New(d Deps) *Service {
 	return &Service{d}
 }
