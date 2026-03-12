@@ -17,8 +17,9 @@ func (s *Service) ListMembers(ctx context.Context, orgId pgtype.UUID, q domain.O
 
 	members, err := s.Repo.ListOrgMembers(ctx, repository.ListOrgMembersParams{
 		OrgID:   orgId,
-		Column2: q.Email,
-		Column3: q.DisplayName,
+		Column2: q.UserID,
+		Column3: q.Email,
+		Column4: q.DisplayName,
 		Limit:   int32(q.PageSize),
 		Offset:  int32((q.PageNumber - 1) * q.PageSize),
 	})

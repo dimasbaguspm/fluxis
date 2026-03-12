@@ -60,17 +60,15 @@ func (s *Service) GetBoard(ctx context.Context, id pgtype.UUID) (domain.BoardMod
 func (s *Service) ListBoards(ctx context.Context, q domain.BoardsSearchModel) (domain.BoardsPagedModel, error) {
 	q.ApplyDefaults()
 
-	if _, err := s.Sprint.GetSprint(ctx, q.SprintID); err != nil {
-		return domain.BoardsPagedModel{}, fmt.Errorf("validate sprint: %w", err)
-	}
-
 	offset := int32((q.PageNumber - 1) * q.PageSize)
 	rows, err := s.Repo.ListBoardsBySprintPaged(ctx, repository.ListBoardsBySprintPagedParams{
-		SprintID: q.SprintID,
-		Column2:  q.Name,
-		Limit:    int32(q.PageSize),
-		Offset:   offset,
+		Column1: q.ID,
+		Column2: q.SprintID,
+		Column3: q.Name,
+		Limit:   int32(q.PageSize),
+		Offset:  offset,
 	})
+
 	if err != nil {
 		return domain.BoardsPagedModel{}, fmt.Errorf("list boards: %w", err)
 	}

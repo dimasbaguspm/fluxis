@@ -183,7 +183,7 @@ func (q *Queries) ListSprintsByProject(ctx context.Context, projectID pgtype.UUI
 	return items, nil
 }
 
-const listSprintsByProjectPaged = `-- name: ListSprintsByProjectPaged :many
+const listSprintsPaged = `-- name: ListSprintsPaged :many
 WITH filtered_sprints AS (
   SELECT
     id, project_id, name, goal, status, planned_started_at, planned_completed_at, started_at, completed_at, created_at, updated_at, deleted_at,
@@ -191,8 +191,10 @@ WITH filtered_sprints AS (
   FROM
     sprints
   WHERE
-    project_id = $1 AND deleted_at IS NULL
-    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+    deleted_at IS NULL
+    AND (array_length($1::uuid[], 1) IS NULL OR id = ANY($1::uuid[]))
+    AND (array_length($2::uuid[], 1) IS NULL OR project_id = ANY($2::uuid[]))
+    AND ($3::text = '' OR name ILIKE '%' || $3 || '%')
 )
 SELECT
   id, project_id, name, goal, status, planned_started_at, planned_completed_at, started_at, completed_at, created_at, updated_at, deleted_at, total_count
@@ -200,18 +202,19 @@ FROM
   filtered_sprints
 ORDER BY
   created_at DESC
-LIMIT $3
-OFFSET $4
+LIMIT $4
+OFFSET $5
 `
 
-type ListSprintsByProjectPagedParams struct {
-	ProjectID pgtype.UUID `db:"project_id" json:"project_id"`
-	Column2   string      `db:"column_2" json:"column_2"`
-	Limit     int32       `db:"limit" json:"limit"`
-	Offset    int32       `db:"offset" json:"offset"`
+type ListSprintsPagedParams struct {
+	Column1 []pgtype.UUID `db:"column_1" json:"column_1"`
+	Column2 []pgtype.UUID `db:"column_2" json:"column_2"`
+	Column3 string        `db:"column_3" json:"column_3"`
+	Limit   int32         `db:"limit" json:"limit"`
+	Offset  int32         `db:"offset" json:"offset"`
 }
 
-type ListSprintsByProjectPagedRow struct {
+type ListSprintsPagedRow struct {
 	ID                 pgtype.UUID        `db:"id" json:"id"`
 	ProjectID          pgtype.UUID        `db:"project_id" json:"project_id"`
 	Name               string             `db:"name" json:"name"`
@@ -227,10 +230,11 @@ type ListSprintsByProjectPagedRow struct {
 	TotalCount         int64              `db:"total_count" json:"total_count"`
 }
 
-func (q *Queries) ListSprintsByProjectPaged(ctx context.Context, arg ListSprintsByProjectPagedParams) ([]ListSprintsByProjectPagedRow, error) {
-	rows, err := q.db.Query(ctx, listSprintsByProjectPaged,
-		arg.ProjectID,
+func (q *Queries) ListSprintsPaged(ctx context.Context, arg ListSprintsPagedParams) ([]ListSprintsPagedRow, error) {
+	rows, err := q.db.Query(ctx, listSprintsPaged,
+		arg.Column1,
 		arg.Column2,
+		arg.Column3,
 		arg.Limit,
 		arg.Offset,
 	)
@@ -238,9 +242,9 @@ func (q *Queries) ListSprintsByProjectPaged(ctx context.Context, arg ListSprints
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListSprintsByProjectPagedRow{}
+	items := []ListSprintsPagedRow{}
 	for rows.Next() {
-		var i ListSprintsByProjectPagedRow
+		var i ListSprintsPagedRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ProjectID,

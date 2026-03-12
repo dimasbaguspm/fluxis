@@ -51,14 +51,9 @@ func (h *Handler) CreateBoard(w http.ResponseWriter, r *http.Request) {
 //	@Security		BearerAuth
 //	@Router			/boards [get]
 func (h *Handler) ListBoards(w http.ResponseWriter, r *http.Request) {
-	sprintID, err := httpx.QueryUUID(r, "sprintId")
-	if err != nil {
-		httpx.Handle(w, err)
-		return
-	}
-
 	req := domain.BoardsSearchModel{
-		SprintID:   sprintID,
+		ID:         httpx.QueryUUIDs(r, "id"),
+		SprintID:   httpx.QueryUUIDs(r, "sprintId"),
 		Name:       httpx.QueryString(r, "name"),
 		PageNumber: httpx.QueryNumber(r, "pageNumber"),
 		PageSize:   httpx.QueryNumber(r, "pageSize"),

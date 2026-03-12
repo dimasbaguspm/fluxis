@@ -27,8 +27,10 @@ WITH filtered_projects AS (
   FROM
     projects
   WHERE
-    org_id = $1 AND deleted_at IS NULL
-    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+    deleted_at IS NULL
+    AND (array_length($1::uuid[], 1) IS NULL OR org_id = ANY($1::uuid[]))
+    AND (array_length($2::uuid[], 1) IS NULL OR id = ANY($2::uuid[]))
+    AND ($3::text = '' OR name ILIKE '%' || $3 || '%')
 )
 SELECT
   id, org_id, key, name, description, visibility, created_at, updated_at, deleted_at, total_count
@@ -36,8 +38,8 @@ FROM
   filtered_projects
 ORDER BY
   created_at DESC
-LIMIT $3
-OFFSET $4;
+LIMIT $4
+OFFSET $5;
 
 -- name: UpdateProject :one
 UPDATE projects

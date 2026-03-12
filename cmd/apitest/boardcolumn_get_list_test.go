@@ -240,8 +240,80 @@ func TestBoardColumn_List_NonExistentBoard(t *testing.T) {
 	nonExistentBoardID := "550e8400-e29b-41d4-a716-446655440000"
 	statusCode, _ := do[domain.BoardColumnsPagedModel](t, "GET", "/boards/"+nonExistentBoardID+"/columns", nil, tokens.AccessToken)
 
-	if statusCode != http.StatusNotFound {
-		t.Fatalf("expected status 404, got %d", statusCode)
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", statusCode)
+	}
+}
+
+func TestBoardColumn_List_FilterByID(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
+	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, "Test Board")
+	boardID := uuidToString(board.ID)
+
+	// Create columns
+	c1 := createBoardColumn(t, boardID, tokens.AccessToken, "Column 1")
+	createBoardColumn(t, boardID, tokens.AccessToken, "Column 2")
+
+	// Filter by specific column ID
+	c1ID := uuidToString(c1.ID)
+	statusCode, resp := do[domain.BoardColumnsPagedModel](t, "GET", "/boards/"+boardID+"/columns?id="+c1ID, nil, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", statusCode)
+	}
+
+	if len(resp.Data.Items) != 1 {
+		t.Fatalf("expected 1 column, got %d", len(resp.Data.Items))
+	}
+
+	if resp.Data.Items[0].ID != c1.ID {
+		t.Fatalf("expected column %s, got %s", c1ID, uuidToString(resp.Data.Items[0].ID))
+	}
+}
+
+func TestBoardColumn_List_FilterByMultipleIDs(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
+	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, "Test Board")
+	boardID := uuidToString(board.ID)
+
+	// Create columns
+	c1 := createBoardColumn(t, boardID, tokens.AccessToken, "Column 1")
+	c2 := createBoardColumn(t, boardID, tokens.AccessToken, "Column 2")
+	createBoardColumn(t, boardID, tokens.AccessToken, "Column 3")
+
+	// Filter by multiple column IDs
+	c1ID := uuidToString(c1.ID)
+	c2ID := uuidToString(c2.ID)
+	statusCode, resp := do[domain.BoardColumnsPagedModel](t, "GET", "/boards/"+boardID+"/columns?id="+c1ID+"&id="+c2ID, nil, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", statusCode)
+	}
+
+	if len(resp.Data.Items) != 2 {
+		t.Fatalf("expected 2 columns, got %d", len(resp.Data.Items))
 	}
 }
 

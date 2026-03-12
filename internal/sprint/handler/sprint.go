@@ -44,7 +44,6 @@ func (h *Handler) CreateSprint(w http.ResponseWriter, r *http.Request) {
 //	@Description	Returns paginated sprints in a project with optional filtering
 //	@Tags			sprint
 //	@Produce		json
-//	@Param			projectId	query		string	true	"Project ID"
 //	@Param			query		query		domain.SprintsSearchModel	false	"Search parameters: name, pageNumber, pageSize"
 //	@Success		200			{object}	domain.SprintsPagedModel
 //	@Failure		400			{object}	httpx.ErrBlock
@@ -52,19 +51,15 @@ func (h *Handler) CreateSprint(w http.ResponseWriter, r *http.Request) {
 //	@Security		BearerAuth
 //	@Router			/sprints [get]
 func (h *Handler) ListSprints(w http.ResponseWriter, r *http.Request) {
-	projectID, err := httpx.QueryUUID(r, "projectId")
-	if err != nil {
-		httpx.Handle(w, err)
-		return
-	}
-
 	req := domain.SprintsSearchModel{
+		ID:         httpx.QueryUUIDs(r, "id"),
+		ProjectID:  httpx.QueryUUIDs(r, "projectId"),
 		Name:       httpx.QueryString(r, "name"),
 		PageNumber: httpx.QueryNumber(r, "pageNumber"),
 		PageSize:   httpx.QueryNumber(r, "pageSize"),
 	}
 
-	result, err := h.svc.ListSprintsByProjectPaged(r.Context(), projectID, req)
+	result, err := h.svc.ListSprintsPaged(r.Context(), req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return

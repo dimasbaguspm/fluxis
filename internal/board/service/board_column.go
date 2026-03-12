@@ -31,45 +31,18 @@ func (s *Service) GetBoardColumn(ctx context.Context, id pgtype.UUID) (domain.Bo
 	}, nil
 }
 
-func (s *Service) listBoardColumnsUnpaginated(ctx context.Context, boardID pgtype.UUID) ([]domain.BoardColumnModel, error) {
-	if _, err := s.GetBoard(ctx, boardID); err != nil {
-		return nil, fmt.Errorf("validate board: %w", err)
-	}
-
-	cols, err := s.Repo.ListBoardColumns(ctx, boardID)
-	if err != nil {
-		return nil, fmt.Errorf("list board columns: %w", err)
-	}
-
-	result := make([]domain.BoardColumnModel, 0, len(cols))
-	for _, col := range cols {
-		result = append(result, domain.BoardColumnModel{
-			ID:        col.ID,
-			BoardID:   col.BoardID,
-			Name:      col.Name,
-			Position:  col.Position,
-			CreatedAt: col.CreatedAt.Time,
-			UpdatedAt: col.UpdatedAt.Time,
-		})
-	}
-
-	return result, nil
-}
-
 func (s *Service) ListBoardColumns(ctx context.Context, q domain.BoardColumnsSearchModel) (domain.BoardColumnsPagedModel, error) {
 	q.ApplyDefaults()
 
-	if _, err := s.GetBoard(ctx, q.BoardID); err != nil {
-		return domain.BoardColumnsPagedModel{}, fmt.Errorf("validate board: %w", err)
-	}
-
 	offset := int32((q.PageNumber - 1) * q.PageSize)
 	rows, err := s.Repo.ListBoardColumnsPaged(ctx, repository.ListBoardColumnsPagedParams{
-		BoardID: q.BoardID,
-		Column2: q.Name,
+		Column1: q.ID,
+		Column2: q.BoardID,
+		Column3: q.Name,
 		Limit:   int32(q.PageSize),
 		Offset:  offset,
 	})
+
 	if err != nil {
 		return domain.BoardColumnsPagedModel{}, fmt.Errorf("list board columns: %w", err)
 	}

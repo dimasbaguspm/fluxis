@@ -35,9 +35,11 @@ type ProjectVisibilityModel struct {
 }
 
 type ProjectsSearchModel struct {
-	Name       string `json:"name"`
-	PageNumber int    `json:"pageNumber" validate:"min=1"`
-	PageSize   int    `json:"pageSize" validate:"min=1,max=100"`
+	ID         []pgtype.UUID `json:"id" validate:"omitempty,dive,uuid4"`
+	OrgID      []pgtype.UUID `json:"orgId" validate:"omitempty,dive,uuid4"`
+	Name       string        `json:"name"`
+	PageNumber int           `json:"pageNumber" validate:"omitempty,min=1"`
+	PageSize   int           `json:"pageSize" validate:"omitempty,min=1,max=100"`
 }
 
 type ProjectsPagedModel struct {
@@ -76,7 +78,7 @@ type ProjectReader interface {
 	GetProjectById(ctx context.Context, id pgtype.UUID) (ProjectModel, error)
 	GetProjectByKey(ctx context.Context, orgId pgtype.UUID, key string) (ProjectModel, error)
 	ListProjectsByOrg(ctx context.Context, orgId pgtype.UUID) ([]ProjectModel, error)
-	ListProjectsByOrgPaged(ctx context.Context, orgId pgtype.UUID, q ProjectsSearchModel) (ProjectsPagedModel, error)
+	ListProjectsByOrgPaged(ctx context.Context, q ProjectsSearchModel) (ProjectsPagedModel, error)
 }
 
 type ProjectWriter interface {

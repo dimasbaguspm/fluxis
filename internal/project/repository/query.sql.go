@@ -178,8 +178,10 @@ WITH filtered_projects AS (
   FROM
     projects
   WHERE
-    org_id = $1 AND deleted_at IS NULL
-    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+    deleted_at IS NULL
+    AND (array_length($1::uuid[], 1) IS NULL OR org_id = ANY($1::uuid[]))
+    AND (array_length($2::uuid[], 1) IS NULL OR id = ANY($2::uuid[]))
+    AND ($3::text = '' OR name ILIKE '%' || $3 || '%')
 )
 SELECT
   id, org_id, key, name, description, visibility, created_at, updated_at, deleted_at, total_count
@@ -187,15 +189,16 @@ FROM
   filtered_projects
 ORDER BY
   created_at DESC
-LIMIT $3
-OFFSET $4
+LIMIT $4
+OFFSET $5
 `
 
 type ListProjectsByOrgPagedParams struct {
-	OrgID   pgtype.UUID `db:"org_id" json:"org_id"`
-	Column2 string      `db:"column_2" json:"column_2"`
-	Limit   int32       `db:"limit" json:"limit"`
-	Offset  int32       `db:"offset" json:"offset"`
+	Column1 []pgtype.UUID `db:"column_1" json:"column_1"`
+	Column2 []pgtype.UUID `db:"column_2" json:"column_2"`
+	Column3 string        `db:"column_3" json:"column_3"`
+	Limit   int32         `db:"limit" json:"limit"`
+	Offset  int32         `db:"offset" json:"offset"`
 }
 
 type ListProjectsByOrgPagedRow struct {
@@ -213,8 +216,9 @@ type ListProjectsByOrgPagedRow struct {
 
 func (q *Queries) ListProjectsByOrgPaged(ctx context.Context, arg ListProjectsByOrgPagedParams) ([]ListProjectsByOrgPagedRow, error) {
 	rows, err := q.db.Query(ctx, listProjectsByOrgPaged,
-		arg.OrgID,
+		arg.Column1,
 		arg.Column2,
+		arg.Column3,
 		arg.Limit,
 		arg.Offset,
 	)

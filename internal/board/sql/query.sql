@@ -17,8 +17,10 @@ WITH filtered_boards AS (
   FROM
     boards
   WHERE
-    sprint_id = $1 AND deleted_at IS NULL
-    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+    deleted_at IS NULL
+    AND (array_length($1::uuid[], 1) IS NULL OR id = ANY($1::uuid[]))
+    AND (array_length($2::uuid[], 1) IS NULL OR sprint_id = ANY($2::uuid[]))
+    AND ($3::text = '' OR name ILIKE '%' || $3 || '%')
 )
 SELECT
   id, sprint_id, name, position, created_at, updated_at, deleted_at, total_count
@@ -26,8 +28,8 @@ FROM
   filtered_boards
 ORDER BY
   position ASC
-LIMIT $3
-OFFSET $4;
+LIMIT $4
+OFFSET $5;
 
 -- name: UpdateBoard :one
 UPDATE boards
@@ -88,8 +90,10 @@ WITH filtered_columns AS (
   FROM
     board_columns
   WHERE
-    board_id = $1 AND deleted_at IS NULL
-    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+    deleted_at IS NULL
+    AND (array_length($1::uuid[], 1) IS NULL OR id = ANY($1::uuid[]))
+    AND (array_length($2::uuid[], 1) IS NULL OR board_id = ANY($2::uuid[]))
+    AND ($3::text = '' OR name ILIKE '%' || $3 || '%')
 )
 SELECT
   id, board_id, name, position, created_at, updated_at, deleted_at, total_count
@@ -97,8 +101,8 @@ FROM
   filtered_columns
 ORDER BY
   position ASC
-LIMIT $3
-OFFSET $4;
+LIMIT $4
+OFFSET $5;
 
 -- name: UpdateBoardColumn :one
 UPDATE board_columns SET name = $2, updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *;

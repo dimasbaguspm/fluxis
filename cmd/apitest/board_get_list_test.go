@@ -229,6 +229,76 @@ func TestBoard_List_WithPagination(t *testing.T) {
 	}
 }
 
+func TestBoard_List_FilterByID(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
+	sprintID := uuidToString(sprint.ID)
+
+	// Create boards
+	b1 := createBoard(t, sprintID, tokens.AccessToken, "Board 1")
+	createBoard(t, sprintID, tokens.AccessToken, "Board 2")
+
+	// Filter by specific board ID
+	b1ID := uuidToString(b1.ID)
+	statusCode, resp := do[domain.BoardsPagedModel](t, "GET", "/boards?sprintId="+sprintID+"&id="+b1ID, nil, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", statusCode)
+	}
+
+	if len(resp.Data.Items) != 1 {
+		t.Fatalf("expected 1 board, got %d", len(resp.Data.Items))
+	}
+
+	if resp.Data.Items[0].ID != b1.ID {
+		t.Fatalf("expected board %s, got %s", b1ID, uuidToString(resp.Data.Items[0].ID))
+	}
+}
+
+func TestBoard_List_FilterByMultipleIDs(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
+	sprintID := uuidToString(sprint.ID)
+
+	// Create boards
+	b1 := createBoard(t, sprintID, tokens.AccessToken, "Board 1")
+	b2 := createBoard(t, sprintID, tokens.AccessToken, "Board 2")
+	createBoard(t, sprintID, tokens.AccessToken, "Board 3")
+
+	// Filter by multiple board IDs
+	b1ID := uuidToString(b1.ID)
+	b2ID := uuidToString(b2.ID)
+	statusCode, resp := do[domain.BoardsPagedModel](t, "GET", "/boards?sprintId="+sprintID+"&id="+b1ID+"&id="+b2ID, nil, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", statusCode)
+	}
+
+	if len(resp.Data.Items) != 2 {
+		t.Fatalf("expected 2 boards, got %d", len(resp.Data.Items))
+	}
+}
+
 func TestBoard_List_Unauthenticated(t *testing.T) {
 	statusCode, _ := do[domain.BoardsPagedModel](t, "GET", "/boards?sprintId=550e8400-e29b-41d4-a716-446655440000", nil, "")
 

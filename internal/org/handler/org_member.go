@@ -30,6 +30,7 @@ func (h *Handler) ListOrgMembers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := domain.OrganisationMembersSearchModel{
+		UserID:     httpx.QueryUUIDs(r, "userId"),
 		Email:       httpx.QueryString(r, "email"),
 		DisplayName: httpx.QueryString(r, "displayName"),
 		PageNumber:  httpx.QueryNumber(r, "pageNumber"),

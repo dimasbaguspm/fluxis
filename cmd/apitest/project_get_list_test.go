@@ -164,3 +164,110 @@ func TestProject_List_EmptyOrg(t *testing.T) {
 		t.Fatalf("expected totalCount 0, got %d", resp.Data.TotalCount)
 	}
 }
+
+func TestProject_List_FilterByID(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	// Create org
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+
+	// Create projects
+	_, p1 := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+		Key:        randomProjectKey(),
+		Name:       "Project 1",
+		Visibility: "private",
+	}, tokens.AccessToken)
+
+	_, p2 := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+		Key:        randomProjectKey(),
+		Name:       "Project 2",
+		Visibility: "public",
+	}, tokens.AccessToken)
+
+	if p1.Data == nil || p2.Data == nil {
+		t.Fatal("failed to create projects")
+	}
+
+	// List projects filtering by specific ID
+	p1ID := uuidToString(p1.Data.ID)
+	statusCode, resp := do[domain.ProjectsPagedModel](t, "GET", "/projects?orgId="+orgID+"&id="+p1ID, nil, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", statusCode)
+	}
+
+	if resp.Data == nil {
+		t.Fatal("expected project list data")
+	}
+
+	if len(resp.Data.Items) != 1 {
+		t.Fatalf("expected 1 project, got %d", len(resp.Data.Items))
+	}
+
+	if resp.Data.Items[0].ID != p1.Data.ID {
+		t.Fatalf("expected project %s, got %s", p1ID, uuidToString(resp.Data.Items[0].ID))
+	}
+}
+
+func TestProject_List_FilterByMultipleIDs(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	// Create org
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+
+	// Create projects
+	_, p1 := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+		Key:        randomProjectKey(),
+		Name:       "Project 1",
+		Visibility: "private",
+	}, tokens.AccessToken)
+
+	_, p2 := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+		Key:        randomProjectKey(),
+		Name:       "Project 2",
+		Visibility: "public",
+	}, tokens.AccessToken)
+
+	_, p3 := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+		Key:        randomProjectKey(),
+		Name:       "Project 3",
+		Visibility: "private",
+	}, tokens.AccessToken)
+
+	if p1.Data == nil || p2.Data == nil || p3.Data == nil {
+		t.Fatal("failed to create projects")
+	}
+
+	// List projects filtering by multiple IDs
+	p1ID := uuidToString(p1.Data.ID)
+	p2ID := uuidToString(p2.Data.ID)
+	statusCode, resp := do[domain.ProjectsPagedModel](t, "GET", "/projects?orgId="+orgID+"&id="+p1ID+"&id="+p2ID, nil, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", statusCode)
+	}
+
+	if resp.Data == nil {
+		t.Fatal("expected project list data")
+	}
+
+	if len(resp.Data.Items) != 2 {
+		t.Fatalf("expected 2 projects, got %d", len(resp.Data.Items))
+	}
+}

@@ -115,33 +115,16 @@ func (s *Service) GetSprint(ctx context.Context, id pgtype.UUID) (domain.SprintM
 	return toSprintModel(sprint), nil
 }
 
-// ListSprintsByProject lists all sprints in a project
-func (s *Service) ListSprintsByProject(ctx context.Context, projectID pgtype.UUID) ([]domain.SprintModel, error) {
-	sprints, err := s.Repo.ListSprintsByProject(ctx, projectID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return []domain.SprintModel{}, nil
-		}
-		return []domain.SprintModel{}, fmt.Errorf("list sprints: %w", err)
-	}
-
-	data := make([]domain.SprintModel, len(sprints))
-	for i, sprint := range sprints {
-		data[i] = toSprintModel(sprint)
-	}
-
-	return data, nil
-}
-
 // ListSprintsByProjectPaged lists sprints in a project with pagination
-func (s *Service) ListSprintsByProjectPaged(ctx context.Context, projectID pgtype.UUID, q domain.SprintsSearchModel) (domain.SprintsPagedModel, error) {
+func (s *Service) ListSprintsPaged(ctx context.Context, q domain.SprintsSearchModel) (domain.SprintsPagedModel, error) {
 	q.ApplyDefaults()
 
-	sprints, err := s.Repo.ListSprintsByProjectPaged(ctx, repository.ListSprintsByProjectPagedParams{
-		ProjectID: projectID,
-		Column2:   q.Name,
-		Limit:     int32(q.PageSize),
-		Offset:    int32((q.PageNumber - 1) * q.PageSize),
+	sprints, err := s.Repo.ListSprintsPaged(ctx, repository.ListSprintsPagedParams{
+		Column1: q.ID,
+		Column2: q.ProjectID,
+		Column3: q.Name,
+		Limit:   int32(q.PageSize),
+		Offset:  int32((q.PageNumber - 1) * q.PageSize),
 	})
 
 	if err != nil {

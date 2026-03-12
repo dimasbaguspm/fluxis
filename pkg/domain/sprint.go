@@ -39,9 +39,11 @@ type SprintUpdateModel struct {
 }
 
 type SprintsSearchModel struct {
-	Name       string `json:"name"`
-	PageNumber int    `json:"pageNumber" validate:"min=1"`
-	PageSize   int    `json:"pageSize" validate:"min=1,max=100"`
+	ID         []pgtype.UUID `json:"id" validate:"omitempty,dive,uuid4"`
+	ProjectID  []pgtype.UUID `json:"projectId" validate:"omitempty,dive,uuid4"`
+	Name       string        `json:"name"`
+	PageNumber int           `json:"pageNumber" validate:"omitempty,min=1"`
+	PageSize   int           `json:"pageSize" validate:"omitempty,min=1,max=100"`
 }
 
 func (s *SprintsSearchModel) ApplyDefaults() {
@@ -77,8 +79,7 @@ func (m SprintsPagedModel) Empty(pageNumber, pageSize int) SprintsPagedModel {
 
 type SprintReader interface {
 	GetSprint(ctx context.Context, id pgtype.UUID) (SprintModel, error)
-	ListSprintsByProject(ctx context.Context, projectID pgtype.UUID) ([]SprintModel, error)
-	ListSprintsByProjectPaged(ctx context.Context, projectID pgtype.UUID, q SprintsSearchModel) (SprintsPagedModel, error)
+	ListSprintsPaged(ctx context.Context, q SprintsSearchModel) (SprintsPagedModel, error)
 }
 
 type SprintWriter interface {

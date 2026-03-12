@@ -13,7 +13,6 @@ import (
 //	@Description	Returns paginated projects in an organisation with optional filtering
 //	@Tags			project
 //	@Produce		json
-//	@Param			orgId	query	string	true	"Organisation ID"
 //	@Param			query	query	domain.ProjectsSearchModel	false	"Search parameters: name, pageNumber, pageSize"
 //	@Success		200	{object}	domain.ProjectsPagedModel
 //	@Failure		400	{object}	httpx.ErrBlock
@@ -21,19 +20,15 @@ import (
 //	@Security		BearerAuth
 //	@Router			/projects [get]
 func (h *Handler) ListProjects(w http.ResponseWriter, r *http.Request) {
-	orgID, err := httpx.QueryUUID(r, "orgId")
-	if err != nil {
-		httpx.Handle(w, err)
-		return
-	}
-
 	req := domain.ProjectsSearchModel{
+		ID:         httpx.QueryUUIDs(r, "id"),
+		OrgID:      httpx.QueryUUIDs(r, "orgId"),
 		Name:       httpx.QueryString(r, "name"),
 		PageNumber: httpx.QueryNumber(r, "pageNumber"),
 		PageSize:   httpx.QueryNumber(r, "pageSize"),
 	}
 
-	result, err := h.svc.ListProjectsByOrgPaged(r.Context(), orgID, req)
+	result, err := h.svc.ListProjectsByOrgPaged(r.Context(), req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return

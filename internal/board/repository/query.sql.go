@@ -179,8 +179,10 @@ WITH filtered_columns AS (
   FROM
     board_columns
   WHERE
-    board_id = $1 AND deleted_at IS NULL
-    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+    deleted_at IS NULL
+    AND (array_length($1::uuid[], 1) IS NULL OR id = ANY($1::uuid[]))
+    AND (array_length($2::uuid[], 1) IS NULL OR board_id = ANY($2::uuid[]))
+    AND ($3::text = '' OR name ILIKE '%' || $3 || '%')
 )
 SELECT
   id, board_id, name, position, created_at, updated_at, deleted_at, total_count
@@ -188,15 +190,16 @@ FROM
   filtered_columns
 ORDER BY
   position ASC
-LIMIT $3
-OFFSET $4
+LIMIT $4
+OFFSET $5
 `
 
 type ListBoardColumnsPagedParams struct {
-	BoardID pgtype.UUID `db:"board_id" json:"board_id"`
-	Column2 string      `db:"column_2" json:"column_2"`
-	Limit   int32       `db:"limit" json:"limit"`
-	Offset  int32       `db:"offset" json:"offset"`
+	Column1 []pgtype.UUID `db:"column_1" json:"column_1"`
+	Column2 []pgtype.UUID `db:"column_2" json:"column_2"`
+	Column3 string        `db:"column_3" json:"column_3"`
+	Limit   int32         `db:"limit" json:"limit"`
+	Offset  int32         `db:"offset" json:"offset"`
 }
 
 type ListBoardColumnsPagedRow struct {
@@ -212,8 +215,9 @@ type ListBoardColumnsPagedRow struct {
 
 func (q *Queries) ListBoardColumnsPaged(ctx context.Context, arg ListBoardColumnsPagedParams) ([]ListBoardColumnsPagedRow, error) {
 	rows, err := q.db.Query(ctx, listBoardColumnsPaged,
-		arg.BoardID,
+		arg.Column1,
 		arg.Column2,
+		arg.Column3,
 		arg.Limit,
 		arg.Offset,
 	)
@@ -284,8 +288,10 @@ WITH filtered_boards AS (
   FROM
     boards
   WHERE
-    sprint_id = $1 AND deleted_at IS NULL
-    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+    deleted_at IS NULL
+    AND (array_length($1::uuid[], 1) IS NULL OR id = ANY($1::uuid[]))
+    AND (array_length($2::uuid[], 1) IS NULL OR sprint_id = ANY($2::uuid[]))
+    AND ($3::text = '' OR name ILIKE '%' || $3 || '%')
 )
 SELECT
   id, sprint_id, name, position, created_at, updated_at, deleted_at, total_count
@@ -293,15 +299,16 @@ FROM
   filtered_boards
 ORDER BY
   position ASC
-LIMIT $3
-OFFSET $4
+LIMIT $4
+OFFSET $5
 `
 
 type ListBoardsBySprintPagedParams struct {
-	SprintID pgtype.UUID `db:"sprint_id" json:"sprint_id"`
-	Column2  string      `db:"column_2" json:"column_2"`
-	Limit    int32       `db:"limit" json:"limit"`
-	Offset   int32       `db:"offset" json:"offset"`
+	Column1 []pgtype.UUID `db:"column_1" json:"column_1"`
+	Column2 []pgtype.UUID `db:"column_2" json:"column_2"`
+	Column3 string        `db:"column_3" json:"column_3"`
+	Limit   int32         `db:"limit" json:"limit"`
+	Offset  int32         `db:"offset" json:"offset"`
 }
 
 type ListBoardsBySprintPagedRow struct {
@@ -317,8 +324,9 @@ type ListBoardsBySprintPagedRow struct {
 
 func (q *Queries) ListBoardsBySprintPaged(ctx context.Context, arg ListBoardsBySprintPagedParams) ([]ListBoardsBySprintPagedRow, error) {
 	rows, err := q.db.Query(ctx, listBoardsBySprintPaged,
-		arg.SprintID,
+		arg.Column1,
 		arg.Column2,
+		arg.Column3,
 		arg.Limit,
 		arg.Offset,
 	)

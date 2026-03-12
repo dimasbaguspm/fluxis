@@ -88,9 +88,9 @@ FROM
     orgs
 WHERE
     deleted_at IS NULL
-    AND ($1::uuid IS NULL OR id = $1)
-    AND ($2::uuid IS NULL OR id IN (
-        SELECT org_id FROM org_members WHERE user_id = $2
+    AND (array_length($1::uuid[], 1) IS NULL OR id = ANY($1::uuid[]))
+    AND (array_length($2::uuid[], 1) IS NULL OR id IN (
+        SELECT org_id FROM org_members WHERE user_id = ANY($2::uuid[])
     ))
 ORDER BY
     created_at DESC;
@@ -143,8 +143,9 @@ WITH filtered_members AS (
     JOIN users u ON u.id = om.user_id
   WHERE
     om.org_id = $1
-    AND ($2::text = '' OR u.email ILIKE '%' || $2 || '%')
-    AND ($3::text = '' OR u.display_name ILIKE '%' || $3 || '%')
+    AND (array_length($2::uuid[], 1) IS NULL OR om.user_id = ANY($2::uuid[]))
+    AND ($3::text = '' OR u.email ILIKE '%' || $3 || '%')
+    AND ($4::text = '' OR u.display_name ILIKE '%' || $4 || '%')
 )
 SELECT
     org_id, user_id, role, joined_at, email, display_name, total_count
@@ -152,8 +153,8 @@ FROM
     filtered_members
 ORDER BY
     joined_at DESC
-LIMIT $4
-OFFSET $5;
+LIMIT $5
+OFFSET $6;
 
 -- name: CountOrgMembers :one
 SELECT

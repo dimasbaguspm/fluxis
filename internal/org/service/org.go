@@ -15,15 +15,15 @@ import (
 )
 
 var (
-	ErrOrgNotFound         = httpx.NotFound("organisation not found")
-	ErrSlugIsTaken        = httpx.Conflict("slug has been taken")
-	ErrOrgMemberNotFound  = httpx.NotFound("organisation member not found")
+	ErrOrgNotFound       = httpx.NotFound("organisation not found")
+	ErrSlugIsTaken       = httpx.Conflict("slug has been taken")
+	ErrOrgMemberNotFound = httpx.NotFound("organisation member not found")
 )
 
 func (s *Service) ListOrgs(ctx context.Context, q domain.OrganisationSearchModel) ([]domain.OrganisationModel, error) {
 	orgs, err := s.Repo.ListOrg(ctx, repository.ListOrgParams{
-		Column1: q.OrgId,
-		Column2: q.UserId,
+		Column1: q.ID,
+		Column2: q.UserID,
 	})
 
 	if err != nil {

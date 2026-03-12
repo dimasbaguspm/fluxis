@@ -97,9 +97,5 @@ func TestOrg_Paged_ResponseStructure(t *testing.T) {
 			t.Fatalf("org[%d]: expected Name field", i)
 		}
 
-		// Verify TotalMembers field exists (should be >= 1 for orgs the user is member of)
-		if org.TotalMembers < 1 {
-			t.Logf("org[%d]: TotalMembers is %d (may be 0 for non-owned orgs)", i, org.TotalMembers)
-		}
 	}
 }

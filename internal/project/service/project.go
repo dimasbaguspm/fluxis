@@ -89,12 +89,13 @@ func (s *Service) ListProjectsByOrg(ctx context.Context, orgId pgtype.UUID) ([]d
 	return data, nil
 }
 
-func (s *Service) ListProjectsByOrgPaged(ctx context.Context, orgId pgtype.UUID, q domain.ProjectsSearchModel) (domain.ProjectsPagedModel, error) {
+func (s *Service) ListProjectsByOrgPaged(ctx context.Context, q domain.ProjectsSearchModel) (domain.ProjectsPagedModel, error) {
 	q.ApplyDefaults()
 
 	projects, err := s.Repo.ListProjectsByOrgPaged(ctx, repository.ListProjectsByOrgPagedParams{
-		OrgID:  orgId,
-		Column2: q.Name,
+		Column1: q.OrgID,
+		Column2: q.ID,
+		Column3: q.Name,
 		Limit:   int32(q.PageSize),
 		Offset:  int32((q.PageNumber - 1) * q.PageSize),
 	})

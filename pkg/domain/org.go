@@ -8,8 +8,8 @@ import (
 )
 
 type OrganisationSearchModel struct {
-	OrgId  pgtype.UUID `json:"orgId" validate:"uuid4"`
-	UserId pgtype.UUID `json:"userId" validate:"uuid4"`
+	ID     []pgtype.UUID `json:"id" validate:"omitempty,dive,uuid4"`
+	UserID []pgtype.UUID `json:"userId" validate:"omitempty,dive,uuid4"`
 }
 
 type OrganisationModel struct {
@@ -55,10 +55,11 @@ type OrganisationMemberUpdateModel struct {
 }
 
 type OrganisationMembersSearchModel struct {
-	Email       string `json:"email"`
-	DisplayName string `json:"displayName"`
-	PageNumber  int    `json:"pageNumber" validate:"min=1"`
-	PageSize    int    `json:"pageSize" validate:"min=1,max=100"`
+	UserID      []pgtype.UUID `json:"userId" validate:"omitempty,dive,uuid4"`
+	Email       string        `json:"email"`
+	DisplayName string        `json:"displayName"`
+	PageNumber  int           `json:"pageNumber" validate:"omitempty,min=1"`
+	PageSize    int           `json:"pageSize" validate:"omitempty,min=1,max=100"`
 }
 
 type OrganisationMembersPagedModel struct {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // ListBoardColumns godoc
@@ -29,7 +30,8 @@ func (h *Handler) ListBoardColumns(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := domain.BoardColumnsSearchModel{
-		BoardID:    boardID,
+		ID:         httpx.QueryUUIDs(r, "id"),
+		BoardID:    []pgtype.UUID{boardID},
 		Name:       httpx.QueryString(r, "name"),
 		PageNumber: httpx.QueryNumber(r, "pageNumber"),
 		PageSize:   httpx.QueryNumber(r, "pageSize"),

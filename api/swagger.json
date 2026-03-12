@@ -168,6 +168,15 @@
                 "summary": "List boards",
                 "parameters": [
                     {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "name": "name",
                         "in": "query"
@@ -186,10 +195,13 @@
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
                         "name": "sprintId",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -524,10 +536,22 @@
                         "required": true
                     },
                     {
-                        "type": "string",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
                         "name": "boardId",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "id",
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -1174,6 +1198,15 @@
                         "type": "integer",
                         "name": "pageSize",
                         "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "userId",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1405,15 +1438,26 @@
                 "summary": "List projects with pagination",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Organisation ID",
-                        "name": "orgId",
-                        "in": "query",
-                        "required": true
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "id",
+                        "in": "query"
                     },
                     {
                         "type": "string",
                         "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "orgId",
                         "in": "query"
                     },
                     {
@@ -1753,11 +1797,13 @@
                 "summary": "List sprints with pagination",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Project ID",
-                        "name": "projectId",
-                        "in": "query",
-                        "required": true
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "id",
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -1775,6 +1821,15 @@
                         "minimum": 1,
                         "type": "integer",
                         "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "projectId",
                         "in": "query"
                     }
                 ],

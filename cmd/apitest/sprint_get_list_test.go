@@ -169,3 +169,81 @@ func TestSprint_List_EmptyProject(t *testing.T) {
 		t.Fatalf("expected totalCount 0, got %d", resp.Data.TotalCount)
 	}
 }
+
+func TestSprint_List_FilterByID(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	projectID := uuidToString(project.ID)
+
+	// Create sprints
+	s1 := createSprint(t, projectID, tokens.AccessToken, "Sprint 1")
+	createSprint(t, projectID, tokens.AccessToken, "Sprint 2")
+
+	// List sprints filtering by specific ID
+	s1ID := uuidToString(s1.ID)
+	statusCode, resp := do[domain.SprintsPagedModel](t, "GET", "/sprints?projectId="+projectID+"&id="+s1ID, nil, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", statusCode)
+	}
+
+	if resp.Data == nil {
+		t.Fatal("expected sprint list data")
+	}
+
+	if len(resp.Data.Items) != 1 {
+		t.Fatalf("expected 1 sprint, got %d", len(resp.Data.Items))
+	}
+
+	if resp.Data.Items[0].ID != s1.ID {
+		t.Fatalf("expected sprint %s, got %s", s1ID, uuidToString(resp.Data.Items[0].ID))
+	}
+}
+
+func TestSprint_List_FilterByMultipleIDs(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	projectID := uuidToString(project.ID)
+
+	// Create sprints
+	s1 := createSprint(t, projectID, tokens.AccessToken, "Sprint 1")
+	s2 := createSprint(t, projectID, tokens.AccessToken, "Sprint 2")
+	createSprint(t, projectID, tokens.AccessToken, "Sprint 3")
+
+	// List sprints filtering by multiple IDs
+	s1ID := uuidToString(s1.ID)
+	s2ID := uuidToString(s2.ID)
+	statusCode, resp := do[domain.SprintsPagedModel](t, "GET", "/sprints?projectId="+projectID+"&id="+s1ID+"&id="+s2ID, nil, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", statusCode)
+	}
+
+	if resp.Data == nil {
+		t.Fatal("expected sprint list data")
+	}
+
+	if len(resp.Data.Items) != 2 {
+		t.Fatalf("expected 2 sprints, got %d", len(resp.Data.Items))
+	}
+}
