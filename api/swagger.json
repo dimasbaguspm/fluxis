@@ -1101,14 +1101,14 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns all members of an organisation",
+                "description": "Returns paginated members of an organisation with optional filtering",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "org"
                 ],
-                "summary": "List organisation members",
+                "summary": "List organisation members with pagination",
                 "parameters": [
                     {
                         "type": "string",
@@ -1116,16 +1116,36 @@
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "displayName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "email",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "pageNumber",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "pageSize",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.OrganisationMemberModel"
-                            }
+                            "$ref": "#/definitions/domain.OrganisationMembersPagedModel"
                         }
                     },
                     "400": {
@@ -2735,6 +2755,29 @@
                         "member",
                         "viewer"
                     ]
+                }
+            }
+        },
+        "domain.OrganisationMembersPagedModel": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.OrganisationMemberModel"
+                    }
+                },
+                "pageNumber": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "totalCount": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
                 }
             }
         },

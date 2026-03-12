@@ -12,25 +12,31 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (s *Service) ListMembers(ctx context.Context, orgId pgtype.UUID) ([]domain.OrganisationMemberModel, error) {
+func (s *Service) ListMembers(ctx context.Context, orgId pgtype.UUID, q domain.OrganisationMembersSearchModel) (domain.OrganisationMembersPagedModel, error) {
+	q.ApplyDefaults()
+
 	members, err := s.Repo.ListOrgMembers(ctx, repository.ListOrgMembersParams{
 		OrgID:   orgId,
-		Column2: "",
-		Column3: "",
-		Limit:   1000,
-		Offset:  0,
+		Column2: q.Email,
+		Column3: q.DisplayName,
+		Limit:   int32(q.PageSize),
+		Offset:  int32((q.PageNumber - 1) * q.PageSize),
 	})
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return []domain.OrganisationMemberModel{}, nil
+			emptyResult := domain.OrganisationMembersPagedModel{}
+			return emptyResult.Empty(q.PageNumber, q.PageSize), nil
 		}
-		return []domain.OrganisationMemberModel{}, fmt.Errorf("get org members: %w", err)
+		emptyResult := domain.OrganisationMembersPagedModel{}
+		return emptyResult.Empty(q.PageNumber, q.PageSize), fmt.Errorf("get org members: %w", err)
 	}
 
+	totalCount := int64(0)
 	data := make([]domain.OrganisationMemberModel, 0, len(members))
 
 	for _, member := range members {
+		totalCount = member.TotalCount
 		data = append(data, domain.OrganisationMemberModel{
 			UserID:   member.UserID,
 			Name:     member.DisplayName,
@@ -40,7 +46,18 @@ func (s *Service) ListMembers(ctx context.Context, orgId pgtype.UUID) ([]domain.
 		})
 	}
 
-	return data, nil
+	totalPages := 0
+	if totalCount > 0 {
+		totalPages = int((totalCount + int64(q.PageSize) - 1) / int64(q.PageSize))
+	}
+
+	return domain.OrganisationMembersPagedModel{
+		Items:      data,
+		TotalCount: int(totalCount),
+		TotalPages: totalPages,
+		PageNumber: q.PageNumber,
+		PageSize:   q.PageSize,
+	}, nil
 }
 
 func (s *Service) AddMember(ctx context.Context, orgId pgtype.UUID, p domain.OrganisationMemberCreateModel) error {

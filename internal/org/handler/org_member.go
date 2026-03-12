@@ -10,31 +10,39 @@ import (
 
 // ListOrgMembers godoc
 //
-//	@Summary		List organisation members
-//	@Description	Returns all members of an organisation
+//	@Summary		List organisation members with pagination
+//	@Description	Returns paginated members of an organisation with optional filtering
 //	@Tags			org
 //	@Produce		json
-//	@Param			id	path		string	true	"Organisation ID"
-//	@Success		200	{array}		domain.OrganisationMemberModel
+//	@Param			id		path	string								true	"Organisation ID"
+//	@Param			query	query	domain.OrganisationMembersSearchModel	false	"Search parameters: email, displayName, pageNumber, pageSize"
+//	@Success		200	{object}	domain.OrganisationMembersPagedModel
 //	@Failure		400	{object}	httpx.ErrBlock
 //	@Failure		401	{object}	httpx.ErrBlock
 //	@Failure		404	{object}	httpx.ErrBlock
 //	@Security		BearerAuth
 //	@Router			/orgs/{id}/members [get]
 func (h *Handler) ListOrgMembers(w http.ResponseWriter, r *http.Request) {
-	var orgID pgtype.UUID
-	if err := orgID.Scan(r.PathValue("id")); err != nil {
-		httpx.Handle(w, httpx.BadRequest("invalid org id"))
-		return
-	}
-
-	members, err := h.svc.ListMembers(r.Context(), orgID)
+	orgID, err := httpx.PathUUID(r, "id")
 	if err != nil {
 		httpx.Handle(w, err)
 		return
 	}
 
-	httpx.OK(w, members)
+	req := domain.OrganisationMembersSearchModel{
+		Email:       httpx.QueryString(r, "email"),
+		DisplayName: httpx.QueryString(r, "displayName"),
+		PageNumber:  httpx.QueryNumber(r, "pageNumber"),
+		PageSize:    httpx.QueryNumber(r, "pageSize"),
+	}
+
+	result, err := h.svc.ListMembers(r.Context(), orgID, req)
+	if err != nil {
+		httpx.Handle(w, err)
+		return
+	}
+
+	httpx.OK(w, result)
 }
 
 // AddOrgMember godoc

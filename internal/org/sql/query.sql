@@ -133,19 +133,26 @@ WHERE
     AND user_id = $2;
 
 -- name: ListOrgMembers :many
-SELECT
+WITH filtered_members AS (
+  SELECT
     om.org_id, om.user_id, om.role, om.joined_at,
-    u.email, u.display_name
-FROM
+    u.email, u.display_name,
+    COUNT(*) OVER () as total_count
+  FROM
     org_members om
     JOIN users u ON u.id = om.user_id
-WHERE
+  WHERE
     om.org_id = $1
     AND ($2::text = '' OR u.email ILIKE '%' || $2 || '%')
     AND ($3::text = '' OR u.display_name ILIKE '%' || $3 || '%')
+)
+SELECT
+    org_id, user_id, role, joined_at, email, display_name, total_count
+FROM
+    filtered_members
 ORDER BY
-    om.joined_at DESC
-LIMIT  $4
+    joined_at DESC
+LIMIT $4
 OFFSET $5;
 
 -- name: CountOrgMembers :one

@@ -54,6 +54,45 @@ type OrganisationMemberUpdateModel struct {
 	Role string `json:"role" validate:"required,oneof=admin member viewer"`
 }
 
+type OrganisationMembersSearchModel struct {
+	Email       string `json:"email"`
+	DisplayName string `json:"displayName"`
+	PageNumber  int    `json:"pageNumber" validate:"min=1"`
+	PageSize    int    `json:"pageSize" validate:"min=1,max=100"`
+}
+
+type OrganisationMembersPagedModel struct {
+	Items      []OrganisationMemberModel `json:"items"`
+	TotalCount int                       `json:"totalCount"`
+	TotalPages int                       `json:"totalPages"`
+	PageNumber int                       `json:"pageNumber"`
+	PageSize   int                       `json:"pageSize"`
+}
+
+func (m *OrganisationMembersSearchModel) ApplyDefaults() {
+	const (
+		defaultPageNumber = 1
+		defaultPageSize   = 25
+	)
+
+	if m.PageNumber == 0 {
+		m.PageNumber = defaultPageNumber
+	}
+	if m.PageSize == 0 {
+		m.PageSize = defaultPageSize
+	}
+}
+
+func (m *OrganisationMembersPagedModel) Empty(pageNumber, pageSize int) OrganisationMembersPagedModel {
+	return OrganisationMembersPagedModel{
+		Items:      []OrganisationMemberModel{},
+		TotalCount: 0,
+		TotalPages: 0,
+		PageNumber: pageNumber,
+		PageSize:   pageSize,
+	}
+}
+
 type Organisations struct {
 	ID         []pgtype.UUID `json:"id" validate:"dive,uuid4"`
 	Name       []string      `json:"name" validate:"dive,min=1"`
@@ -99,7 +138,7 @@ type OrgReader interface {
 	ListOrgs(ctx context.Context, q OrganisationSearchModel) ([]OrganisationModel, error)
 	GetOrgById(ctx context.Context, id pgtype.UUID) (OrganisationModel, error)
 	GetOrgBySlug(ctx context.Context, slug string) (OrganisationModel, error)
-	ListMembers(ctx context.Context, orgId pgtype.UUID) ([]OrganisationMemberModel, error)
+	ListMembers(ctx context.Context, orgId pgtype.UUID, q OrganisationMembersSearchModel) (OrganisationMembersPagedModel, error)
 }
 
 type OrganisationWrite interface {

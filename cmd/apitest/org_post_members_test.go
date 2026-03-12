@@ -43,7 +43,7 @@ func TestOrg_Members_AddAndList(t *testing.T) {
 	}
 
 	// List org members
-	statusCode, listResp := do[[]domain.OrganisationMemberModel](t, "GET", "/orgs/"+uuidToString(orgID)+"/members", nil, tokens1.AccessToken)
+	statusCode, listResp := do[domain.OrganisationMembersPagedModel](t, "GET", "/orgs/"+uuidToString(orgID)+"/members", nil, tokens1.AccessToken)
 
 	if statusCode != http.StatusOK {
 		t.Fatalf("expected status 200, got %d: %v", statusCode, listResp.Error)
@@ -53,8 +53,12 @@ func TestOrg_Members_AddAndList(t *testing.T) {
 		t.Fatalf("expected member list, got nil data, error=%v", listResp.Error)
 	}
 
-	if len(*listResp.Data) < 2 {
-		t.Fatalf("expected at least 2 members, got %d: %v", len(*listResp.Data), listResp.Data)
+	if len(listResp.Data.Items) < 2 {
+		t.Fatalf("expected at least 2 members, got %d: %v", len(listResp.Data.Items), listResp.Data)
+	}
+
+	if listResp.Data.TotalCount < 2 {
+		t.Fatalf("expected totalCount >= 2, got %d", listResp.Data.TotalCount)
 	}
 }
 

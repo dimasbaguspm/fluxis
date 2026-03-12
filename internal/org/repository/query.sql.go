@@ -292,19 +292,26 @@ func (q *Queries) ListOrg(ctx context.Context, arg ListOrgParams) ([]ListOrgRow,
 }
 
 const listOrgMembers = `-- name: ListOrgMembers :many
-SELECT
+WITH filtered_members AS (
+  SELECT
     om.org_id, om.user_id, om.role, om.joined_at,
-    u.email, u.display_name
-FROM
+    u.email, u.display_name,
+    COUNT(*) OVER () as total_count
+  FROM
     org_members om
     JOIN users u ON u.id = om.user_id
-WHERE
+  WHERE
     om.org_id = $1
     AND ($2::text = '' OR u.email ILIKE '%' || $2 || '%')
     AND ($3::text = '' OR u.display_name ILIKE '%' || $3 || '%')
+)
+SELECT
+    org_id, user_id, role, joined_at, email, display_name, total_count
+FROM
+    filtered_members
 ORDER BY
-    om.joined_at DESC
-LIMIT  $4
+    joined_at DESC
+LIMIT $4
 OFFSET $5
 `
 
@@ -323,6 +330,7 @@ type ListOrgMembersRow struct {
 	JoinedAt    pgtype.Timestamptz `db:"joined_at" json:"joined_at"`
 	Email       string             `db:"email" json:"email"`
 	DisplayName string             `db:"display_name" json:"display_name"`
+	TotalCount  int64              `db:"total_count" json:"total_count"`
 }
 
 func (q *Queries) ListOrgMembers(ctx context.Context, arg ListOrgMembersParams) ([]ListOrgMembersRow, error) {
@@ -347,6 +355,7 @@ func (q *Queries) ListOrgMembers(ctx context.Context, arg ListOrgMembersParams) 
 			&i.JoinedAt,
 			&i.Email,
 			&i.DisplayName,
+			&i.TotalCount,
 		); err != nil {
 			return nil, err
 		}
