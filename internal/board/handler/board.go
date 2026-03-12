@@ -133,35 +133,43 @@ func (h *Handler) UpdateBoard(w http.ResponseWriter, r *http.Request) {
 	httpx.OK(w, board)
 }
 
-// ReorderBoard godoc
+// ReorderBoards godoc
 //
 //	@Summary		Reorder boards
-//	@Description	Reorder boards within a sprint
+//	@Description	Reorder boards within a sprint (positions determined by array order)
 //	@Tags			board
 //	@Accept			json
 //	@Produce		json
-//	@Param			body		body		domain.BoardReorderModel	true	"Board reorder payload"
+//	@Param			sprintId	query		string					true	"Sprint ID"
+//	@Param			body		body		domain.BoardReorderModel	true	"Board IDs in desired order"
 //	@Success		200		{array}		domain.BoardModel
 //	@Failure		400		{object}	httpx.ErrBlock
 //	@Failure		401		{object}	httpx.ErrBlock
+//	@Failure		404		{object}	httpx.ErrBlock
 //	@Security		BearerAuth
 //	@Router			/boards/reorder [patch]
 func (h *Handler) ReorderBoards(w http.ResponseWriter, r *http.Request) {
-	var req domain.BoardReorderModel
+	sprintID, err := httpx.QueryUUID(r, "sprintId")
+	if err != nil {
+		httpx.Handle(w, err)
+		return
+	}
 
-	if err := httpx.DecodeAndValidate(r, &req); err != nil {
+	var req domain.BoardReorderModel
+	if err := httpx.Decode(r, &req); err != nil {
 		httpx.Handle(w, httpx.BadRequest(err.Error()))
 		return
 	}
 
-	boards := make([]domain.BoardModel, 0, len(req.Boards))
-	for _, b := range req.Boards {
-		board, err := h.svc.ReorderBoard(r.Context(), b.ID, b.Position)
-		if err != nil {
-			httpx.Handle(w, err)
-			return
-		}
-		boards = append(boards, board)
+	if len(req) == 0 {
+		httpx.Handle(w, httpx.BadRequest("boards array is required and cannot be empty"))
+		return
+	}
+
+	boards, err := h.svc.ReorderBoards(r.Context(), sprintID, req)
+	if err != nil {
+		httpx.Handle(w, err)
+		return
 	}
 
 	httpx.OK(w, boards)

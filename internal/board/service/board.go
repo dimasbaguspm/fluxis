@@ -128,19 +128,40 @@ func (s *Service) UpdateBoard(ctx context.Context, id pgtype.UUID, b domain.Boar
 	return toBoardModel(board), nil
 }
 
-func (s *Service) ReorderBoard(ctx context.Context, id pgtype.UUID, position int32) (domain.BoardModel, error) {
-	board, err := s.Repo.ReorderBoard(ctx, repository.ReorderBoardParams{
-		ID:       id,
-		Position: position,
-	})
+func (s *Service) ReorderBoards(ctx context.Context, sprintID pgtype.UUID, reorder domain.BoardReorderModel) ([]domain.BoardModel, error) {
+	sprint, err := s.Sprint.GetSprint(ctx, sprintID)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return domain.BoardModel{}, ErrBoardNotFound
-		}
-		return domain.BoardModel{}, fmt.Errorf("reorder board: %w", err)
+		return nil, fmt.Errorf("validate sprint: %w", err)
 	}
 
-	return toBoardModel(board), nil
+	boards, err := s.Repo.ReorderBoardsInBatch(ctx, repository.ReorderBoardsInBatchParams{
+		SprintID: sprint.ID,
+		Column2:  reorder,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("reorder boards: %w", err)
+	}
+
+	if len(boards) == 0 {
+		if len(reorder) == 0 {
+			return nil, httpx.BadRequest("boards array is required and cannot be empty")
+		}
+		return nil, httpx.BadRequest("some boards not found or don't belong to this sprint, or reorder array must include all boards in the sprint")
+	}
+
+	result := make([]domain.BoardModel, 0, len(boards))
+	for _, board := range boards {
+		result = append(result, domain.BoardModel{
+			ID:        board.ID,
+			SprintID:  board.SprintID,
+			Name:      board.Name,
+			Position:  board.Position,
+			CreatedAt: board.CreatedAt.Time,
+			UpdatedAt: board.UpdatedAt.Time,
+		})
+	}
+
+	return result, nil
 }
 
 func (s *Service) DeleteBoard(ctx context.Context, id pgtype.UUID) error {

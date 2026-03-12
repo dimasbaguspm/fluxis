@@ -15,11 +15,39 @@ SET name = $2, sprint_id = $3, updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
--- name: ReorderBoard :one
-UPDATE boards SET position = $2, updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *;
-
 -- name: DeleteBoard :one
 UPDATE boards SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *;
+
+-- name: ReorderBoardsInBatch :many
+-- Atomically validates and reorders boards within a sprint with row-level locking
+-- All boards must belong to the same sprint; results ordered by position to maintain input array order
+WITH validation AS (
+  -- Validate: all provided IDs exist and belong to this sprint
+  SELECT id, ROW_NUMBER() OVER () - 1 as pos
+  FROM UNNEST($2::uuid[]) AS t(id)
+  WHERE EXISTS (
+    SELECT 1 FROM boards b
+    WHERE b.id = t.id AND b.sprint_id = $1 AND b.deleted_at IS NULL
+  )
+),updated AS (
+  UPDATE boards
+  SET position = validation.pos, updated_at = NOW()
+  FROM validation
+  WHERE boards.id = validation.id
+    AND boards.sprint_id = $1
+    AND boards.deleted_at IS NULL
+    -- Validate: provided count matches total boards in sprint
+    AND (
+      SELECT COUNT(*) FROM boards
+      WHERE sprint_id = $1 AND deleted_at IS NULL
+    ) = array_length($2::uuid[], 1)
+    -- Validate: all array elements are valid boards for this sprint
+    AND (
+      SELECT COUNT(*) FROM validation
+    ) = array_length($2::uuid[], 1)
+  RETURNING boards.id, boards.sprint_id, boards.name, boards.position, boards.created_at, boards.updated_at, boards.deleted_at
+)
+SELECT * FROM updated ORDER BY position;
 
 -- name: CreateBoardColumn :one
 INSERT INTO board_columns (board_id, name, position)

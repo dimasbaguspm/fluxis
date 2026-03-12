@@ -203,30 +203,6 @@ func (q *Queries) ListBoardsBySprint(ctx context.Context, sprintID pgtype.UUID) 
 	return items, nil
 }
 
-const reorderBoard = `-- name: ReorderBoard :one
-UPDATE boards SET position = $2, updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, sprint_id, name, position, created_at, updated_at, deleted_at
-`
-
-type ReorderBoardParams struct {
-	ID       pgtype.UUID `db:"id" json:"id"`
-	Position int32       `db:"position" json:"position"`
-}
-
-func (q *Queries) ReorderBoard(ctx context.Context, arg ReorderBoardParams) (Board, error) {
-	row := q.db.QueryRow(ctx, reorderBoard, arg.ID, arg.Position)
-	var i Board
-	err := row.Scan(
-		&i.ID,
-		&i.SprintID,
-		&i.Name,
-		&i.Position,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.DeletedAt,
-	)
-	return i, err
-}
-
 const reorderBoardColumn = `-- name: ReorderBoardColumn :one
 UPDATE board_columns SET position = $2, updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, board_id, name, position, created_at, updated_at, deleted_at
 `
@@ -310,6 +286,81 @@ func (q *Queries) ReorderBoardColumnsInBatch(ctx context.Context, arg ReorderBoa
 		if err := rows.Scan(
 			&i.ID,
 			&i.BoardID,
+			&i.Name,
+			&i.Position,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const reorderBoardsInBatch = `-- name: ReorderBoardsInBatch :many
+WITH validation AS (
+  -- Validate: all provided IDs exist and belong to this sprint
+  SELECT id, ROW_NUMBER() OVER () - 1 as pos
+  FROM UNNEST($2::uuid[]) AS t(id)
+  WHERE EXISTS (
+    SELECT 1 FROM boards b
+    WHERE b.id = t.id AND b.sprint_id = $1 AND b.deleted_at IS NULL
+  )
+),updated AS (
+  UPDATE boards
+  SET position = validation.pos, updated_at = NOW()
+  FROM validation
+  WHERE boards.id = validation.id
+    AND boards.sprint_id = $1
+    AND boards.deleted_at IS NULL
+    -- Validate: provided count matches total boards in sprint
+    AND (
+      SELECT COUNT(*) FROM boards
+      WHERE sprint_id = $1 AND deleted_at IS NULL
+    ) = array_length($2::uuid[], 1)
+    -- Validate: all array elements are valid boards for this sprint
+    AND (
+      SELECT COUNT(*) FROM validation
+    ) = array_length($2::uuid[], 1)
+  RETURNING boards.id, boards.sprint_id, boards.name, boards.position, boards.created_at, boards.updated_at, boards.deleted_at
+)
+SELECT id, sprint_id, name, position, created_at, updated_at, deleted_at FROM updated ORDER BY position
+`
+
+type ReorderBoardsInBatchParams struct {
+	SprintID pgtype.UUID   `db:"sprint_id" json:"sprint_id"`
+	Column2  []pgtype.UUID `db:"column_2" json:"column_2"`
+}
+
+type ReorderBoardsInBatchRow struct {
+	ID        pgtype.UUID        `db:"id" json:"id"`
+	SprintID  pgtype.UUID        `db:"sprint_id" json:"sprint_id"`
+	Name      string             `db:"name" json:"name"`
+	Position  int32              `db:"position" json:"position"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	DeletedAt pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+}
+
+// Atomically validates and reorders boards within a sprint with row-level locking
+// All boards must belong to the same sprint; results ordered by position to maintain input array order
+func (q *Queries) ReorderBoardsInBatch(ctx context.Context, arg ReorderBoardsInBatchParams) ([]ReorderBoardsInBatchRow, error) {
+	rows, err := q.db.Query(ctx, reorderBoardsInBatch, arg.SprintID, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ReorderBoardsInBatchRow{}
+	for rows.Next() {
+		var i ReorderBoardsInBatchRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.SprintID,
 			&i.Name,
 			&i.Position,
 			&i.CreatedAt,

@@ -262,7 +262,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Reorder boards within a sprint",
+                "description": "Reorder boards within a sprint (positions determined by array order)",
                 "consumes": [
                     "application/json"
                 ],
@@ -275,12 +275,22 @@
                 "summary": "Reorder boards",
                 "parameters": [
                     {
-                        "description": "Board reorder payload",
+                        "type": "string",
+                        "description": "Sprint ID",
+                        "name": "sprintId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "Board IDs in desired order",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/domain.BoardReorderModel"
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
                         }
                     }
                 ],
@@ -302,6 +312,12 @@
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrBlock"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/httpx.ErrBlock"
                         }
@@ -2590,36 +2606,6 @@
                 },
                 "updatedAt": {
                     "type": "string"
-                }
-            }
-        },
-        "domain.BoardPositionUpdate": {
-            "type": "object",
-            "required": [
-                "id",
-                "position"
-            ],
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "position": {
-                    "type": "integer",
-                    "minimum": 0
-                }
-            }
-        },
-        "domain.BoardReorderModel": {
-            "type": "object",
-            "required": [
-                "boards"
-            ],
-            "properties": {
-                "boards": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.BoardPositionUpdate"
-                    }
                 }
             }
         },
