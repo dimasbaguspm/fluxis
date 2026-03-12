@@ -20,7 +20,7 @@ func TestBoardColumn_Delete_Success(t *testing.T) {
 	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
 	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
 	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
-	column := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, randomBoardColumnName(), 0)
+	column := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, randomBoardColumnName())
 
 	code, _ := do[interface{}](t, "DELETE", "/boards/"+uuidToString(board.ID)+"/columns/"+uuidToString(column.ID), nil, tokens.AccessToken)
 
@@ -64,7 +64,7 @@ func TestBoardColumn_Delete_InvalidBoard(t *testing.T) {
 	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
 	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
 	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
-	column := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, randomBoardColumnName(), 0)
+	column := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, randomBoardColumnName())
 
 	// Try to delete column with wrong board ID
 	wrongBoardID := "550e8400-e29b-41d4-a716-446655440000"

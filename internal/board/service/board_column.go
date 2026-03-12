@@ -62,9 +62,8 @@ func (s *Service) CreateBoardColumn(ctx context.Context, boardID pgtype.UUID, b 
 	}
 
 	col, err := s.Repo.CreateBoardColumn(ctx, repository.CreateBoardColumnParams{
-		BoardID:  boardID,
-		Name:     b.Name,
-		Position: b.Position,
+		BoardID: boardID,
+		Name:    b.Name,
 	})
 	if err != nil {
 		return domain.BoardColumnModel{}, fmt.Errorf("create board column: %w", err)
@@ -90,31 +89,71 @@ func (s *Service) UpdateBoardColumn(ctx context.Context, boardID, columnID pgtyp
 		return domain.BoardColumnModel{}, httpx.NotFound("board column not found in this board")
 	}
 
-	if b.Name != "" {
-		colUpdated, err := s.Repo.UpdateBoardColumn(ctx, repository.UpdateBoardColumnParams{
-			ID:   columnID,
-			Name: b.Name,
-		})
-		if err != nil {
-			return domain.BoardColumnModel{}, fmt.Errorf("update board column: %w", err)
-		}
-		col.Name = colUpdated.Name
-		col.UpdatedAt = colUpdated.UpdatedAt.Time
+	colUpdated, err := s.Repo.UpdateBoardColumn(ctx, repository.UpdateBoardColumnParams{
+		ID:   columnID,
+		Name: b.Name,
+	})
+	if err != nil {
+		return domain.BoardColumnModel{}, fmt.Errorf("update board column: %w", err)
 	}
 
-	if b.Position != 0 {
-		colUpdated, err := s.Repo.ReorderBoardColumn(ctx, repository.ReorderBoardColumnParams{
-			ID:       columnID,
-			Position: b.Position,
-		})
-		if err != nil {
-			return domain.BoardColumnModel{}, fmt.Errorf("update board column position: %w", err)
-		}
-		col.Position = colUpdated.Position
-		col.UpdatedAt = colUpdated.UpdatedAt.Time
+	return domain.BoardColumnModel{
+		ID:        colUpdated.ID,
+		BoardID:   colUpdated.BoardID,
+		Name:      colUpdated.Name,
+		Position:  colUpdated.Position,
+		CreatedAt: colUpdated.CreatedAt.Time,
+		UpdatedAt: colUpdated.UpdatedAt.Time,
+	}, nil
+}
+
+func (s *Service) ReorderBoardColumns(ctx context.Context, boardID pgtype.UUID, reorder domain.BoardColumnReorderModel) ([]domain.BoardColumnModel, error) {
+	if _, err := s.GetBoard(ctx, boardID); err != nil {
+		return nil, fmt.Errorf("validate board: %w", err)
 	}
 
-	return col, nil
+	totalCount, err := s.Repo.CountBoardColumns(ctx, boardID)
+	if err != nil {
+		return nil, fmt.Errorf("count board columns: %w", err)
+	}
+
+	if len(reorder) != int(totalCount) {
+		return nil, httpx.BadRequest("reorder array must include all board columns")
+	}
+
+	count, err := s.Repo.CheckBoardColumnsExist(ctx, repository.CheckBoardColumnsExistParams{
+		BoardID: boardID,
+		Column2: reorder,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("check board columns: %w", err)
+	}
+
+	if count != int64(len(reorder)) {
+		return nil, httpx.BadRequest("some board columns not found or don't belong to this board")
+	}
+
+	cols, err := s.Repo.ReorderBoardColumnsInBatch(ctx, repository.ReorderBoardColumnsInBatchParams{
+		BoardID: boardID,
+		Column2: reorder,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("reorder board columns: %w", err)
+	}
+
+	result := make([]domain.BoardColumnModel, 0, len(cols))
+	for _, col := range cols {
+		result = append(result, domain.BoardColumnModel{
+			ID:        col.ID,
+			BoardID:   col.BoardID,
+			Name:      col.Name,
+			Position:  col.Position,
+			CreatedAt: col.CreatedAt.Time,
+			UpdatedAt: col.UpdatedAt.Time,
+		})
+	}
+
+	return result, nil
 }
 
 func (s *Service) DeleteBoardColumn(ctx context.Context, boardID, columnID pgtype.UUID) error {

@@ -45,14 +45,14 @@ type BoardColumnModel struct {
 }
 
 type BoardColumnCreateModel struct {
-	Name     string `json:"name" validate:"required,min=1"`
-	Position int32  `json:"position" validate:"min=0"`
+	Name string `json:"name" validate:"required,min=1"`
 }
 
 type BoardColumnUpdateModel struct {
-	Name     string `json:"name,omitempty" validate:"omitempty,min=1"`
-	Position int32  `json:"position,omitempty" validate:"omitempty,min=0"`
+	Name string `json:"name,omitempty" validate:"omitempty,min=1"`
 }
+
+type BoardColumnReorderModel []pgtype.UUID
 
 type BoardReader interface {
 	GetBoard(ctx context.Context, id pgtype.UUID) (BoardModel, error)
@@ -67,5 +67,6 @@ type BoardWriter interface {
 	DeleteBoard(ctx context.Context, id pgtype.UUID) error
 	CreateBoardColumn(ctx context.Context, boardID pgtype.UUID, b BoardColumnCreateModel) (BoardColumnModel, error)
 	UpdateBoardColumn(ctx context.Context, boardID, columnID pgtype.UUID, b BoardColumnUpdateModel) (BoardColumnModel, error)
+	ReorderBoardColumns(ctx context.Context, boardID pgtype.UUID, reorder BoardColumnReorderModel) ([]BoardColumnModel, error)
 	DeleteBoardColumn(ctx context.Context, boardID, columnID pgtype.UUID) error
 }

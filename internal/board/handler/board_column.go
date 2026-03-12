@@ -39,11 +39,11 @@ func (h *Handler) ListBoardColumns(w http.ResponseWriter, r *http.Request) {
 // CreateBoardColumn godoc
 //
 //	@Summary		Create a board column
-//	@Description	Creates a new column in a board
+//	@Description	Creates a new column in a board (position is auto-calculated)
 //	@Tags			board
 //	@Accept			json
 //	@Produce		json
-//	@Param			boardId	query		string								true	"Board ID"
+//	@Param			boardId	path		string								true	"Board ID"
 //	@Param			body		body		domain.BoardColumnCreateModel	true	"Column payload"
 //	@Success		201			{object}	domain.BoardColumnModel
 //	@Failure		400			{object}	httpx.ErrBlock
@@ -76,7 +76,7 @@ func (h *Handler) CreateBoardColumn(w http.ResponseWriter, r *http.Request) {
 // UpdateBoardColumn godoc
 //
 //	@Summary		Update a board column
-//	@Description	Updates a column in a board
+//	@Description	Updates column name (use reorder endpoint for position changes)
 //	@Tags			board
 //	@Accept			json
 //	@Produce		json
@@ -115,6 +115,48 @@ func (h *Handler) UpdateBoardColumn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.OK(w, column)
+}
+
+// ReorderBoardColumns godoc
+//
+//	@Summary		Reorder board columns
+//	@Description	Reorder columns within a board
+//	@Tags			board
+//	@Accept			json
+//	@Produce		json
+//	@Param			boardId	path		string									true	"Board ID"
+//	@Param			body		body		domain.BoardColumnReorderModel	true	"Column reorder payload"
+//	@Success		200		{array}		domain.BoardColumnModel
+//	@Failure		400		{object}	httpx.ErrBlock
+//	@Failure		401		{object}	httpx.ErrBlock
+//	@Failure		404		{object}	httpx.ErrBlock
+//	@Security		BearerAuth
+//	@Router			/boards/{boardId}/columns/reorder [patch]
+func (h *Handler) ReorderBoardColumns(w http.ResponseWriter, r *http.Request) {
+	boardID, err := httpx.PathUUID(r, "boardId")
+	if err != nil {
+		httpx.Handle(w, err)
+		return
+	}
+
+	var req domain.BoardColumnReorderModel
+	if err := httpx.Decode(r, &req); err != nil {
+		httpx.Handle(w, httpx.BadRequest(err.Error()))
+		return
+	}
+
+	if len(req) == 0 {
+		httpx.Handle(w, httpx.BadRequest("columns array is required and cannot be empty"))
+		return
+	}
+
+	columns, err := h.svc.ReorderBoardColumns(r.Context(), boardID, req)
+	if err != nil {
+		httpx.Handle(w, err)
+		return
+	}
+
+	httpx.OK(w, columns)
 }
 
 // DeleteBoardColumn godoc

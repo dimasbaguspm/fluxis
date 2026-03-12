@@ -11,6 +11,35 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const checkBoardColumnsExist = `-- name: CheckBoardColumnsExist :one
+SELECT COUNT(*) as count FROM board_columns
+WHERE board_id = $1 AND id = ANY($2::uuid[]) AND deleted_at IS NULL
+`
+
+type CheckBoardColumnsExistParams struct {
+	BoardID pgtype.UUID   `db:"board_id" json:"board_id"`
+	Column2 []pgtype.UUID `db:"column_2" json:"column_2"`
+}
+
+func (q *Queries) CheckBoardColumnsExist(ctx context.Context, arg CheckBoardColumnsExistParams) (int64, error) {
+	row := q.db.QueryRow(ctx, checkBoardColumnsExist, arg.BoardID, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countBoardColumns = `-- name: CountBoardColumns :one
+SELECT COUNT(*) as count FROM board_columns
+WHERE board_id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) CountBoardColumns(ctx context.Context, boardID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countBoardColumns, boardID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createBoard = `-- name: CreateBoard :one
 INSERT INTO boards (sprint_id, name, position)
 VALUES ($1, $2, (SELECT COALESCE(MAX(position), -1) + 1 FROM boards WHERE sprint_id = $1 AND deleted_at IS NULL))
@@ -39,18 +68,17 @@ func (q *Queries) CreateBoard(ctx context.Context, arg CreateBoardParams) (Board
 
 const createBoardColumn = `-- name: CreateBoardColumn :one
 INSERT INTO board_columns (board_id, name, position)
-VALUES ($1, $2, $3)
+VALUES ($1, $2, (SELECT COALESCE(MAX(position), -1) + 1 FROM board_columns WHERE board_id = $1 AND deleted_at IS NULL))
 RETURNING id, board_id, name, position, created_at, updated_at, deleted_at
 `
 
 type CreateBoardColumnParams struct {
-	BoardID  pgtype.UUID `db:"board_id" json:"board_id"`
-	Name     string      `db:"name" json:"name"`
-	Position int32       `db:"position" json:"position"`
+	BoardID pgtype.UUID `db:"board_id" json:"board_id"`
+	Name    string      `db:"name" json:"name"`
 }
 
 func (q *Queries) CreateBoardColumn(ctx context.Context, arg CreateBoardColumnParams) (BoardColumn, error) {
-	row := q.db.QueryRow(ctx, createBoardColumn, arg.BoardID, arg.Name, arg.Position)
+	row := q.db.QueryRow(ctx, createBoardColumn, arg.BoardID, arg.Name)
 	var i BoardColumn
 	err := row.Scan(
 		&i.ID,
@@ -252,9 +280,55 @@ func (q *Queries) ReorderBoardColumn(ctx context.Context, arg ReorderBoardColumn
 	return i, err
 }
 
+const reorderBoardColumnsInBatch = `-- name: ReorderBoardColumnsInBatch :many
+UPDATE board_columns
+SET position = positions.pos, updated_at = NOW()
+FROM (
+  SELECT id, ROW_NUMBER() OVER () - 1 as pos
+  FROM UNNEST($2::uuid[]) AS t(id)
+) AS positions
+WHERE board_columns.id = positions.id
+  AND board_columns.board_id = $1
+  AND board_columns.deleted_at IS NULL
+RETURNING board_columns.id, board_columns.board_id, board_columns.name, board_columns.position, board_columns.created_at, board_columns.updated_at, board_columns.deleted_at
+`
+
+type ReorderBoardColumnsInBatchParams struct {
+	BoardID pgtype.UUID   `db:"board_id" json:"board_id"`
+	Column2 []pgtype.UUID `db:"column_2" json:"column_2"`
+}
+
+func (q *Queries) ReorderBoardColumnsInBatch(ctx context.Context, arg ReorderBoardColumnsInBatchParams) ([]BoardColumn, error) {
+	rows, err := q.db.Query(ctx, reorderBoardColumnsInBatch, arg.BoardID, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []BoardColumn{}
+	for rows.Next() {
+		var i BoardColumn
+		if err := rows.Scan(
+			&i.ID,
+			&i.BoardID,
+			&i.Name,
+			&i.Position,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateBoard = `-- name: UpdateBoard :one
 UPDATE boards
-SET name = $2, sprint_id =$3, updated_at = NOW()
+SET name = $2, sprint_id = $3, updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, sprint_id, name, position, created_at, updated_at, deleted_at
 `

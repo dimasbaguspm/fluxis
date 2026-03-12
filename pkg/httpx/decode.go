@@ -13,33 +13,27 @@ import (
 
 var validate = validator.New()
 
-// DecodeAndValidate decodes JSON body into dst and runs struct validation.
-// Returns a clean user-facing error string on failure.
+// Decode decodes JSON body into dst without validation.
 // Body is limited to 1MB — prevents memory exhaustion attacks.
-
-func DecodeAndValidate(r *http.Request, dst any) error {
+func Decode(r *http.Request, dst any) error {
 	r.Body = http.MaxBytesReader(nil, r.Body, 1<<20) // 1MB
 
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields() // reject unexpected fields
 
 	if err := dec.Decode(dst); err != nil {
-		var syntaxErr *json.SyntaxError
-		var unmarshalErr *json.UnmarshalTypeError
-		var maxBytesErr *http.MaxBytesError
+		return handleDecodeError(err)
+	}
 
-		switch {
-		case errors.As(err, &syntaxErr):
-			return fmt.Errorf("malformed json at position %d", syntaxErr.Offset)
-		case errors.As(err, &unmarshalErr):
-			return fmt.Errorf("invalid type for field %q", unmarshalErr.Field)
-		case errors.As(err, &maxBytesErr):
-			return fmt.Errorf("request body too large")
-		case errors.Is(err, io.EOF):
-			return fmt.Errorf("request body is empty")
-		default:
-			return fmt.Errorf("decode error: %w", err)
-		}
+	return nil
+}
+
+// DecodeAndValidate decodes JSON body into dst and runs struct validation.
+// Returns a clean user-facing error string on failure.
+// Body is limited to 1MB — prevents memory exhaustion attacks.
+func DecodeAndValidate(r *http.Request, dst any) error {
+	if err := Decode(r, dst); err != nil {
+		return err
 	}
 
 	if err := validate.Struct(dst); err != nil {
@@ -51,6 +45,26 @@ func DecodeAndValidate(r *http.Request, dst any) error {
 	}
 
 	return nil
+}
+
+// handleDecodeError converts JSON decode errors into user-friendly messages.
+func handleDecodeError(err error) error {
+	var syntaxErr *json.SyntaxError
+	var unmarshalErr *json.UnmarshalTypeError
+	var maxBytesErr *http.MaxBytesError
+
+	switch {
+	case errors.As(err, &syntaxErr):
+		return fmt.Errorf("malformed json at position %d", syntaxErr.Offset)
+	case errors.As(err, &unmarshalErr):
+		return fmt.Errorf("invalid type for field %q", unmarshalErr.Field)
+	case errors.As(err, &maxBytesErr):
+		return fmt.Errorf("request body too large")
+	case errors.Is(err, io.EOF):
+		return fmt.Errorf("request body is empty")
+	default:
+		return fmt.Errorf("decode error: %w", err)
+	}
 }
 
 // formatValidationErrors turns validator's verbose errors

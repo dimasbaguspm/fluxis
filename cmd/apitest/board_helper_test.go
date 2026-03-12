@@ -28,10 +28,9 @@ func randomBoardName() string {
 	return "Board " + randomString(4)
 }
 
-func createBoardColumn(tb testing.TB, boardID string, token string, name string, position int32) domain.BoardColumnModel {
+func createBoardColumn(tb testing.TB, boardID string, token string, name string) domain.BoardColumnModel {
 	statusCode, resp := do[domain.BoardColumnModel](tb, "POST", "/boards/"+boardID+"/columns", domain.BoardColumnCreateModel{
-		Name:     name,
-		Position: position,
+		Name: name,
 	}, token)
 
 	if statusCode != http.StatusCreated {

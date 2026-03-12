@@ -22,8 +22,8 @@ func TestBoardColumn_List_Success(t *testing.T) {
 	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
 
 	// Create multiple columns
-	col1 := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, "Column 1", 0)
-	col2 := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, "Column 2", 1)
+	col1 := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, "Column 1")
+	col2 := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, "Column 2")
 
 	statusCode, resp := do[[]domain.BoardColumnModel](t, "GET", "/boards/"+uuidToString(board.ID)+"/columns", nil, tokens.AccessToken)
 

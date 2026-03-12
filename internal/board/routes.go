@@ -26,6 +26,7 @@ func (m *Module) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("DELETE /boards/{boardId}", httpx.RequireAuth(m.handler.DeleteBoard))
 	mux.HandleFunc("GET /boards/{boardId}/columns", httpx.RequireAuth(m.handler.ListBoardColumns))
 	mux.HandleFunc("POST /boards/{boardId}/columns", httpx.RequireAuth(m.handler.CreateBoardColumn))
+	mux.HandleFunc("PATCH /boards/{boardId}/columns/reorder", httpx.RequireAuth(m.handler.ReorderBoardColumns))
 	mux.HandleFunc("PATCH /boards/{boardId}/columns/{boardColumnId}", httpx.RequireAuth(m.handler.UpdateBoardColumn))
 	mux.HandleFunc("DELETE /boards/{boardId}/columns/{boardColumnId}", httpx.RequireAuth(m.handler.DeleteBoardColumn))
 }

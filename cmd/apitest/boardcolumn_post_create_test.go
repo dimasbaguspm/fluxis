@@ -22,10 +22,8 @@ func TestBoardColumn_Create_Success(t *testing.T) {
 	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
 
 	columnName := randomBoardColumnName()
-	position := int32(0)
 	statusCode, resp := do[domain.BoardColumnModel](t, "POST", "/boards/"+uuidToString(board.ID)+"/columns", domain.BoardColumnCreateModel{
-		Name:     columnName,
-		Position: position,
+		Name: columnName,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated {
@@ -38,10 +36,6 @@ func TestBoardColumn_Create_Success(t *testing.T) {
 
 	if resp.Data.Name != columnName {
 		t.Fatalf("expected name '%s', got '%s'", columnName, resp.Data.Name)
-	}
-
-	if resp.Data.Position != position {
-		t.Fatalf("expected position %d, got %d", position, resp.Data.Position)
 	}
 
 	if uuidToString(resp.Data.ID) == "" {
@@ -64,8 +58,7 @@ func TestBoardColumn_Create_MissingName(t *testing.T) {
 	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
 
 	status, _ := do[domain.BoardColumnModel](t, "POST", "/boards/"+uuidToString(board.ID)+"/columns", domain.BoardColumnCreateModel{
-		Name:     "",
-		Position: 0,
+		Name: "",
 	}, tokens.AccessToken)
 
 	if status != http.StatusBadRequest {
@@ -77,8 +70,7 @@ func TestBoardColumn_Create_InvalidBoardUUID(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	statusCode, _ := do[domain.BoardColumnModel](t, "POST", "/boards/not-a-uuid/columns", domain.BoardColumnCreateModel{
-		Name:     "Test Column",
-		Position: 0,
+		Name: "Test Column",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusBadRequest {
@@ -92,8 +84,7 @@ func TestBoardColumn_Create_NonExistentBoard(t *testing.T) {
 	nonExistentBoardID := "550e8400-e29b-41d4-a716-446655440000"
 
 	statusCode, _ := do[domain.BoardColumnModel](t, "POST", "/boards/"+nonExistentBoardID+"/columns", domain.BoardColumnCreateModel{
-		Name:     "Test Column",
-		Position: 0,
+		Name: "Test Column",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusNotFound {
@@ -105,8 +96,7 @@ func TestBoardColumn_Create_Unauthenticated(t *testing.T) {
 	boardID := "550e8400-e29b-41d4-a716-446655440000"
 
 	statusCode, _ := do[domain.BoardColumnModel](t, "POST", "/boards/"+boardID+"/columns", domain.BoardColumnCreateModel{
-		Name:     "Test Column",
-		Position: 0,
+		Name: "Test Column",
 	}, "")
 
 	if statusCode != http.StatusUnauthorized {

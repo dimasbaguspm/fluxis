@@ -28,7 +28,7 @@ func TestTicket_MoveToBoard_Success(t *testing.T) {
 	board := createBoard(t, sprintID, tokens.AccessToken, randomBoardName())
 	boardID := uuidToString(board.ID)
 
-	boardColumn := createBoardColumn(t, boardID, tokens.AccessToken, randomBoardColumnName(), 0)
+	boardColumn := createBoardColumn(t, boardID, tokens.AccessToken, randomBoardColumnName())
 	boardColumnID := uuidToString(boardColumn.ID)
 
 	ticket := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "story", "medium")

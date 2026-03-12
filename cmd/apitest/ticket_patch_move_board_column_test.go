@@ -29,7 +29,7 @@ func TestTicket_MoveToBoardColumn_Success(t *testing.T) {
 	board := createBoard(t, sprintID, tokens.AccessToken, randomBoardName())
 	boardID := uuidToString(board.ID)
 
-	boardColumn := createBoardColumn(t, boardID, tokens.AccessToken, randomBoardColumnName(), 0)
+	boardColumn := createBoardColumn(t, boardID, tokens.AccessToken, randomBoardColumnName())
 	boardColumnID := uuidToString(boardColumn.ID)
 
 	ticket := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "story", "medium")
@@ -80,7 +80,7 @@ func TestTicket_MoveToBoardColumn_MismatchedColumn(t *testing.T) {
 	boardID2 := uuidToString(board2.ID)
 
 	// Create column in board2
-	boardColumn2 := createBoardColumn(t, boardID2, tokens.AccessToken, randomBoardColumnName(), 0)
+	boardColumn2 := createBoardColumn(t, boardID2, tokens.AccessToken, randomBoardColumnName())
 	boardColumnID2 := uuidToString(boardColumn2.ID)
 
 	ticket := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "story", "medium")
