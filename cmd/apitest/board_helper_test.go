@@ -9,7 +9,7 @@ import (
 
 func createBoard(tb testing.TB, sprintID string, token string, name string) domain.BoardModel {
 	statusCode, resp := do[domain.BoardModel](tb, "POST", "/boards", domain.BoardCreateModel{
-		Name:     &name,
+		Name:     name,
 		SprintID: stringToUUID(sprintID),
 	}, token)
 
@@ -30,8 +30,8 @@ func randomBoardName() string {
 
 func createBoardColumn(tb testing.TB, boardID string, token string, name string, position int32) domain.BoardColumnModel {
 	statusCode, resp := do[domain.BoardColumnModel](tb, "POST", "/boards/"+boardID+"/columns", domain.BoardColumnCreateModel{
-		Name:     &name,
-		Position: &position,
+		Name:     name,
+		Position: position,
 	}, token)
 
 	if statusCode != http.StatusCreated {

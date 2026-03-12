@@ -29,7 +29,7 @@ func TestBoards_Create_Success(t *testing.T) {
 	// Create board
 	boardName := randomBoardName()
 	statusCode, resp := do[domain.BoardModel](t, "POST", "/boards", domain.BoardCreateModel{
-		Name:     &boardName,
+		Name:     boardName,
 		SprintID: stringToUUID(sprintID),
 	}, tokens.AccessToken)
 
@@ -59,7 +59,7 @@ func TestBoards_Create_Unauthenticated(t *testing.T) {
 
 	name := "Test Board"
 	statusCode, _ := do[domain.BoardModel](t, "POST", "/boards", domain.BoardCreateModel{
-		Name:     &name,
+		Name:     name,
 		SprintID: stringToUUID(sprintID),
 	}, "")
 
@@ -111,7 +111,7 @@ func TestBoards_Create_InvalidSprintID(t *testing.T) {
 	boardName := randomBoardName()
 
 	statusCode, resp := do[domain.BoardModel](t, "POST", "/boards", domain.BoardCreateModel{
-		Name:     &boardName,
+		Name:     boardName,
 		SprintID: stringToUUID(invalidSprintID),
 	}, tokens.AccessToken)
 
@@ -246,7 +246,7 @@ func TestBoards_Update_Success(t *testing.T) {
 	// Update the board
 	updatedName := "Updated Board Name " + randomString(4)
 	statusCode, resp := do[domain.BoardModel](t, "PATCH", "/boards/"+boardID, domain.BoardUpdateModel{
-		Name: &updatedName,
+		Name: updatedName,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
@@ -286,8 +286,8 @@ func TestBoards_Update_WithSprintChange_Success(t *testing.T) {
 	updatedName := "Updated Board Name"
 	newSprintID := stringToUUID(sprintID2)
 	statusCode, resp := do[domain.BoardModel](t, "PATCH", "/boards/"+boardID, domain.BoardUpdateModel{
-		Name:     &updatedName,
-		SprintID: &newSprintID,
+		Name:     updatedName,
+		SprintID: newSprintID,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
@@ -328,8 +328,8 @@ func TestBoards_Update_InvalidSprintID(t *testing.T) {
 	invalidSprintID := stringToUUID("550e8400-e29b-41d4-a716-446655440000")
 	updatedName := "Updated Board"
 	statusCode, resp := do[domain.BoardModel](t, "PATCH", "/boards/"+boardID, domain.BoardUpdateModel{
-		Name:     &updatedName,
-		SprintID: &invalidSprintID,
+		Name:     updatedName,
+		SprintID: invalidSprintID,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusNotFound {
@@ -524,8 +524,8 @@ func TestBoardColumns_Create_Success(t *testing.T) {
 	columnName := randomBoardColumnName()
 	position := int32(0)
 	statusCode, resp := do[domain.BoardColumnModel](t, "POST", "/boards/"+uuidToString(board.ID)+"/columns", domain.BoardColumnCreateModel{
-		Name:     &columnName,
-		Position: &position,
+		Name:     columnName,
+		Position: position,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated {
@@ -566,7 +566,7 @@ func TestBoardColumns_Update_Success(t *testing.T) {
 
 	newName := "Updated Column"
 	statusCode, resp := do[domain.BoardColumnModel](t, "PATCH", "/boards/"+uuidToString(board.ID)+"/columns/"+uuidToString(column.ID), domain.BoardColumnUpdateModel{
-		Name: &newName,
+		Name: newName,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
@@ -599,7 +599,7 @@ func TestBoardColumns_Update_Position(t *testing.T) {
 
 	newPosition := int32(5)
 	statusCode, resp := do[domain.BoardColumnModel](t, "PATCH", "/boards/"+uuidToString(board.ID)+"/columns/"+uuidToString(column.ID), domain.BoardColumnUpdateModel{
-		Position: &newPosition,
+		Position: newPosition,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
@@ -632,7 +632,7 @@ func TestBoardColumns_Update_NotFound(t *testing.T) {
 	invalidColumnID := "550e8400-e29b-41d4-a716-446655440000"
 	newName := "Updated Column"
 	code, _ := do[domain.BoardColumnModel](t, "PATCH", "/boards/"+uuidToString(board.ID)+"/columns/"+invalidColumnID, domain.BoardColumnUpdateModel{
-		Name: &newName,
+		Name: newName,
 	}, tokens.AccessToken)
 
 	if code != http.StatusNotFound {

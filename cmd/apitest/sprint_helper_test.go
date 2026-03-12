@@ -9,7 +9,7 @@ import (
 
 func createSprint(tb testing.TB, projectID string, token string, name string) domain.SprintModel {
 	statusCode, resp := do[domain.SprintModel](tb, "POST", "/sprints", domain.SprintCreateModel{
-		Name:      &name,
+		Name:      name,
 		ProjectID: stringToUUID(projectID),
 	}, token)
 

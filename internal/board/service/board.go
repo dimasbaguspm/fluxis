@@ -36,7 +36,7 @@ func (s *Service) CreateBoard(ctx context.Context, b domain.BoardCreateModel) (d
 
 	board, err := s.Repo.CreateBoard(ctx, repository.CreateBoardParams{
 		SprintID: sprint.ID,
-		Name:     *b.Name,
+		Name:     b.Name,
 	})
 	if err != nil {
 		return domain.BoardModel{}, fmt.Errorf("create board: %w", err)
@@ -89,8 +89,8 @@ func (s *Service) UpdateBoard(ctx context.Context, id pgtype.UUID, b domain.Boar
 			return nil
 		},
 		func(ctx context.Context) error {
-			if b.SprintID != nil {
-				s, err := s.Sprint.GetSprint(ctx, *b.SprintID)
+			if b.SprintID.Valid {
+				s, err := s.Sprint.GetSprint(ctx, b.SprintID)
 				if err != nil {
 					return fmt.Errorf("validate sprint: %w", err)
 				}
@@ -106,12 +106,12 @@ func (s *Service) UpdateBoard(ctx context.Context, id pgtype.UUID, b domain.Boar
 
 	// Use existing value if not provided
 	name := existing.Name
-	if b.Name != nil {
-		name = *b.Name
+	if b.Name != "" {
+		name = b.Name
 	}
 
 	sprintID := existing.SprintID
-	if b.SprintID != nil {
+	if b.SprintID.Valid {
 		sprintID = sprint.ID
 	}
 

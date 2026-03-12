@@ -26,7 +26,7 @@ func TestSprints_Create_Success(t *testing.T) {
 	// Create sprint
 	sprintName := randomSprintName()
 	statusCode, resp := do[domain.SprintModel](t, "POST", "/sprints", domain.SprintCreateModel{
-		Name:      &sprintName,
+		Name:      sprintName,
 		ProjectID: stringToUUID(projectID),
 	}, tokens.AccessToken)
 
@@ -71,9 +71,9 @@ func TestSprints_Create_WithGoal(t *testing.T) {
 	sprintName := randomSprintName()
 	goal := "Complete user authentication feature"
 	statusCode, resp := do[domain.SprintModel](t, "POST", "/sprints", domain.SprintCreateModel{
-		Name:      &sprintName,
+		Name:      sprintName,
 		ProjectID: stringToUUID(projectID),
-		Goal:      &goal,
+		Goal:      goal,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || resp.Data == nil {
@@ -90,7 +90,7 @@ func TestSprints_Create_Unauthenticated(t *testing.T) {
 
 	name := "Test Sprint"
 	statusCode, _ := do[domain.SprintModel](t, "POST", "/sprints", domain.SprintCreateModel{
-		Name:      &name,
+		Name:      name,
 		ProjectID: stringToUUID(projectID),
 	}, "")
 
@@ -104,7 +104,7 @@ func TestSprints_Create_MissingProjectId(t *testing.T) {
 
 	name := "Test Sprint"
 	statusCode, resp := do[domain.SprintModel](t, "POST", "/sprints", domain.SprintCreateModel{
-		Name: &name,
+		Name: name,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusNotFound {
@@ -229,8 +229,8 @@ func TestSprints_Update_Success(t *testing.T) {
 	updatedName := "Updated Sprint Name " + randomString(4)
 	updatedGoal := "New sprint goal"
 	statusCode, resp := do[domain.SprintModel](t, "PATCH", "/sprints/"+sprintID, domain.SprintUpdateModel{
-		Name: &updatedName,
-		Goal: &updatedGoal,
+		Name: updatedName,
+		Goal: updatedGoal,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
@@ -342,7 +342,7 @@ func TestSprints_Update_PartialFields(t *testing.T) {
 	// Update only the goal (name should remain unchanged)
 	updatedGoal := "Only goal changed"
 	statusCode, resp := do[domain.SprintModel](t, "PATCH", "/sprints/"+sprintID, domain.SprintUpdateModel{
-		Goal: &updatedGoal,
+		Goal: updatedGoal,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {

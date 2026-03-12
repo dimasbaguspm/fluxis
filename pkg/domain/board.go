@@ -17,13 +17,13 @@ type BoardModel struct {
 }
 
 type BoardCreateModel struct {
-	Name     *string     `json:"name" validate:"required,min=1"`
+	Name     string      `json:"name" validate:"required,min=1"`
 	SprintID pgtype.UUID `json:"sprintId" validate:"required"`
 }
 
 type BoardUpdateModel struct {
-	Name     *string      `json:"name" validate:"omitempty,min=1"`
-	SprintID *pgtype.UUID `json:"sprintId,omitempty"`
+	Name     string      `json:"name,omitempty" validate:"omitempty,min=1"`
+	SprintID pgtype.UUID `json:"sprintId,omitempty"`
 }
 
 type BoardReorderModel struct {
@@ -45,13 +45,13 @@ type BoardColumnModel struct {
 }
 
 type BoardColumnCreateModel struct {
-	Name     *string `json:"name" validate:"required,min=1"`
-	Position *int32  `json:"position" validate:"required,min=0"`
+	Name     string `json:"name" validate:"required,min=1"`
+	Position int32  `json:"position" validate:"min=0"`
 }
 
 type BoardColumnUpdateModel struct {
-	Name     *string `json:"name" validate:"omitempty,min=1"`
-	Position *int32  `json:"position" validate:"omitempty,min=0"`
+	Name     string `json:"name,omitempty" validate:"omitempty,min=1"`
+	Position int32  `json:"position,omitempty" validate:"omitempty,min=0"`
 }
 
 type BoardReader interface {

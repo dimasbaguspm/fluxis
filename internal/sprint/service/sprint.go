@@ -66,30 +66,30 @@ func (s *Service) CreateSprint(ctx context.Context, req domain.SprintCreateModel
 	}
 
 	sprintStatus := repository.SprintStatusPlanned
-	if req.Status != nil {
-		sprintStatus = repository.SprintStatus(*req.Status)
+	if req.Status != "" {
+		sprintStatus = repository.SprintStatus(req.Status)
 	}
 
 	goalText := pgtype.Text{Valid: false}
-	if req.Goal != nil {
-		goalText = pgtype.Text{String: *req.Goal, Valid: true}
+	if req.Goal != "" {
+		goalText = pgtype.Text{String: req.Goal, Valid: true}
 	}
 
 	plannedStart := pgtype.Timestamptz{Valid: false}
-	if req.PlannedStartedAt != nil {
+	if req.PlannedStartedAt != "" {
 		plannedStart = pgtype.Timestamptz{}
-		plannedStart.Scan(*req.PlannedStartedAt)
+		plannedStart.Scan(req.PlannedStartedAt)
 	}
 
 	plannedEnd := pgtype.Timestamptz{Valid: false}
-	if req.PlannedCompletedAt != nil {
+	if req.PlannedCompletedAt != "" {
 		plannedEnd = pgtype.Timestamptz{}
-		plannedEnd.Scan(*req.PlannedCompletedAt)
+		plannedEnd.Scan(req.PlannedCompletedAt)
 	}
 
 	sprint, err := s.Repo.CreateSprint(ctx, repository.CreateSprintParams{
 		ProjectID:          project.ID,
-		Name:               *req.Name,
+		Name:               req.Name,
 		Goal:               goalText,
 		Status:             sprintStatus,
 		PlannedStartedAt:   plannedStart,
@@ -146,18 +146,32 @@ func (s *Service) UpdateSprint(ctx context.Context, id pgtype.UUID, req domain.S
 
 	// Use provided values or keep existing ones
 	updatedName := current.Name
-	if req.Name != nil {
-		updatedName = *req.Name
+	if req.Name != "" {
+		updatedName = req.Name
 	}
 
 	updatedGoal := current.Goal
-	if req.Goal != nil {
-		updatedGoal = pgtype.Text{String: *req.Goal, Valid: true}
+	if req.Goal != "" {
+		updatedGoal = pgtype.Text{String: req.Goal, Valid: true}
 	}
 
 	updatedStatus := current.Status
-	if req.Status != nil {
-		updatedStatus = repository.SprintStatus(*req.Status)
+	if req.Status != "" {
+		updatedStatus = repository.SprintStatus(req.Status)
+	}
+
+	updatedPlannedStart := current.PlannedStartedAt
+	if req.PlannedStartedAt != "" {
+		ts := pgtype.Timestamptz{}
+		ts.Scan(req.PlannedStartedAt)
+		updatedPlannedStart = ts
+	}
+
+	updatedPlannedComplete := current.PlannedCompletedAt
+	if req.PlannedCompletedAt != "" {
+		ts := pgtype.Timestamptz{}
+		ts.Scan(req.PlannedCompletedAt)
+		updatedPlannedComplete = ts
 	}
 
 	sprint, err := s.Repo.UpdateSprint(ctx, repository.UpdateSprintParams{
@@ -165,8 +179,8 @@ func (s *Service) UpdateSprint(ctx context.Context, id pgtype.UUID, req domain.S
 		Name:               updatedName,
 		Goal:               updatedGoal,
 		Status:             updatedStatus,
-		PlannedStartedAt:   current.PlannedStartedAt,
-		PlannedCompletedAt: current.PlannedCompletedAt,
+		PlannedStartedAt:   updatedPlannedStart,
+		PlannedCompletedAt: updatedPlannedComplete,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

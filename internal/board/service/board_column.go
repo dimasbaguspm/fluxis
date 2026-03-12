@@ -61,18 +61,10 @@ func (s *Service) CreateBoardColumn(ctx context.Context, boardID pgtype.UUID, b 
 		return domain.BoardColumnModel{}, fmt.Errorf("validate board: %w", err)
 	}
 
-	if b.Name == nil {
-		return domain.BoardColumnModel{}, httpx.BadRequest("name is required")
-	}
-
-	if b.Position == nil {
-		return domain.BoardColumnModel{}, httpx.BadRequest("position is required")
-	}
-
 	col, err := s.Repo.CreateBoardColumn(ctx, repository.CreateBoardColumnParams{
 		BoardID:  boardID,
-		Name:     *b.Name,
-		Position: *b.Position,
+		Name:     b.Name,
+		Position: b.Position,
 	})
 	if err != nil {
 		return domain.BoardColumnModel{}, fmt.Errorf("create board column: %w", err)
@@ -98,10 +90,10 @@ func (s *Service) UpdateBoardColumn(ctx context.Context, boardID, columnID pgtyp
 		return domain.BoardColumnModel{}, httpx.NotFound("board column not found in this board")
 	}
 
-	if b.Name != nil {
+	if b.Name != "" {
 		colUpdated, err := s.Repo.UpdateBoardColumn(ctx, repository.UpdateBoardColumnParams{
 			ID:   columnID,
-			Name: *b.Name,
+			Name: b.Name,
 		})
 		if err != nil {
 			return domain.BoardColumnModel{}, fmt.Errorf("update board column: %w", err)
@@ -110,10 +102,10 @@ func (s *Service) UpdateBoardColumn(ctx context.Context, boardID, columnID pgtyp
 		col.UpdatedAt = colUpdated.UpdatedAt.Time
 	}
 
-	if b.Position != nil {
+	if b.Position != 0 {
 		colUpdated, err := s.Repo.ReorderBoardColumn(ctx, repository.ReorderBoardColumnParams{
 			ID:       columnID,
-			Position: *b.Position,
+			Position: b.Position,
 		})
 		if err != nil {
 			return domain.BoardColumnModel{}, fmt.Errorf("update board column position: %w", err)

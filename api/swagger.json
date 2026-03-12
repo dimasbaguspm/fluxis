@@ -2435,8 +2435,7 @@
         "domain.BoardColumnCreateModel": {
             "type": "object",
             "required": [
-                "name",
-                "position"
+                "name"
             ],
             "properties": {
                 "name": {

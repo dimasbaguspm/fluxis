@@ -85,9 +85,9 @@ func (s *Service) CreateTicket(ctx context.Context, projectID pgtype.UUID, p dom
 
 	// Convert DueDate to pgtype.Date if provided
 	var dueDate pgtype.Date
-	if p.DueDate != nil {
+	if !p.DueDate.IsZero() {
 		dueDate = pgtype.Date{
-			Time:  *p.DueDate,
+			Time:  p.DueDate,
 			Valid: true,
 		}
 	}
@@ -129,9 +129,9 @@ func (s *Service) UpdateTicket(ctx context.Context, id pgtype.UUID, p domain.Tic
 
 	// Convert DueDate to pgtype.Date if provided
 	var dueDate pgtype.Date
-	if p.DueDate != nil {
+	if !p.DueDate.IsZero() {
 		dueDate = pgtype.Date{
-			Time:  *p.DueDate,
+			Time:  p.DueDate,
 			Valid: true,
 		}
 	}
