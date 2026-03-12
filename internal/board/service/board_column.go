@@ -112,33 +112,19 @@ func (s *Service) ReorderBoardColumns(ctx context.Context, boardID pgtype.UUID, 
 		return nil, fmt.Errorf("validate board: %w", err)
 	}
 
-	totalCount, err := s.Repo.CountBoardColumns(ctx, boardID)
-	if err != nil {
-		return nil, fmt.Errorf("count board columns: %w", err)
-	}
-
-	if len(reorder) != int(totalCount) {
-		return nil, httpx.BadRequest("reorder array must include all board columns")
-	}
-
-	count, err := s.Repo.CheckBoardColumnsExist(ctx, repository.CheckBoardColumnsExistParams{
-		BoardID: boardID,
-		Column2: reorder,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("check board columns: %w", err)
-	}
-
-	if count != int64(len(reorder)) {
-		return nil, httpx.BadRequest("some board columns not found or don't belong to this board")
-	}
-
 	cols, err := s.Repo.ReorderBoardColumnsInBatch(ctx, repository.ReorderBoardColumnsInBatchParams{
 		BoardID: boardID,
 		Column2: reorder,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("reorder board columns: %w", err)
+	}
+
+	if len(cols) == 0 {
+		if len(reorder) == 0 {
+			return nil, httpx.BadRequest("columns array is required and cannot be empty")
+		}
+		return nil, httpx.BadRequest("some board columns not found or don't belong to this board, or reorder array must include all board columns")
 	}
 
 	result := make([]domain.BoardColumnModel, 0, len(cols))
