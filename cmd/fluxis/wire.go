@@ -72,9 +72,11 @@ func Wire(d Deps) *App {
 	})
 	orgSvc := orgservice.New(orgservice.Deps{
 		Repo: orgRepo,
+		User: userSvc,
 	})
 	projectSvc := projectservice.New(projectservice.Deps{
 		Repo: projectRepo,
+		Org:  orgSvc,
 	})
 	sprintSvc := sprintservice.New(sprintservice.Deps{
 		Repo:    sprintRepo,

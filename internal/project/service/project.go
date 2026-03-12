@@ -90,8 +90,13 @@ func (s *Service) ListProjectsByOrg(ctx context.Context, orgId pgtype.UUID) ([]d
 }
 
 func (s *Service) CreateProject(ctx context.Context, orgId pgtype.UUID, p domain.ProjectCreateModel) (domain.ProjectModel, error) {
+	org, err := s.Org.GetOrgById(ctx, orgId)
+	if err != nil {
+		return domain.ProjectModel{}, err
+	}
+
 	project, err := s.Repo.CreateProject(ctx, repository.CreateProjectParams{
-		OrgID:       orgId,
+		OrgID:       org.ID,
 		Key:         p.Key,
 		Name:        p.Name,
 		Description: pgtype.Text{String: p.Description, Valid: p.Description != ""},

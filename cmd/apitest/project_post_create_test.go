@@ -144,3 +144,130 @@ func TestProject_Create_WithDescription(t *testing.T) {
 		t.Fatalf("expected description '%s', got '%s'", description, resp.Data.Description)
 	}
 }
+
+func TestProject_Create_MissingKey(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+
+	status, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+		Key:        "",
+		Name:       "Test Project",
+		Visibility: "private",
+	}, tokens.AccessToken)
+
+	if status != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", status)
+	}
+}
+
+func TestProject_Create_MissingName(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+
+	status, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+		Key:        randomProjectKey(),
+		Name:       "",
+		Visibility: "private",
+	}, tokens.AccessToken)
+
+	if status != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", status)
+	}
+}
+
+func TestProject_Create_MissingVisibility(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+
+	status, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+		Key:        randomProjectKey(),
+		Name:       "Test Project",
+		Visibility: "",
+	}, tokens.AccessToken)
+
+	if status != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", status)
+	}
+}
+
+func TestProject_Create_InvalidVisibility(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+
+	status, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+		Key:        randomProjectKey(),
+		Name:       "Test Project",
+		Visibility: "protected",
+	}, tokens.AccessToken)
+
+	if status != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", status)
+	}
+}
+
+func TestProject_Create_InvalidOrgIdFormat(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId=not-a-uuid", domain.ProjectCreateModel{
+		Key:        randomProjectKey(),
+		Name:       "Test Project",
+		Visibility: "private",
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", statusCode)
+	}
+}
+
+func TestProject_Create_NonExistentOrg(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	nonExistentOrgID := "550e8400-e29b-41d4-a716-446655440000"
+
+	statusCode, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId="+nonExistentOrgID, domain.ProjectCreateModel{
+		Key:        randomProjectKey(),
+		Name:       "Test Project",
+		Visibility: "private",
+	}, tokens.AccessToken)
+
+	// Non-existent org can result in 404 or 500 (database constraint)
+	if statusCode != http.StatusNotFound && statusCode != http.StatusInternalServerError {
+		t.Fatalf("expected status 404 or 500, got %d", statusCode)
+	}
+}

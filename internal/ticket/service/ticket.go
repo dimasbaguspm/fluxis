@@ -77,6 +77,12 @@ func (s *Service) GetTicketByKey(ctx context.Context, projectID pgtype.UUID, key
 func (s *Service) CreateTicket(ctx context.Context, projectID pgtype.UUID, p domain.TicketCreateModel) (domain.TicketModel, error) {
 	userID := httpx.MustUserID(ctx)
 
+	// Validate project exists before creating ticket
+	_, err := s.Project.GetProjectById(ctx, projectID)
+	if err != nil {
+		return domain.TicketModel{}, err
+	}
+
 	// Generate ticket key
 	key, err := s.Repo.GenerateTicketKey(ctx, projectID)
 	if err != nil {

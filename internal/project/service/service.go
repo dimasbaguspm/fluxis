@@ -7,6 +7,7 @@ import (
 
 type Deps struct {
 	Repo *repository.Queries
+	Org  domain.OrgReader
 }
 
 type Service struct {

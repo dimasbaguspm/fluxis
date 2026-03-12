@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	ErrOrgNotFound = httpx.NotFound("organisation not found")
-	ErrSlugIsTaken = httpx.Conflict("slug has been taken")
+	ErrOrgNotFound         = httpx.NotFound("organisation not found")
+	ErrSlugIsTaken        = httpx.Conflict("slug has been taken")
+	ErrOrgMemberNotFound  = httpx.NotFound("organisation member not found")
 )
 
 func (s *Service) ListOrgs(ctx context.Context, q domain.OrganisationSearchModel) ([]domain.OrganisationModel, error) {

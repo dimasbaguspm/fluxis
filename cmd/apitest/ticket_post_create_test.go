@@ -114,3 +114,138 @@ func TestTicket_Create_InvalidTicketType(t *testing.T) {
 		t.Fatalf("expected status 400, got %d", statusCode)
 	}
 }
+
+func TestTicket_Create_MissingTitle(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
+	projectID := uuidToString(project.ID)
+
+	status, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
+		Title:    "",
+		Type:     "story",
+		Priority: "high",
+	}, tokens.AccessToken)
+
+	if status != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", status)
+	}
+}
+
+func TestTicket_Create_MissingType(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
+	projectID := uuidToString(project.ID)
+
+	status, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
+		Title:    "Test Ticket",
+		Type:     "",
+		Priority: "high",
+	}, tokens.AccessToken)
+
+	if status != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", status)
+	}
+}
+
+func TestTicket_Create_MissingPriority(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
+	projectID := uuidToString(project.ID)
+
+	status, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
+		Title:    "Test Ticket",
+		Type:     "story",
+		Priority: "",
+	}, tokens.AccessToken)
+
+	if status != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", status)
+	}
+}
+
+func TestTicket_Create_InvalidPriority(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
+	projectID := uuidToString(project.ID)
+
+	status, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
+		Title:    "Test Ticket",
+		Type:     "story",
+		Priority: "ultra",
+	}, tokens.AccessToken)
+
+	if status != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", status)
+	}
+}
+
+func TestTicket_Create_MissingProjectId(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets", domain.TicketCreateModel{
+		Title:    "Test Ticket",
+		Type:     "story",
+		Priority: "high",
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", statusCode)
+	}
+}
+
+func TestTicket_Create_NonExistentProject(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	nonExistentProjectID := "550e8400-e29b-41d4-a716-446655440000"
+
+	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+nonExistentProjectID, domain.TicketCreateModel{
+		Title:    "Test Ticket",
+		Type:     "story",
+		Priority: "high",
+	}, tokens.AccessToken)
+
+	// Non-existent project can result in either 404 or 500 depending on when the error is caught
+	if statusCode != http.StatusNotFound && statusCode != http.StatusInternalServerError {
+		t.Fatalf("expected status 404 or 500, got %d", statusCode)
+	}
+}

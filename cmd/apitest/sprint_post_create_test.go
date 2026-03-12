@@ -111,3 +111,58 @@ func TestSprint_Create_MissingProjectId(t *testing.T) {
 		t.Fatalf("expected status 400, got %d: %v", statusCode, resp.Error)
 	}
 }
+
+func TestSprint_Create_MissingName(t *testing.T) {
+	// Create org and project first
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	projectID := uuidToString(project.ID)
+
+	status, _ := do[domain.SprintModel](t, "POST", "/sprints", domain.SprintCreateModel{
+		Name:      "",
+		ProjectID: stringToUUID(projectID),
+	}, tokens.AccessToken)
+
+	if status != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", status)
+	}
+}
+
+func TestSprint_Create_InvalidProjectIdFormat(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, _ := do[domain.SprintModel](t, "POST", "/sprints", domain.SprintCreateModel{
+		Name:      "Test Sprint",
+		ProjectID: stringToUUID("not-a-uuid"),
+	}, tokens.AccessToken)
+
+	// Invalid UUID format is treated as not found, not bad request
+	if statusCode != http.StatusNotFound && statusCode != http.StatusBadRequest {
+		t.Fatalf("expected status 404 or 400, got %d", statusCode)
+	}
+}
+
+func TestSprint_Create_NonExistentProject(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	nonExistentProjectID := "550e8400-e29b-41d4-a716-446655440000"
+
+	statusCode, _ := do[domain.SprintModel](t, "POST", "/sprints", domain.SprintCreateModel{
+		Name:      "Test Sprint",
+		ProjectID: stringToUUID(nonExistentProjectID),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d", statusCode)
+	}
+}

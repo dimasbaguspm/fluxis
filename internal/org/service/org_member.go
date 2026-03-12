@@ -7,6 +7,7 @@ import (
 
 	"github.com/dimasbaguspm/fluxis/internal/org/repository"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
+	"github.com/dimasbaguspm/fluxis/pkg/syncx"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -48,9 +49,26 @@ func (s *Service) AddMember(ctx context.Context, orgId pgtype.UUID, p domain.Org
 		return fmt.Errorf("invalid user id: %w", err)
 	}
 
-	_, err := s.Repo.CreateOrgMember(ctx, repository.CreateOrgMemberParams{
-		OrgID:  orgId,
-		UserID: userId,
+	var (
+		org  domain.OrganisationModel
+		user domain.UserModel
+	)
+
+	err := syncx.Run(ctx, func(ctx context.Context) (err error) {
+		org, err = s.GetOrgById(ctx, orgId)
+		return err
+	}, func(ctx context.Context) (err error) {
+		user, err = s.User.GetSingleUserById(ctx, userId)
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("get org or user: %w", err)
+	}
+
+	_, err = s.Repo.CreateOrgMember(ctx, repository.CreateOrgMemberParams{
+		OrgID:  org.ID,
+		UserID: user.ID,
 		Role:   repository.OrgRole(p.Role),
 	})
 
@@ -69,6 +87,9 @@ func (s *Service) UpdateMemberRole(ctx context.Context, orgId, userId pgtype.UUI
 	})
 
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrOrgMemberNotFound
+		}
 		return fmt.Errorf("update org member role err: %w", err)
 	}
 
