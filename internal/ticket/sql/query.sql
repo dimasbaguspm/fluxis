@@ -98,3 +98,18 @@ RETURNING id, project_id, ticket_number, key, sprint_id, board_id, board_column_
 -- name: HardDeleteTicket :exec
 DELETE FROM tickets
 WHERE id = $1;
+
+-- name: ListTicketsPaged :many
+WITH filtered_tickets AS (
+    SELECT id, project_id, ticket_number, key, sprint_id, board_id, board_column_id, type, priority, title, description, assignee_id, reporter_id, epic_id, parent_id, story_points, due_date, created_at, updated_at, deleted_at,
+           COUNT(*) OVER () as total_count
+    FROM tickets
+    WHERE deleted_at IS NULL
+        AND (array_length($1::uuid[], 1) IS NULL OR project_id = ANY($1::uuid[]))
+        AND (array_length($2::uuid[], 1) IS NULL OR id = ANY($2::uuid[]))
+        AND (array_length($3::uuid[], 1) IS NULL OR sprint_id = ANY($3::uuid[]))
+        AND (array_length($4::uuid[], 1) IS NULL OR board_id = ANY($4::uuid[]))
+)
+SELECT * FROM filtered_tickets
+ORDER BY ticket_number DESC
+LIMIT $5 OFFSET $6;

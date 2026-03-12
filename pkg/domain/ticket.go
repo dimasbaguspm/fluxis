@@ -8,9 +8,43 @@ import (
 )
 
 type TicketSearchModel struct {
-	ProjectID pgtype.UUID `json:"projectId" validate:"uuid4"`
-	SprintID  pgtype.UUID `json:"sprintId" validate:"omitempty,uuid4"`
-	BoardID   pgtype.UUID `json:"boardId" validate:"omitempty,uuid4"`
+	ID         []pgtype.UUID `json:"id" validate:"omitempty,dive,uuid4"`
+	ProjectID  []pgtype.UUID `json:"projectId" validate:"omitempty,dive,uuid4"`
+	SprintID   []pgtype.UUID `json:"sprintId" validate:"omitempty,dive,uuid4"`
+	BoardID    []pgtype.UUID `json:"boardId" validate:"omitempty,dive,uuid4"`
+	PageNumber int           `json:"pageNumber" validate:"omitempty,min=1"`
+	PageSize   int           `json:"pageSize" validate:"omitempty,min=1,max=100"`
+}
+
+func (t *TicketSearchModel) ApplyDefaults() {
+	const (
+		defaultPageNumber = 1
+		defaultPageSize   = 25
+	)
+	if t.PageNumber == 0 {
+		t.PageNumber = defaultPageNumber
+	}
+	if t.PageSize == 0 {
+		t.PageSize = defaultPageSize
+	}
+}
+
+type TicketsPagedModel struct {
+	Items      []TicketModel `json:"items"`
+	TotalCount int           `json:"totalCount"`
+	TotalPages int           `json:"totalPages"`
+	PageNumber int           `json:"pageNumber"`
+	PageSize   int           `json:"pageSize"`
+}
+
+func (t TicketsPagedModel) Empty(pageNumber, pageSize int) TicketsPagedModel {
+	return TicketsPagedModel{
+		Items:      []TicketModel{},
+		TotalCount: 0,
+		TotalPages: 1,
+		PageNumber: pageNumber,
+		PageSize:   pageSize,
+	}
 }
 
 type TicketModel struct {
@@ -63,7 +97,7 @@ type TicketBoardMoveModel struct {
 }
 
 type TicketReader interface {
-	ListTickets(ctx context.Context, q TicketSearchModel) ([]TicketModel, error)
+	ListTickets(ctx context.Context, q TicketSearchModel) (TicketsPagedModel, error)
 	GetTicket(ctx context.Context, id pgtype.UUID) (TicketModel, error)
 	GetTicketByKey(ctx context.Context, projectID pgtype.UUID, key string) (TicketModel, error)
 }

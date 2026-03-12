@@ -9,44 +9,24 @@ import (
 
 // ListTickets godoc
 //
-//	@Summary		List tickets
-//	@Description	Returns tickets for a project, optionally filtered by sprint or board
+//	@Summary		List tickets with pagination
+//	@Description	Returns paginated tickets for a project, optionally filtered by sprint or board
 //	@Tags			ticket
 //	@Produce		json
-//	@Param			projectId	query		string	true	"Project ID"
-//	@Param			sprintId	query		string	false	"Sprint ID (optional)"
-//	@Param			boardId		query		string	false	"Board ID (optional)"
-//	@Success		200			{array}		domain.TicketModel
-//	@Failure		400			{object}	httpx.ErrBlock
-//	@Failure		401			{object}	httpx.ErrBlock
+//	@Param			query	query	domain.TicketSearchModel	false	"Search parameters: projectId (required), sprintId (optional), boardId (optional), pageNumber, pageSize"
+//	@Success		200	{object}	domain.TicketsPagedModel
+//	@Failure		400	{object}	httpx.ErrBlock
+//	@Failure		401	{object}	httpx.ErrBlock
 //	@Security		BearerAuth
 //	@Router			/tickets [get]
 func (h *Handler) ListTickets(w http.ResponseWriter, r *http.Request) {
-	projectID, err := httpx.QueryUUID(r, "projectId")
-	if err != nil {
-		httpx.Handle(w, err)
-		return
-	}
-
 	req := domain.TicketSearchModel{
-		ProjectID: projectID,
-	}
-
-	// Optional sprint and board filters
-	sprintIDStr := httpx.QueryString(r, "sprintId")
-	if sprintIDStr != "" {
-		if err := req.SprintID.Scan(sprintIDStr); err != nil {
-			httpx.Handle(w, httpx.BadRequest("invalid sprint id"))
-			return
-		}
-	}
-
-	boardIDStr := httpx.QueryString(r, "boardId")
-	if boardIDStr != "" {
-		if err := req.BoardID.Scan(boardIDStr); err != nil {
-			httpx.Handle(w, httpx.BadRequest("invalid board id"))
-			return
-		}
+		ID:         httpx.QueryUUIDs(r, "id"),
+		ProjectID:  httpx.QueryUUIDs(r, "projectId"),
+		SprintID:   httpx.QueryUUIDs(r, "sprintId"),
+		BoardID:    httpx.QueryUUIDs(r, "boardId"),
+		PageNumber: httpx.QueryNumber(r, "pageNumber"),
+		PageSize:   httpx.QueryNumber(r, "pageSize"),
 	}
 
 	tickets, err := h.svc.ListTickets(r.Context(), req)

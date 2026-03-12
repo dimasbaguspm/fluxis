@@ -2080,32 +2080,62 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns tickets for a project, optionally filtered by sprint or board",
+                "description": "Returns paginated tickets for a project, optionally filtered by sprint or board",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "ticket"
                 ],
-                "summary": "List tickets",
+                "summary": "List tickets with pagination",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Project ID",
-                        "name": "projectId",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Sprint ID (optional)",
-                        "name": "sprintId",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "boardId",
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "Board ID (optional)",
-                        "name": "boardId",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "pageNumber",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "projectId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "sprintId",
                         "in": "query"
                     }
                 ],
@@ -2113,10 +2143,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.TicketModel"
-                            }
+                            "$ref": "#/definitions/domain.TicketsPagedModel"
                         }
                     },
                     "400": {
@@ -3375,6 +3402,29 @@
                         "task",
                         "epic"
                     ]
+                }
+            }
+        },
+        "domain.TicketsPagedModel": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.TicketModel"
+                    }
+                },
+                "pageNumber": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "totalCount": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
                 }
             }
         },

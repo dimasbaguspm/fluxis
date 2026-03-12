@@ -419,6 +419,104 @@ func (q *Queries) ListTicketsBySprint(ctx context.Context, arg ListTicketsBySpri
 	return items, nil
 }
 
+const listTicketsPaged = `-- name: ListTicketsPaged :many
+WITH filtered_tickets AS (
+    SELECT id, project_id, ticket_number, key, sprint_id, board_id, board_column_id, type, priority, title, description, assignee_id, reporter_id, epic_id, parent_id, story_points, due_date, created_at, updated_at, deleted_at,
+           COUNT(*) OVER () as total_count
+    FROM tickets
+    WHERE deleted_at IS NULL
+        AND (array_length($1::uuid[], 1) IS NULL OR project_id = ANY($1::uuid[]))
+        AND (array_length($2::uuid[], 1) IS NULL OR id = ANY($2::uuid[]))
+        AND (array_length($3::uuid[], 1) IS NULL OR sprint_id = ANY($3::uuid[]))
+        AND (array_length($4::uuid[], 1) IS NULL OR board_id = ANY($4::uuid[]))
+)
+SELECT id, project_id, ticket_number, key, sprint_id, board_id, board_column_id, type, priority, title, description, assignee_id, reporter_id, epic_id, parent_id, story_points, due_date, created_at, updated_at, deleted_at, total_count FROM filtered_tickets
+ORDER BY ticket_number DESC
+LIMIT $5 OFFSET $6
+`
+
+type ListTicketsPagedParams struct {
+	Column1 []pgtype.UUID `db:"column_1" json:"column_1"`
+	Column2 []pgtype.UUID `db:"column_2" json:"column_2"`
+	Column3 []pgtype.UUID `db:"column_3" json:"column_3"`
+	Column4 []pgtype.UUID `db:"column_4" json:"column_4"`
+	Limit   int32         `db:"limit" json:"limit"`
+	Offset  int32         `db:"offset" json:"offset"`
+}
+
+type ListTicketsPagedRow struct {
+	ID            pgtype.UUID        `db:"id" json:"id"`
+	ProjectID     pgtype.UUID        `db:"project_id" json:"project_id"`
+	TicketNumber  int32              `db:"ticket_number" json:"ticket_number"`
+	Key           string             `db:"key" json:"key"`
+	SprintID      pgtype.UUID        `db:"sprint_id" json:"sprint_id"`
+	BoardID       pgtype.UUID        `db:"board_id" json:"board_id"`
+	BoardColumnID pgtype.UUID        `db:"board_column_id" json:"board_column_id"`
+	Type          TicketType         `db:"type" json:"type"`
+	Priority      TicketPriority     `db:"priority" json:"priority"`
+	Title         string             `db:"title" json:"title"`
+	Description   pgtype.Text        `db:"description" json:"description"`
+	AssigneeID    pgtype.UUID        `db:"assignee_id" json:"assignee_id"`
+	ReporterID    pgtype.UUID        `db:"reporter_id" json:"reporter_id"`
+	EpicID        pgtype.UUID        `db:"epic_id" json:"epic_id"`
+	ParentID      pgtype.UUID        `db:"parent_id" json:"parent_id"`
+	StoryPoints   pgtype.Int4        `db:"story_points" json:"story_points"`
+	DueDate       pgtype.Date        `db:"due_date" json:"due_date"`
+	CreatedAt     pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt     pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	DeletedAt     pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+	TotalCount    int64              `db:"total_count" json:"total_count"`
+}
+
+func (q *Queries) ListTicketsPaged(ctx context.Context, arg ListTicketsPagedParams) ([]ListTicketsPagedRow, error) {
+	rows, err := q.db.Query(ctx, listTicketsPaged,
+		arg.Column1,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListTicketsPagedRow{}
+	for rows.Next() {
+		var i ListTicketsPagedRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ProjectID,
+			&i.TicketNumber,
+			&i.Key,
+			&i.SprintID,
+			&i.BoardID,
+			&i.BoardColumnID,
+			&i.Type,
+			&i.Priority,
+			&i.Title,
+			&i.Description,
+			&i.AssigneeID,
+			&i.ReporterID,
+			&i.EpicID,
+			&i.ParentID,
+			&i.StoryPoints,
+			&i.DueDate,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.TotalCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateTicketBoard = `-- name: UpdateTicketBoard :one
 UPDATE tickets
 SET board_id = $2, board_column_id = $3, updated_at = NOW()

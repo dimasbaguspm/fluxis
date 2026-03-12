@@ -17,34 +17,73 @@ var (
 	ErrTicketNotFound = httpx.NotFound("ticket not found")
 )
 
-func (s *Service) ListTickets(ctx context.Context, q domain.TicketSearchModel) ([]domain.TicketModel, error) {
-	var tickets []repository.Ticket
-	var err error
+func (s *Service) ListTickets(ctx context.Context, q domain.TicketSearchModel) (domain.TicketsPagedModel, error) {
+	q.ApplyDefaults()
 
-	if q.SprintID.Valid {
-		tickets, err = s.Repo.ListTicketsBySprint(ctx, repository.ListTicketsBySprintParams{
-			ProjectID: q.ProjectID,
-			SprintID:  q.SprintID,
-		})
-	} else if q.BoardID.Valid {
-		tickets, err = s.Repo.ListTicketsByBoard(ctx, q.BoardID)
-	} else {
-		tickets, err = s.Repo.ListTicketsByProject(ctx, q.ProjectID)
+	// Require at least projectId for listing
+	if len(q.ProjectID) == 0 {
+		return domain.TicketsPagedModel{}, httpx.BadRequest("projectId is required")
 	}
+
+	offset := int32((q.PageNumber - 1) * q.PageSize)
+	rows, err := s.Repo.ListTicketsPaged(ctx, repository.ListTicketsPagedParams{
+		Column1: q.ProjectID,
+		Column2: q.ID,
+		Column3: q.SprintID,
+		Column4: q.BoardID,
+		Limit:   int32(q.PageSize),
+		Offset:  offset,
+	})
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return []domain.TicketModel{}, nil
+			return domain.TicketsPagedModel{}.Empty(q.PageNumber, q.PageSize), nil
 		}
-		return []domain.TicketModel{}, fmt.Errorf("list tickets: %w", err)
+		return domain.TicketsPagedModel{}, fmt.Errorf("list tickets: %w", err)
 	}
 
-	data := make([]domain.TicketModel, 0, len(tickets))
-	for _, t := range tickets {
-		data = append(data, s.ticketToModel(t))
+	if len(rows) == 0 {
+		return domain.TicketsPagedModel{}.Empty(q.PageNumber, q.PageSize), nil
 	}
 
-	return data, nil
+	totalCount := int(rows[0].TotalCount)
+	items := make([]domain.TicketModel, len(rows))
+	for i, row := range rows {
+		items[i] = domain.TicketModel{
+			ID:            row.ID,
+			ProjectID:     row.ProjectID,
+			TicketNumber:  row.TicketNumber,
+			Key:           row.Key,
+			Type:          string(row.Type),
+			Priority:      string(row.Priority),
+			Title:         row.Title,
+			Description:   row.Description.String,
+			SprintID:      row.SprintID,
+			BoardID:       row.BoardID,
+			BoardColumnID: row.BoardColumnID,
+			AssigneeID:    row.AssigneeID,
+			ReporterID:    row.ReporterID,
+			EpicID:        row.EpicID,
+			ParentID:      row.ParentID,
+			StoryPoints:   row.StoryPoints.Int32,
+			DueDate:       row.DueDate.Time,
+			CreatedAt:     row.CreatedAt.Time,
+			UpdatedAt:     row.UpdatedAt.Time,
+		}
+	}
+
+	totalPages := (totalCount + q.PageSize - 1) / q.PageSize
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	return domain.TicketsPagedModel{
+		Items:      items,
+		TotalCount: totalCount,
+		TotalPages: totalPages,
+		PageNumber: q.PageNumber,
+		PageSize:   q.PageSize,
+	}, nil
 }
 
 func (s *Service) GetTicket(ctx context.Context, id pgtype.UUID) (domain.TicketModel, error) {
