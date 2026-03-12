@@ -21,15 +21,6 @@ type OrganisationModel struct {
 	UpdatedAt    time.Time   `json:"updatedAt"`
 }
 
-type Organisations struct {
-	ID         []pgtype.UUID `json:"id" validate:"dive,uuid4"`
-	Name       []string      `json:"name" validate:"dive,min=1"`
-	PageNumber int           `json:"pageNumber" validate:"min=1"`
-	PageSize   int           `json:"pageSize" validate:"min=1,max=100"`
-	SortBy     string        `json:"sortBy" validate:"oneof=name createdAt updatedAt"`
-	SortOrder  string        `json:"sortOrder" validate:"oneof=asc desc"`
-}
-
 type OrganisationPagedModel struct {
 	Items      []OrganisationModel `json:"items"`
 	TotalCount int                 `json:"totalCount"`
@@ -61,6 +52,47 @@ type OrganisationMemberCreateModel struct {
 
 type OrganisationMemberUpdateModel struct {
 	Role string `json:"role" validate:"required,oneof=admin member viewer"`
+}
+
+type Organisations struct {
+	ID         []pgtype.UUID `json:"id" validate:"dive,uuid4"`
+	Name       []string      `json:"name" validate:"dive,min=1"`
+	PageNumber int           `json:"pageNumber" validate:"min=1"`
+	PageSize   int           `json:"pageSize" validate:"min=1,max=100"`
+	SortBy     string        `json:"sortBy" validate:"oneof=name createdAt updatedAt"`
+	SortOrder  string        `json:"sortOrder" validate:"oneof=asc desc"`
+}
+
+func (o *Organisations) ApplyDefaults() {
+	const (
+		defaultPageNumber = 1
+		defaultPageSize   = 25
+		defaultSortBy     = "updatedAt"
+		defaultSortOrder  = "desc"
+	)
+
+	if o.PageNumber == 0 {
+		o.PageNumber = defaultPageNumber
+	}
+	if o.PageSize == 0 {
+		o.PageSize = defaultPageSize
+	}
+	if o.SortBy == "" {
+		o.SortBy = defaultSortBy
+	}
+	if o.SortOrder == "" {
+		o.SortOrder = defaultSortOrder
+	}
+}
+
+func (o *OrganisationPagedModel) Empty(pageNumber, pageSize int) OrganisationPagedModel {
+	return OrganisationPagedModel{
+		Items:      []OrganisationModel{},
+		TotalCount: 0,
+		TotalPages: 0,
+		Page:       pageNumber,
+		PageSize:   pageSize,
+	}
 }
 
 type OrgReader interface {

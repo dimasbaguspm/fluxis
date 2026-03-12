@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
@@ -21,43 +20,13 @@ import (
 //	@Security		BearerAuth
 //	@Router			/orgs [get]
 func (h *Handler) ListOrgs(w http.ResponseWriter, r *http.Request) {
-	// Extract pagination parameters with defaults
-	pageNumber := 1
-	if pn := r.URL.Query().Get("pageNumber"); pn != "" {
-		if n, err := strconv.Atoi(pn); err == nil && n > 0 {
-			pageNumber = n
-		}
-	}
-
-	pageSize := 25
-	if ps := r.URL.Query().Get("pageSize"); ps != "" {
-		if n, err := strconv.Atoi(ps); err == nil && n > 0 && n <= 100 {
-			pageSize = n
-		}
-	}
-
-	sortBy := r.URL.Query().Get("sortBy")
-	sortOrder := r.URL.Query().Get("sortOrder")
-
-	// Parse ID filters
-	var idFilters []pgtype.UUID
-	for _, idStr := range r.URL.Query()["id"] {
-		var id pgtype.UUID
-		if err := id.Scan(idStr); err == nil {
-			idFilters = append(idFilters, id)
-		}
-	}
-
-	// Parse name filters
-	nameFilters := r.URL.Query()["name"]
-
 	req := domain.Organisations{
-		ID:         idFilters,
-		Name:       nameFilters,
-		PageNumber: pageNumber,
-		PageSize:   pageSize,
-		SortBy:     sortBy,
-		SortOrder:  sortOrder,
+		ID:         httpx.QueryUUIDs(r, "id"),
+		Name:       httpx.QueryStrings(r, "name"),
+		PageNumber: httpx.QueryNumber(r, "pageNumber"),
+		PageSize:   httpx.QueryNumber(r, "pageSize"),
+		SortBy:     httpx.QueryString(r, "sortBy"),
+		SortOrder:  httpx.QueryString(r, "sortOrder"),
 	}
 
 	result, err := h.svc.SearchOrganisations(r.Context(), req)

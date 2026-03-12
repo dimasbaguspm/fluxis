@@ -49,19 +49,7 @@ func (s *Service) ListOrgs(ctx context.Context, q domain.OrganisationSearchModel
 }
 
 func (s *Service) SearchOrganisations(ctx context.Context, q domain.Organisations) (domain.OrganisationPagedModel, error) {
-	// Apply defaults
-	if q.PageSize == 0 {
-		q.PageSize = 25
-	}
-	if q.PageNumber == 0 {
-		q.PageNumber = 1
-	}
-	if q.SortBy == "" {
-		q.SortBy = "updatedAt"
-	}
-	if q.SortOrder == "" {
-		q.SortOrder = "desc"
-	}
+	q.ApplyDefaults()
 
 	rows, err := s.Repo.SearchOrganisations(ctx, repository.SearchOrganisationsParams{
 		Column1: q.ID,
@@ -74,13 +62,8 @@ func (s *Service) SearchOrganisations(ctx context.Context, q domain.Organisation
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return domain.OrganisationPagedModel{
-				Items:      []domain.OrganisationModel{},
-				TotalCount: 0,
-				TotalPages: 0,
-				Page:       q.PageNumber,
-				PageSize:   q.PageSize,
-			}, nil
+			emptyPage := domain.OrganisationPagedModel{}
+			return emptyPage.Empty(q.PageNumber, q.PageSize), nil
 		}
 		return domain.OrganisationPagedModel{}, fmt.Errorf("search organisations: %w", err)
 	}

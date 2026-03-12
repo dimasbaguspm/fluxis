@@ -33,7 +33,7 @@ func (h *Handler) ListTickets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Optional sprint and board filters
-	sprintIDStr := httpx.QueryStringOptional(r, "sprintId")
+	sprintIDStr := httpx.QueryString(r, "sprintId")
 	if sprintIDStr != "" {
 		if err := req.SprintID.Scan(sprintIDStr); err != nil {
 			httpx.Handle(w, httpx.BadRequest("invalid sprint id"))
@@ -41,7 +41,7 @@ func (h *Handler) ListTickets(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	boardIDStr := httpx.QueryStringOptional(r, "boardId")
+	boardIDStr := httpx.QueryString(r, "boardId")
 	if boardIDStr != "" {
 		if err := req.BoardID.Scan(boardIDStr); err != nil {
 			httpx.Handle(w, httpx.BadRequest("invalid board id"))
