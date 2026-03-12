@@ -89,6 +89,55 @@ func (s *Service) ListProjectsByOrg(ctx context.Context, orgId pgtype.UUID) ([]d
 	return data, nil
 }
 
+func (s *Service) ListProjectsByOrgPaged(ctx context.Context, orgId pgtype.UUID, q domain.ProjectsSearchModel) (domain.ProjectsPagedModel, error) {
+	q.ApplyDefaults()
+
+	projects, err := s.Repo.ListProjectsByOrgPaged(ctx, repository.ListProjectsByOrgPagedParams{
+		OrgID:  orgId,
+		Column2: q.Name,
+		Limit:   int32(q.PageSize),
+		Offset:  int32((q.PageNumber - 1) * q.PageSize),
+	})
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			emptyResult := domain.ProjectsPagedModel{}
+			return emptyResult.Empty(q.PageNumber, q.PageSize), nil
+		}
+		return domain.ProjectsPagedModel{}, fmt.Errorf("list projects by org paged: %w", err)
+	}
+
+	var totalCount int64
+	data := make([]domain.ProjectModel, 0, len(projects))
+
+	for _, project := range projects {
+		totalCount = project.TotalCount
+		data = append(data, domain.ProjectModel{
+			ID:          project.ID,
+			OrgID:       project.OrgID,
+			Key:         project.Key,
+			Name:        project.Name,
+			Description: project.Description.String,
+			Visibility:  string(project.Visibility),
+			CreatedAt:   project.CreatedAt.Time,
+			UpdatedAt:   project.UpdatedAt.Time,
+		})
+	}
+
+	totalPages := 0
+	if totalCount > 0 {
+		totalPages = int((totalCount + int64(q.PageSize) - 1) / int64(q.PageSize))
+	}
+
+	return domain.ProjectsPagedModel{
+		Items:      data,
+		TotalCount: int(totalCount),
+		TotalPages: totalPages,
+		PageNumber: q.PageNumber,
+		PageSize:   q.PageSize,
+	}, nil
+}
+
 func (s *Service) CreateProject(ctx context.Context, orgId pgtype.UUID, p domain.ProjectCreateModel) (domain.ProjectModel, error) {
 	org, err := s.Org.GetOrgById(ctx, orgId)
 	if err != nil {

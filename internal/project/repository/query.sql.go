@@ -170,6 +170,83 @@ func (q *Queries) ListProjectsByOrg(ctx context.Context, orgID pgtype.UUID) ([]P
 	return items, nil
 }
 
+const listProjectsByOrgPaged = `-- name: ListProjectsByOrgPaged :many
+WITH filtered_projects AS (
+  SELECT
+    id, org_id, key, name, description, visibility, created_at, updated_at, deleted_at,
+    COUNT(*) OVER () as total_count
+  FROM
+    projects
+  WHERE
+    org_id = $1 AND deleted_at IS NULL
+    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+)
+SELECT
+  id, org_id, key, name, description, visibility, created_at, updated_at, deleted_at, total_count
+FROM
+  filtered_projects
+ORDER BY
+  created_at DESC
+LIMIT $3
+OFFSET $4
+`
+
+type ListProjectsByOrgPagedParams struct {
+	OrgID   pgtype.UUID `db:"org_id" json:"org_id"`
+	Column2 string      `db:"column_2" json:"column_2"`
+	Limit   int32       `db:"limit" json:"limit"`
+	Offset  int32       `db:"offset" json:"offset"`
+}
+
+type ListProjectsByOrgPagedRow struct {
+	ID          pgtype.UUID        `db:"id" json:"id"`
+	OrgID       pgtype.UUID        `db:"org_id" json:"org_id"`
+	Key         string             `db:"key" json:"key"`
+	Name        string             `db:"name" json:"name"`
+	Description pgtype.Text        `db:"description" json:"description"`
+	Visibility  ProjectVisibility  `db:"visibility" json:"visibility"`
+	CreatedAt   pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	DeletedAt   pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+	TotalCount  int64              `db:"total_count" json:"total_count"`
+}
+
+func (q *Queries) ListProjectsByOrgPaged(ctx context.Context, arg ListProjectsByOrgPagedParams) ([]ListProjectsByOrgPagedRow, error) {
+	rows, err := q.db.Query(ctx, listProjectsByOrgPaged,
+		arg.OrgID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListProjectsByOrgPagedRow{}
+	for rows.Next() {
+		var i ListProjectsByOrgPagedRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrgID,
+			&i.Key,
+			&i.Name,
+			&i.Description,
+			&i.Visibility,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.TotalCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateProject = `-- name: UpdateProject :one
 UPDATE projects
 SET name = $2, description = $3, updated_at = NOW()

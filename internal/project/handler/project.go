@@ -9,12 +9,13 @@ import (
 
 // ListProjects godoc
 //
-//	@Summary		List projects
-//	@Description	Returns all projects in an organisation
+//	@Summary		List projects with pagination
+//	@Description	Returns paginated projects in an organisation with optional filtering
 //	@Tags			project
 //	@Produce		json
-//	@Param			orgId	query		string	true	"Organisation ID"
-//	@Success		200	{array}		domain.ProjectModel
+//	@Param			orgId	query	string	true	"Organisation ID"
+//	@Param			query	query	domain.ProjectsSearchModel	false	"Search parameters: name, pageNumber, pageSize"
+//	@Success		200	{object}	domain.ProjectsPagedModel
 //	@Failure		400	{object}	httpx.ErrBlock
 //	@Failure		401	{object}	httpx.ErrBlock
 //	@Security		BearerAuth
@@ -26,13 +27,19 @@ func (h *Handler) ListProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projects, err := h.svc.ListProjectsByOrg(r.Context(), orgID)
+	req := domain.ProjectsSearchModel{
+		Name:       httpx.QueryString(r, "name"),
+		PageNumber: httpx.QueryNumber(r, "pageNumber"),
+		PageSize:   httpx.QueryNumber(r, "pageSize"),
+	}
+
+	result, err := h.svc.ListProjectsByOrgPaged(r.Context(), orgID, req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return
 	}
 
-	httpx.OK(w, projects)
+	httpx.OK(w, result)
 }
 
 // CreateProject godoc

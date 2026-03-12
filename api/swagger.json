@@ -1360,14 +1360,14 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns all projects in an organisation",
+                "description": "Returns paginated projects in an organisation with optional filtering",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "project"
                 ],
-                "summary": "List projects",
+                "summary": "List projects with pagination",
                 "parameters": [
                     {
                         "type": "string",
@@ -1375,16 +1375,31 @@
                         "name": "orgId",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "pageNumber",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "pageSize",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.ProjectModel"
-                            }
+                            "$ref": "#/definitions/domain.ProjectsPagedModel"
                         }
                     },
                     "400": {
@@ -2937,6 +2952,29 @@
                         "public",
                         "private"
                     ]
+                }
+            }
+        },
+        "domain.ProjectsPagedModel": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.ProjectModel"
+                    }
+                },
+                "pageNumber": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "totalCount": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
                 }
             }
         },
