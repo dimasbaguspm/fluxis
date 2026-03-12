@@ -27,11 +27,11 @@ func TestBoardColumn_Reorder_Success(t *testing.T) {
 	col3 := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, "Column 3")
 
 	// Verify initial order
-	statusCode, listResp := do[[]domain.BoardColumnModel](t, "GET", "/boards/"+uuidToString(board.ID)+"/columns", nil, tokens.AccessToken)
-	if statusCode != http.StatusOK || len(*listResp.Data) != 3 {
+	statusCode, listResp := do[domain.BoardColumnsPagedModel](t, "GET", "/boards/"+uuidToString(board.ID)+"/columns", nil, tokens.AccessToken)
+	if statusCode != http.StatusOK || len(listResp.Data.Items) != 3 {
 		t.Fatalf("expected 3 columns")
 	}
-	if (*listResp.Data)[0].ID != col1.ID || (*listResp.Data)[1].ID != col2.ID || (*listResp.Data)[2].ID != col3.ID {
+	if listResp.Data.Items[0].ID != col1.ID || listResp.Data.Items[1].ID != col2.ID || listResp.Data.Items[2].ID != col3.ID {
 		t.Fatalf("initial order incorrect")
 	}
 
@@ -63,11 +63,11 @@ func TestBoardColumn_Reorder_Success(t *testing.T) {
 	}
 
 	// Verify list endpoint returns same order
-	statusCode, listResp = do[[]domain.BoardColumnModel](t, "GET", "/boards/"+uuidToString(board.ID)+"/columns", nil, tokens.AccessToken)
+	statusCode, listResp = do[domain.BoardColumnsPagedModel](t, "GET", "/boards/"+uuidToString(board.ID)+"/columns", nil, tokens.AccessToken)
 	if statusCode != http.StatusOK {
 		t.Fatalf("expected status 200")
 	}
-	if (*listResp.Data)[0].ID != col3.ID || (*listResp.Data)[1].ID != col1.ID || (*listResp.Data)[2].ID != col2.ID {
+	if listResp.Data.Items[0].ID != col3.ID || listResp.Data.Items[1].ID != col1.ID || listResp.Data.Items[2].ID != col2.ID {
 		t.Fatalf("list order does not match reorder result")
 	}
 }

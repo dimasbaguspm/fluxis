@@ -171,6 +171,79 @@ func (q *Queries) ListBoardColumns(ctx context.Context, boardID pgtype.UUID) ([]
 	return items, nil
 }
 
+const listBoardColumnsPaged = `-- name: ListBoardColumnsPaged :many
+WITH filtered_columns AS (
+  SELECT
+    id, board_id, name, position, created_at, updated_at, deleted_at,
+    COUNT(*) OVER () as total_count
+  FROM
+    board_columns
+  WHERE
+    board_id = $1 AND deleted_at IS NULL
+    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+)
+SELECT
+  id, board_id, name, position, created_at, updated_at, deleted_at, total_count
+FROM
+  filtered_columns
+ORDER BY
+  position ASC
+LIMIT $3
+OFFSET $4
+`
+
+type ListBoardColumnsPagedParams struct {
+	BoardID pgtype.UUID `db:"board_id" json:"board_id"`
+	Column2 string      `db:"column_2" json:"column_2"`
+	Limit   int32       `db:"limit" json:"limit"`
+	Offset  int32       `db:"offset" json:"offset"`
+}
+
+type ListBoardColumnsPagedRow struct {
+	ID         pgtype.UUID        `db:"id" json:"id"`
+	BoardID    pgtype.UUID        `db:"board_id" json:"board_id"`
+	Name       string             `db:"name" json:"name"`
+	Position   int32              `db:"position" json:"position"`
+	CreatedAt  pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	DeletedAt  pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+	TotalCount int64              `db:"total_count" json:"total_count"`
+}
+
+func (q *Queries) ListBoardColumnsPaged(ctx context.Context, arg ListBoardColumnsPagedParams) ([]ListBoardColumnsPagedRow, error) {
+	rows, err := q.db.Query(ctx, listBoardColumnsPaged,
+		arg.BoardID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListBoardColumnsPagedRow{}
+	for rows.Next() {
+		var i ListBoardColumnsPagedRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.BoardID,
+			&i.Name,
+			&i.Position,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.TotalCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listBoardsBySprint = `-- name: ListBoardsBySprint :many
 SELECT id, sprint_id, name, position, created_at, updated_at, deleted_at FROM boards WHERE sprint_id = $1 AND deleted_at IS NULL ORDER BY position ASC
 `
@@ -192,6 +265,79 @@ func (q *Queries) ListBoardsBySprint(ctx context.Context, sprintID pgtype.UUID) 
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listBoardsBySprintPaged = `-- name: ListBoardsBySprintPaged :many
+WITH filtered_boards AS (
+  SELECT
+    id, sprint_id, name, position, created_at, updated_at, deleted_at,
+    COUNT(*) OVER () as total_count
+  FROM
+    boards
+  WHERE
+    sprint_id = $1 AND deleted_at IS NULL
+    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+)
+SELECT
+  id, sprint_id, name, position, created_at, updated_at, deleted_at, total_count
+FROM
+  filtered_boards
+ORDER BY
+  position ASC
+LIMIT $3
+OFFSET $4
+`
+
+type ListBoardsBySprintPagedParams struct {
+	SprintID pgtype.UUID `db:"sprint_id" json:"sprint_id"`
+	Column2  string      `db:"column_2" json:"column_2"`
+	Limit    int32       `db:"limit" json:"limit"`
+	Offset   int32       `db:"offset" json:"offset"`
+}
+
+type ListBoardsBySprintPagedRow struct {
+	ID         pgtype.UUID        `db:"id" json:"id"`
+	SprintID   pgtype.UUID        `db:"sprint_id" json:"sprint_id"`
+	Name       string             `db:"name" json:"name"`
+	Position   int32              `db:"position" json:"position"`
+	CreatedAt  pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	DeletedAt  pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+	TotalCount int64              `db:"total_count" json:"total_count"`
+}
+
+func (q *Queries) ListBoardsBySprintPaged(ctx context.Context, arg ListBoardsBySprintPagedParams) ([]ListBoardsBySprintPagedRow, error) {
+	rows, err := q.db.Query(ctx, listBoardsBySprintPaged,
+		arg.SprintID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListBoardsBySprintPagedRow{}
+	for rows.Next() {
+		var i ListBoardsBySprintPagedRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.SprintID,
+			&i.Name,
+			&i.Position,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.TotalCount,
 		); err != nil {
 			return nil, err
 		}

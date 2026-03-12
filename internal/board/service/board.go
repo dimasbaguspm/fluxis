@@ -57,22 +57,53 @@ func (s *Service) GetBoard(ctx context.Context, id pgtype.UUID) (domain.BoardMod
 	return toBoardModel(board), nil
 }
 
-func (s *Service) ListBoardsBySprint(ctx context.Context, sprintID pgtype.UUID) ([]domain.BoardModel, error) {
-	boards, err := s.Repo.ListBoardsBySprint(ctx, sprintID)
+func (s *Service) ListBoards(ctx context.Context, q domain.BoardsSearchModel) (domain.BoardsPagedModel, error) {
+	q.ApplyDefaults()
+
+	if _, err := s.Sprint.GetSprint(ctx, q.SprintID); err != nil {
+		return domain.BoardsPagedModel{}, fmt.Errorf("validate sprint: %w", err)
+	}
+
+	offset := int32((q.PageNumber - 1) * q.PageSize)
+	rows, err := s.Repo.ListBoardsBySprintPaged(ctx, repository.ListBoardsBySprintPagedParams{
+		SprintID: q.SprintID,
+		Column2:  q.Name,
+		Limit:    int32(q.PageSize),
+		Offset:   offset,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("list boards: %w", err)
+		return domain.BoardsPagedModel{}, fmt.Errorf("list boards: %w", err)
 	}
 
-	if boards == nil {
-		boards = []repository.Board{}
+	if len(rows) == 0 {
+		return domain.BoardsPagedModel{}.Empty(q.PageNumber, q.PageSize), nil
 	}
 
-	result := make([]domain.BoardModel, len(boards))
-	for i, board := range boards {
-		result[i] = toBoardModel(board)
+	totalCount := int(rows[0].TotalCount)
+	totalPages := (totalCount + q.PageSize - 1) / q.PageSize
+	if totalPages == 0 {
+		totalPages = 1
 	}
 
-	return result, nil
+	items := make([]domain.BoardModel, len(rows))
+	for i, row := range rows {
+		items[i] = domain.BoardModel{
+			ID:        row.ID,
+			SprintID:  row.SprintID,
+			Name:      row.Name,
+			Position:  row.Position,
+			CreatedAt: row.CreatedAt.Time,
+			UpdatedAt: row.UpdatedAt.Time,
+		}
+	}
+
+	return domain.BoardsPagedModel{
+		Items:      items,
+		TotalCount: totalCount,
+		TotalPages: totalPages,
+		PageNumber: q.PageNumber,
+		PageSize:   q.PageSize,
+	}, nil
 }
 
 func (s *Service) UpdateBoard(ctx context.Context, id pgtype.UUID, b domain.BoardUpdateModel) (domain.BoardModel, error) {

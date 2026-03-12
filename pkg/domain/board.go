@@ -28,6 +28,44 @@ type BoardUpdateModel struct {
 
 type BoardReorderModel []pgtype.UUID
 
+type BoardsSearchModel struct {
+	SprintID   pgtype.UUID `json:"sprintId" validate:"required"`
+	Name       string      `json:"name"`
+	PageNumber int         `json:"pageNumber" validate:"min=1"`
+	PageSize   int         `json:"pageSize" validate:"min=1,max=100"`
+}
+
+func (b *BoardsSearchModel) ApplyDefaults() {
+	const (
+		defaultPageNumber = 1
+		defaultPageSize   = 25
+	)
+	if b.PageNumber == 0 {
+		b.PageNumber = defaultPageNumber
+	}
+	if b.PageSize == 0 {
+		b.PageSize = defaultPageSize
+	}
+}
+
+type BoardsPagedModel struct {
+	Items      []BoardModel `json:"items"`
+	TotalCount int          `json:"totalCount"`
+	TotalPages int          `json:"totalPages"`
+	PageNumber int          `json:"pageNumber"`
+	PageSize   int          `json:"pageSize"`
+}
+
+func (m BoardsPagedModel) Empty(pageNumber, pageSize int) BoardsPagedModel {
+	return BoardsPagedModel{
+		Items:      []BoardModel{},
+		TotalCount: 0,
+		TotalPages: 0,
+		PageNumber: pageNumber,
+		PageSize:   pageSize,
+	}
+}
+
 type BoardColumnModel struct {
 	ID        pgtype.UUID `json:"id"`
 	BoardID   pgtype.UUID `json:"boardId"`
@@ -47,10 +85,49 @@ type BoardColumnUpdateModel struct {
 
 type BoardColumnReorderModel []pgtype.UUID
 
+type BoardColumnsSearchModel struct {
+	BoardID    pgtype.UUID `json:"boardId" validate:"required"`
+	Name       string      `json:"name"`
+	PageNumber int         `json:"pageNumber" validate:"min=1"`
+	PageSize   int         `json:"pageSize" validate:"min=1,max=100"`
+}
+
+func (b *BoardColumnsSearchModel) ApplyDefaults() {
+	const (
+		defaultPageNumber = 1
+		defaultPageSize   = 25
+	)
+	if b.PageNumber == 0 {
+		b.PageNumber = defaultPageNumber
+	}
+	if b.PageSize == 0 {
+		b.PageSize = defaultPageSize
+	}
+}
+
+type BoardColumnsPagedModel struct {
+	Items      []BoardColumnModel `json:"items"`
+	TotalCount int                `json:"totalCount"`
+	TotalPages int                `json:"totalPages"`
+	PageNumber int                `json:"pageNumber"`
+	PageSize   int                `json:"pageSize"`
+}
+
+func (m BoardColumnsPagedModel) Empty(pageNumber, pageSize int) BoardColumnsPagedModel {
+	return BoardColumnsPagedModel{
+		Items:      []BoardColumnModel{},
+		TotalCount: 0,
+		TotalPages: 0,
+		PageNumber: pageNumber,
+		PageSize:   pageSize,
+	}
+}
+
 type BoardReader interface {
 	GetBoard(ctx context.Context, id pgtype.UUID) (BoardModel, error)
-	ListBoardsBySprint(ctx context.Context, sprintID pgtype.UUID) ([]BoardModel, error)
+	ListBoards(ctx context.Context, q BoardsSearchModel) (BoardsPagedModel, error)
 	GetBoardColumn(ctx context.Context, id pgtype.UUID) (BoardColumnModel, error)
+	ListBoardColumns(ctx context.Context, q BoardColumnsSearchModel) (BoardColumnsPagedModel, error)
 }
 
 type BoardWriter interface {

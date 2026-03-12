@@ -31,7 +31,7 @@ func (s *Service) GetBoardColumn(ctx context.Context, id pgtype.UUID) (domain.Bo
 	}, nil
 }
 
-func (s *Service) ListBoardColumns(ctx context.Context, boardID pgtype.UUID) ([]domain.BoardColumnModel, error) {
+func (s *Service) listBoardColumnsUnpaginated(ctx context.Context, boardID pgtype.UUID) ([]domain.BoardColumnModel, error) {
 	if _, err := s.GetBoard(ctx, boardID); err != nil {
 		return nil, fmt.Errorf("validate board: %w", err)
 	}
@@ -54,6 +54,55 @@ func (s *Service) ListBoardColumns(ctx context.Context, boardID pgtype.UUID) ([]
 	}
 
 	return result, nil
+}
+
+func (s *Service) ListBoardColumns(ctx context.Context, q domain.BoardColumnsSearchModel) (domain.BoardColumnsPagedModel, error) {
+	q.ApplyDefaults()
+
+	if _, err := s.GetBoard(ctx, q.BoardID); err != nil {
+		return domain.BoardColumnsPagedModel{}, fmt.Errorf("validate board: %w", err)
+	}
+
+	offset := int32((q.PageNumber - 1) * q.PageSize)
+	rows, err := s.Repo.ListBoardColumnsPaged(ctx, repository.ListBoardColumnsPagedParams{
+		BoardID: q.BoardID,
+		Column2: q.Name,
+		Limit:   int32(q.PageSize),
+		Offset:  offset,
+	})
+	if err != nil {
+		return domain.BoardColumnsPagedModel{}, fmt.Errorf("list board columns: %w", err)
+	}
+
+	if len(rows) == 0 {
+		return domain.BoardColumnsPagedModel{}.Empty(q.PageNumber, q.PageSize), nil
+	}
+
+	totalCount := int(rows[0].TotalCount)
+	totalPages := (totalCount + q.PageSize - 1) / q.PageSize
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	items := make([]domain.BoardColumnModel, len(rows))
+	for i, row := range rows {
+		items[i] = domain.BoardColumnModel{
+			ID:        row.ID,
+			BoardID:   row.BoardID,
+			Name:      row.Name,
+			Position:  row.Position,
+			CreatedAt: row.CreatedAt.Time,
+			UpdatedAt: row.UpdatedAt.Time,
+		}
+	}
+
+	return domain.BoardColumnsPagedModel{
+		Items:      items,
+		TotalCount: totalCount,
+		TotalPages: totalPages,
+		PageNumber: q.PageNumber,
+		PageSize:   q.PageSize,
+	}, nil
 }
 
 func (s *Service) CreateBoardColumn(ctx context.Context, boardID pgtype.UUID, b domain.BoardColumnCreateModel) (domain.BoardColumnModel, error) {

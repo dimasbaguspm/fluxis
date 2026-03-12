@@ -9,6 +9,26 @@ SELECT * FROM boards WHERE id = $1 AND deleted_at IS NULL;
 -- name: ListBoardsBySprint :many
 SELECT * FROM boards WHERE sprint_id = $1 AND deleted_at IS NULL ORDER BY position ASC;
 
+-- name: ListBoardsBySprintPaged :many
+WITH filtered_boards AS (
+  SELECT
+    id, sprint_id, name, position, created_at, updated_at, deleted_at,
+    COUNT(*) OVER () as total_count
+  FROM
+    boards
+  WHERE
+    sprint_id = $1 AND deleted_at IS NULL
+    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+)
+SELECT
+  id, sprint_id, name, position, created_at, updated_at, deleted_at, total_count
+FROM
+  filtered_boards
+ORDER BY
+  position ASC
+LIMIT $3
+OFFSET $4;
+
 -- name: UpdateBoard :one
 UPDATE boards
 SET name = $2, sprint_id = $3, updated_at = NOW()
@@ -59,6 +79,26 @@ SELECT * FROM board_columns WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: ListBoardColumns :many
 SELECT * FROM board_columns WHERE board_id = $1 AND deleted_at IS NULL ORDER BY position ASC;
+
+-- name: ListBoardColumnsPaged :many
+WITH filtered_columns AS (
+  SELECT
+    id, board_id, name, position, created_at, updated_at, deleted_at,
+    COUNT(*) OVER () as total_count
+  FROM
+    board_columns
+  WHERE
+    board_id = $1 AND deleted_at IS NULL
+    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+)
+SELECT
+  id, board_id, name, position, created_at, updated_at, deleted_at, total_count
+FROM
+  filtered_columns
+ORDER BY
+  position ASC
+LIMIT $3
+OFFSET $4;
 
 -- name: UpdateBoardColumn :one
 UPDATE board_columns SET name = $2, updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *;

@@ -10,11 +10,12 @@ import (
 // ListBoardColumns godoc
 //
 //	@Summary		List board columns
-//	@Description	Returns all columns in a board
+//	@Description	Returns all columns in a board with pagination
 //	@Tags			board
 //	@Produce		json
-//	@Param			boardId	path		string	true	"Board ID"
-//	@Success		200		{array}		domain.BoardColumnModel
+//	@Param			boardId	path		string							true	"Board ID"
+//	@Param			query	query		domain.BoardColumnsSearchModel	false	"Search parameters: name, pageNumber, pageSize"
+//	@Success		200		{object}	domain.BoardColumnsPagedModel
 //	@Failure		400		{object}	httpx.ErrBlock
 //	@Failure		401		{object}	httpx.ErrBlock
 //	@Failure		404		{object}	httpx.ErrBlock
@@ -27,13 +28,20 @@ func (h *Handler) ListBoardColumns(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	columns, err := h.svc.ListBoardColumns(r.Context(), boardID)
+	req := domain.BoardColumnsSearchModel{
+		BoardID:    boardID,
+		Name:       httpx.QueryString(r, "name"),
+		PageNumber: httpx.QueryNumber(r, "pageNumber"),
+		PageSize:   httpx.QueryNumber(r, "pageSize"),
+	}
+
+	result, err := h.svc.ListBoardColumns(r.Context(), req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return
 	}
 
-	httpx.OK(w, columns)
+	httpx.OK(w, result)
 }
 
 // CreateBoardColumn godoc
