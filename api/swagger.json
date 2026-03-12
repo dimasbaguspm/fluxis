@@ -805,22 +805,71 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns all organisations the authenticated user belongs to",
+                "description": "Returns paginated organisations with optional filtering and sorting",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "org"
                 ],
-                "summary": "List organisations",
+                "summary": "List organisations with pagination",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "pageNumber",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "name",
+                            "createdAt",
+                            "updatedAt"
+                        ],
+                        "type": "string",
+                        "name": "sortBy",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.OrganisationModel"
-                            }
+                            "$ref": "#/definitions/domain.OrganisationPagedModel"
                         }
                     },
                     "401": {
@@ -2713,6 +2762,29 @@
                 },
                 "updatedAt": {
                     "type": "string"
+                }
+            }
+        },
+        "domain.OrganisationPagedModel": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.OrganisationModel"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "totalCount": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
                 }
             }
         },

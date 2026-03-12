@@ -358,6 +358,87 @@ func (q *Queries) ListOrgMembers(ctx context.Context, arg ListOrgMembersParams) 
 	return items, nil
 }
 
+const searchOrganisations = `-- name: SearchOrganisations :many
+WITH filtered_orgs AS (
+  SELECT
+    id, name, slug, created_at, updated_at,
+    COUNT(*) OVER () as total_count
+  FROM orgs
+  WHERE
+    deleted_at IS NULL
+    AND (array_length($1::uuid[], 1) IS NULL OR id = ANY($1::uuid[]))
+    AND (array_length($2::text[], 1) IS NULL OR name ILIKE ANY((SELECT '%' || unnest($2::text[]) || '%')))
+)
+SELECT
+    id, name, slug, created_at, updated_at, total_count
+FROM
+    filtered_orgs
+ORDER BY
+    CASE WHEN $3 = 'name' AND $4 = 'asc' THEN name END ASC,
+    CASE WHEN $3 = 'name' AND $4 = 'desc' THEN name END DESC,
+    CASE WHEN $3 = 'createdAt' AND $4 = 'asc' THEN created_at END ASC,
+    CASE WHEN $3 = 'createdAt' AND $4 = 'desc' THEN created_at END DESC,
+    CASE WHEN $3 = 'updatedAt' AND $4 = 'asc' THEN updated_at END ASC,
+    CASE WHEN $3 = 'updatedAt' AND $4 = 'desc' THEN updated_at END DESC
+LIMIT $5
+OFFSET (($6 - 1) * $5)
+`
+
+type SearchOrganisationsParams struct {
+	Column1 []pgtype.UUID `db:"column_1" json:"column_1"`
+	Column2 []string      `db:"column_2" json:"column_2"`
+	Column3 interface{}   `db:"column_3" json:"column_3"`
+	Column4 interface{}   `db:"column_4" json:"column_4"`
+	Limit   int32         `db:"limit" json:"limit"`
+	Column6 interface{}   `db:"column_6" json:"column_6"`
+}
+
+type SearchOrganisationsRow struct {
+	ID         pgtype.UUID        `db:"id" json:"id"`
+	Name       string             `db:"name" json:"name"`
+	Slug       string             `db:"slug" json:"slug"`
+	CreatedAt  pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	TotalCount int64              `db:"total_count" json:"total_count"`
+}
+
+// Searches organisations with pagination support
+// Parameters: $1=idArray, $2=nameArray, $3=sortBy (name/createdAt/updatedAt), $4=sortOrder (asc/desc), $5=pageSize, $6=pageNumber
+// Defaults should be applied in service layer: sortBy=updatedAt, sortOrder=desc, pageSize=25, pageNumber=1
+func (q *Queries) SearchOrganisations(ctx context.Context, arg SearchOrganisationsParams) ([]SearchOrganisationsRow, error) {
+	rows, err := q.db.Query(ctx, searchOrganisations,
+		arg.Column1,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+		arg.Limit,
+		arg.Column6,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SearchOrganisationsRow{}
+	for rows.Next() {
+		var i SearchOrganisationsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Slug,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.TotalCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const slugExists = `-- name: SlugExists :one
 SELECT EXISTS (
     SELECT 1 FROM orgs WHERE slug = $1 AND deleted_at IS NULL

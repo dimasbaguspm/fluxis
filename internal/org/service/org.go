@@ -48,6 +48,73 @@ func (s *Service) ListOrgs(ctx context.Context, q domain.OrganisationSearchModel
 	return data, nil
 }
 
+func (s *Service) SearchOrganisations(ctx context.Context, q domain.Organisations) (domain.OrganisationPagedModel, error) {
+	// Apply defaults
+	if q.PageSize == 0 {
+		q.PageSize = 25
+	}
+	if q.PageNumber == 0 {
+		q.PageNumber = 1
+	}
+	if q.SortBy == "" {
+		q.SortBy = "updatedAt"
+	}
+	if q.SortOrder == "" {
+		q.SortOrder = "desc"
+	}
+
+	rows, err := s.Repo.SearchOrganisations(ctx, repository.SearchOrganisationsParams{
+		Column1: q.ID,
+		Column2: q.Name,
+		Column3: q.SortBy,
+		Column4: q.SortOrder,
+		Limit:   int32(q.PageSize),
+		Column6: int32(q.PageNumber),
+	})
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.OrganisationPagedModel{
+				Items:      []domain.OrganisationModel{},
+				TotalCount: 0,
+				TotalPages: 0,
+				Page:       q.PageNumber,
+				PageSize:   q.PageSize,
+			}, nil
+		}
+		return domain.OrganisationPagedModel{}, fmt.Errorf("search organisations: %w", err)
+	}
+
+	var totalCount int64
+	items := make([]domain.OrganisationModel, 0, len(rows))
+
+	for _, row := range rows {
+		if totalCount == 0 {
+			totalCount = row.TotalCount
+		}
+		items = append(items, domain.OrganisationModel{
+			ID:        row.ID,
+			Name:      row.Name,
+			Slug:      row.Slug,
+			CreatedAt: row.CreatedAt.Time,
+			UpdatedAt: row.UpdatedAt.Time,
+		})
+	}
+
+	totalPages := int(totalCount) / q.PageSize
+	if int(totalCount)%q.PageSize != 0 {
+		totalPages++
+	}
+
+	return domain.OrganisationPagedModel{
+		Items:      items,
+		TotalCount: int(totalCount),
+		TotalPages: totalPages,
+		Page:       q.PageNumber,
+		PageSize:   q.PageSize,
+	}, nil
+}
+
 func (s *Service) GetOrgById(ctx context.Context, id pgtype.UUID) (domain.OrganisationModel, error) {
 	org, err := s.Repo.GetOrgById(ctx, id)
 

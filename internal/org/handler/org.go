@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
@@ -10,28 +11,62 @@ import (
 
 // ListOrgs godoc
 //
-//	@Summary		List organisations
-//	@Description	Returns all organisations the authenticated user belongs to
+//	@Summary		List organisations with pagination
+//	@Description	Returns paginated organisations with optional filtering and sorting
 //	@Tags			org
 //	@Produce		json
-//	@Success		200	{array}		domain.OrganisationModel
+//	@Param			query	query	domain.Organisations	false	"Search parameters: id (array), name (array), pageNumber, pageSize, sortBy, sortOrder"
+//	@Success		200	{object}	domain.OrganisationPagedModel
 //	@Failure		401	{object}	httpx.ErrBlock
 //	@Security		BearerAuth
 //	@Router			/orgs [get]
 func (h *Handler) ListOrgs(w http.ResponseWriter, r *http.Request) {
-	userID := httpx.MustUserID(r.Context())
-
-	req := domain.OrganisationSearchModel{
-		UserId: userID,
+	// Extract pagination parameters with defaults
+	pageNumber := 1
+	if pn := r.URL.Query().Get("pageNumber"); pn != "" {
+		if n, err := strconv.Atoi(pn); err == nil && n > 0 {
+			pageNumber = n
+		}
 	}
 
-	orgs, err := h.svc.ListOrgs(r.Context(), req)
+	pageSize := 25
+	if ps := r.URL.Query().Get("pageSize"); ps != "" {
+		if n, err := strconv.Atoi(ps); err == nil && n > 0 && n <= 100 {
+			pageSize = n
+		}
+	}
+
+	sortBy := r.URL.Query().Get("sortBy")
+	sortOrder := r.URL.Query().Get("sortOrder")
+
+	// Parse ID filters
+	var idFilters []pgtype.UUID
+	for _, idStr := range r.URL.Query()["id"] {
+		var id pgtype.UUID
+		if err := id.Scan(idStr); err == nil {
+			idFilters = append(idFilters, id)
+		}
+	}
+
+	// Parse name filters
+	nameFilters := r.URL.Query()["name"]
+
+	req := domain.Organisations{
+		ID:         idFilters,
+		Name:       nameFilters,
+		PageNumber: pageNumber,
+		PageSize:   pageSize,
+		SortBy:     sortBy,
+		SortOrder:  sortOrder,
+	}
+
+	result, err := h.svc.SearchOrganisations(r.Context(), req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return
 	}
 
-	httpx.OK(w, orgs)
+	httpx.OK(w, result)
 }
 
 // CreateOrg godoc

@@ -53,6 +53,34 @@ WHERE
     id = $1
     AND deleted_at IS NULL;
 
+-- name: SearchOrganisations :many
+-- Searches organisations with pagination support
+-- Parameters: $1=idArray, $2=nameArray, $3=sortBy (name/createdAt/updatedAt), $4=sortOrder (asc/desc), $5=pageSize, $6=pageNumber
+-- Defaults should be applied in service layer: sortBy=updatedAt, sortOrder=desc, pageSize=25, pageNumber=1
+WITH filtered_orgs AS (
+  SELECT
+    id, name, slug, created_at, updated_at,
+    COUNT(*) OVER () as total_count
+  FROM orgs
+  WHERE
+    deleted_at IS NULL
+    AND (array_length($1::uuid[], 1) IS NULL OR id = ANY($1::uuid[]))
+    AND (array_length($2::text[], 1) IS NULL OR name ILIKE ANY((SELECT '%' || unnest($2::text[]) || '%')))
+)
+SELECT
+    id, name, slug, created_at, updated_at, total_count
+FROM
+    filtered_orgs
+ORDER BY
+    CASE WHEN $3 = 'name' AND $4 = 'asc' THEN name END ASC,
+    CASE WHEN $3 = 'name' AND $4 = 'desc' THEN name END DESC,
+    CASE WHEN $3 = 'createdAt' AND $4 = 'asc' THEN created_at END ASC,
+    CASE WHEN $3 = 'createdAt' AND $4 = 'desc' THEN created_at END DESC,
+    CASE WHEN $3 = 'updatedAt' AND $4 = 'asc' THEN updated_at END ASC,
+    CASE WHEN $3 = 'updatedAt' AND $4 = 'desc' THEN updated_at END DESC
+LIMIT $5
+OFFSET (($6 - 1) * $5);
+
 -- name: ListOrg :many
 SELECT
     id, name, slug, created_at, updated_at

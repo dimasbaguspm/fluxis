@@ -7,7 +7,7 @@ import (
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 )
 
-func TestOrg_List_Success(t *testing.T) {
+func TestOrg_Paged_Success(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	// Create an org first
@@ -15,7 +15,7 @@ func TestOrg_List_Success(t *testing.T) {
 		Name: "Test Org " + randomString(8),
 	}, tokens.AccessToken)
 
-	statusCode, resp := do[[]domain.OrganisationModel](t, "GET", "/orgs", nil, tokens.AccessToken)
+	statusCode, resp := do[domain.OrganisationPagedModel](t, "GET", "/orgs", nil, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
 		t.Fatalf("expected status 200, got %d: %v", statusCode, resp.Error)
@@ -25,12 +25,24 @@ func TestOrg_List_Success(t *testing.T) {
 		t.Fatal("expected org list data")
 	}
 
-	if len(*resp.Data) < 1 {
+	if len(resp.Data.Items) < 1 {
 		t.Fatal("expected at least one org in list")
+	}
+
+	if resp.Data.TotalCount < 1 {
+		t.Fatal("expected totalCount >= 1")
+	}
+
+	if resp.Data.Page != 1 {
+		t.Fatalf("expected page 1, got %d", resp.Data.Page)
+	}
+
+	if resp.Data.PageSize == 0 {
+		t.Fatal("expected pageSize > 0")
 	}
 }
 
-func TestOrg_List_ResponseStructure(t *testing.T) {
+func TestOrg_Paged_ResponseStructure(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	// Create multiple orgs
@@ -44,7 +56,7 @@ func TestOrg_List_ResponseStructure(t *testing.T) {
 		}, tokens.AccessToken)
 	}
 
-	statusCode, resp := do[[]domain.OrganisationModel](t, "GET", "/orgs", nil, tokens.AccessToken)
+	statusCode, resp := do[domain.OrganisationPagedModel](t, "GET", "/orgs", nil, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", statusCode)
@@ -54,12 +66,29 @@ func TestOrg_List_ResponseStructure(t *testing.T) {
 		t.Fatal("expected org list data")
 	}
 
-	if len(*resp.Data) < 2 {
-		t.Fatalf("expected at least 2 orgs, got %d", len(*resp.Data))
+	if len(resp.Data.Items) < 2 {
+		t.Fatalf("expected at least 2 orgs, got %d", len(resp.Data.Items))
+	}
+
+	// Verify pagination metadata
+	if resp.Data.TotalCount < 2 {
+		t.Fatalf("expected totalCount >= 2, got %d", resp.Data.TotalCount)
+	}
+
+	if resp.Data.TotalPages < 1 {
+		t.Fatal("expected totalPages >= 1")
+	}
+
+	if resp.Data.Page != 1 {
+		t.Fatalf("expected page 1, got %d", resp.Data.Page)
+	}
+
+	if resp.Data.PageSize == 0 {
+		t.Fatal("expected pageSize > 0")
 	}
 
 	// Verify response structure of list items
-	for i, org := range *resp.Data {
+	for i, org := range resp.Data.Items {
 		if uuidToString(org.ID) == "" {
 			t.Fatalf("org[%d]: expected non-empty ID", i)
 		}

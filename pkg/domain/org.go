@@ -21,6 +21,23 @@ type OrganisationModel struct {
 	UpdatedAt    time.Time   `json:"updatedAt"`
 }
 
+type Organisations struct {
+	ID         []pgtype.UUID `json:"id" validate:"dive,uuid4"`
+	Name       []string      `json:"name" validate:"dive,min=1"`
+	PageNumber int           `json:"pageNumber" validate:"min=1"`
+	PageSize   int           `json:"pageSize" validate:"min=1,max=100"`
+	SortBy     string        `json:"sortBy" validate:"oneof=name createdAt updatedAt"`
+	SortOrder  string        `json:"sortOrder" validate:"oneof=asc desc"`
+}
+
+type OrganisationPagedModel struct {
+	Items      []OrganisationModel `json:"items"`
+	TotalCount int                 `json:"totalCount"`
+	TotalPages int                 `json:"totalPages"`
+	Page       int                 `json:"page"`
+	PageSize   int                 `json:"pageSize"`
+}
+
 type OrganisationCreateModel struct {
 	Name string `json:"name" validate:"required,min=1"`
 }
