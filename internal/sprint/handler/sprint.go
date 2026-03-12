@@ -40,12 +40,13 @@ func (h *Handler) CreateSprint(w http.ResponseWriter, r *http.Request) {
 
 // ListSprints godoc
 //
-//	@Summary		List sprints
-//	@Description	Returns all sprints in a project
+//	@Summary		List sprints with pagination
+//	@Description	Returns paginated sprints in a project with optional filtering
 //	@Tags			sprint
 //	@Produce		json
 //	@Param			projectId	query		string	true	"Project ID"
-//	@Success		200			{array}		domain.SprintModel
+//	@Param			query		query		domain.SprintsSearchModel	false	"Search parameters: name, pageNumber, pageSize"
+//	@Success		200			{object}	domain.SprintsPagedModel
 //	@Failure		400			{object}	httpx.ErrBlock
 //	@Failure		401			{object}	httpx.ErrBlock
 //	@Security		BearerAuth
@@ -57,13 +58,19 @@ func (h *Handler) ListSprints(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sprints, err := h.svc.ListSprintsByProject(r.Context(), projectID)
+	req := domain.SprintsSearchModel{
+		Name:       httpx.QueryString(r, "name"),
+		PageNumber: httpx.QueryNumber(r, "pageNumber"),
+		PageSize:   httpx.QueryNumber(r, "pageSize"),
+	}
+
+	result, err := h.svc.ListSprintsByProjectPaged(r.Context(), projectID, req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return
 	}
 
-	httpx.OK(w, sprints)
+	httpx.OK(w, result)
 }
 
 // GetSprint godoc

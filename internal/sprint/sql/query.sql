@@ -14,6 +14,26 @@ FROM sprints
 WHERE project_id = $1 AND deleted_at IS NULL
 ORDER BY created_at DESC;
 
+-- name: ListSprintsByProjectPaged :many
+WITH filtered_sprints AS (
+  SELECT
+    id, project_id, name, goal, status, planned_started_at, planned_completed_at, started_at, completed_at, created_at, updated_at, deleted_at,
+    COUNT(*) OVER () as total_count
+  FROM
+    sprints
+  WHERE
+    project_id = $1 AND deleted_at IS NULL
+    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+)
+SELECT
+  id, project_id, name, goal, status, planned_started_at, planned_completed_at, started_at, completed_at, created_at, updated_at, deleted_at, total_count
+FROM
+  filtered_sprints
+ORDER BY
+  created_at DESC
+LIMIT $3
+OFFSET $4;
+
 -- name: UpdateSprint :one
 UPDATE sprints
 SET name = $2, goal = $3, status = $4, planned_started_at = $5, planned_completed_at = $6, updated_at = NOW()

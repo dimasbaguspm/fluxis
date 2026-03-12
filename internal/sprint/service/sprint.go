@@ -133,6 +133,60 @@ func (s *Service) ListSprintsByProject(ctx context.Context, projectID pgtype.UUI
 	return data, nil
 }
 
+// ListSprintsByProjectPaged lists sprints in a project with pagination
+func (s *Service) ListSprintsByProjectPaged(ctx context.Context, projectID pgtype.UUID, q domain.SprintsSearchModel) (domain.SprintsPagedModel, error) {
+	q.ApplyDefaults()
+
+	sprints, err := s.Repo.ListSprintsByProjectPaged(ctx, repository.ListSprintsByProjectPagedParams{
+		ProjectID: projectID,
+		Column2:   q.Name,
+		Limit:     int32(q.PageSize),
+		Offset:    int32((q.PageNumber - 1) * q.PageSize),
+	})
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			emptyResult := domain.SprintsPagedModel{}
+			return emptyResult.Empty(q.PageNumber, q.PageSize), nil
+		}
+		return domain.SprintsPagedModel{}, fmt.Errorf("list sprints by project paged: %w", err)
+	}
+
+	var totalCount int64
+	data := make([]domain.SprintModel, 0, len(sprints))
+
+	for _, row := range sprints {
+		totalCount = row.TotalCount
+		data = append(data, toSprintModel(repository.Sprint{
+			ID:                 row.ID,
+			ProjectID:          row.ProjectID,
+			Name:               row.Name,
+			Goal:               row.Goal,
+			Status:             row.Status,
+			PlannedStartedAt:   row.PlannedStartedAt,
+			PlannedCompletedAt: row.PlannedCompletedAt,
+			StartedAt:          row.StartedAt,
+			CompletedAt:        row.CompletedAt,
+			CreatedAt:          row.CreatedAt,
+			UpdatedAt:          row.UpdatedAt,
+			DeletedAt:          row.DeletedAt,
+		}))
+	}
+
+	totalPages := 0
+	if totalCount > 0 {
+		totalPages = int((totalCount + int64(q.PageSize) - 1) / int64(q.PageSize))
+	}
+
+	return domain.SprintsPagedModel{
+		Items:      data,
+		TotalCount: int(totalCount),
+		TotalPages: totalPages,
+		PageNumber: q.PageNumber,
+		PageSize:   q.PageSize,
+	}, nil
+}
+
 // UpdateSprint updates sprint details
 func (s *Service) UpdateSprint(ctx context.Context, id pgtype.UUID, req domain.SprintUpdateModel) (domain.SprintModel, error) {
 	// Get current sprint to preserve existing values

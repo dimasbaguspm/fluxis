@@ -38,9 +38,47 @@ type SprintUpdateModel struct {
 	PlannedCompletedAt string `json:"plannedCompletedAt,omitempty" validate:"omitempty,datetime"`
 }
 
+type SprintsSearchModel struct {
+	Name       string `json:"name"`
+	PageNumber int    `json:"pageNumber" validate:"min=1"`
+	PageSize   int    `json:"pageSize" validate:"min=1,max=100"`
+}
+
+func (s *SprintsSearchModel) ApplyDefaults() {
+	const (
+		defaultPageNumber = 1
+		defaultPageSize   = 25
+	)
+	if s.PageNumber == 0 {
+		s.PageNumber = defaultPageNumber
+	}
+	if s.PageSize == 0 {
+		s.PageSize = defaultPageSize
+	}
+}
+
+type SprintsPagedModel struct {
+	Items      []SprintModel `json:"items"`
+	TotalCount int           `json:"totalCount"`
+	TotalPages int           `json:"totalPages"`
+	PageNumber int           `json:"pageNumber"`
+	PageSize   int           `json:"pageSize"`
+}
+
+func (m SprintsPagedModel) Empty(pageNumber, pageSize int) SprintsPagedModel {
+	return SprintsPagedModel{
+		Items:      []SprintModel{},
+		TotalCount: 0,
+		TotalPages: 0,
+		PageNumber: pageNumber,
+		PageSize:   pageSize,
+	}
+}
+
 type SprintReader interface {
 	GetSprint(ctx context.Context, id pgtype.UUID) (SprintModel, error)
 	ListSprintsByProject(ctx context.Context, projectID pgtype.UUID) ([]SprintModel, error)
+	ListSprintsByProjectPaged(ctx context.Context, projectID pgtype.UUID, q SprintsSearchModel) (SprintsPagedModel, error)
 }
 
 type SprintWriter interface {

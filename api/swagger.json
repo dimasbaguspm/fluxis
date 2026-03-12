@@ -1708,14 +1708,14 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns all sprints in a project",
+                "description": "Returns paginated sprints in a project with optional filtering",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "sprint"
                 ],
-                "summary": "List sprints",
+                "summary": "List sprints with pagination",
                 "parameters": [
                     {
                         "type": "string",
@@ -1723,16 +1723,31 @@
                         "name": "projectId",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "pageNumber",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "pageSize",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.SprintModel"
-                            }
+                            "$ref": "#/definitions/domain.SprintsPagedModel"
                         }
                     },
                     "400": {
@@ -3082,6 +3097,29 @@
                         "active",
                         "completed"
                     ]
+                }
+            }
+        },
+        "domain.SprintsPagedModel": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.SprintModel"
+                    }
+                },
+                "pageNumber": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "totalCount": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
                 }
             }
         },

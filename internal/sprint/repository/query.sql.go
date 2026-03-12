@@ -183,6 +183,89 @@ func (q *Queries) ListSprintsByProject(ctx context.Context, projectID pgtype.UUI
 	return items, nil
 }
 
+const listSprintsByProjectPaged = `-- name: ListSprintsByProjectPaged :many
+WITH filtered_sprints AS (
+  SELECT
+    id, project_id, name, goal, status, planned_started_at, planned_completed_at, started_at, completed_at, created_at, updated_at, deleted_at,
+    COUNT(*) OVER () as total_count
+  FROM
+    sprints
+  WHERE
+    project_id = $1 AND deleted_at IS NULL
+    AND ($2::text = '' OR name ILIKE '%' || $2 || '%')
+)
+SELECT
+  id, project_id, name, goal, status, planned_started_at, planned_completed_at, started_at, completed_at, created_at, updated_at, deleted_at, total_count
+FROM
+  filtered_sprints
+ORDER BY
+  created_at DESC
+LIMIT $3
+OFFSET $4
+`
+
+type ListSprintsByProjectPagedParams struct {
+	ProjectID pgtype.UUID `db:"project_id" json:"project_id"`
+	Column2   string      `db:"column_2" json:"column_2"`
+	Limit     int32       `db:"limit" json:"limit"`
+	Offset    int32       `db:"offset" json:"offset"`
+}
+
+type ListSprintsByProjectPagedRow struct {
+	ID                 pgtype.UUID        `db:"id" json:"id"`
+	ProjectID          pgtype.UUID        `db:"project_id" json:"project_id"`
+	Name               string             `db:"name" json:"name"`
+	Goal               pgtype.Text        `db:"goal" json:"goal"`
+	Status             SprintStatus       `db:"status" json:"status"`
+	PlannedStartedAt   pgtype.Timestamptz `db:"planned_started_at" json:"planned_started_at"`
+	PlannedCompletedAt pgtype.Timestamptz `db:"planned_completed_at" json:"planned_completed_at"`
+	StartedAt          pgtype.Timestamptz `db:"started_at" json:"started_at"`
+	CompletedAt        pgtype.Timestamptz `db:"completed_at" json:"completed_at"`
+	CreatedAt          pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	DeletedAt          pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+	TotalCount         int64              `db:"total_count" json:"total_count"`
+}
+
+func (q *Queries) ListSprintsByProjectPaged(ctx context.Context, arg ListSprintsByProjectPagedParams) ([]ListSprintsByProjectPagedRow, error) {
+	rows, err := q.db.Query(ctx, listSprintsByProjectPaged,
+		arg.ProjectID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSprintsByProjectPagedRow{}
+	for rows.Next() {
+		var i ListSprintsByProjectPagedRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ProjectID,
+			&i.Name,
+			&i.Goal,
+			&i.Status,
+			&i.PlannedStartedAt,
+			&i.PlannedCompletedAt,
+			&i.StartedAt,
+			&i.CompletedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.TotalCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const startSprint = `-- name: StartSprint :one
 UPDATE sprints
 SET status = 'active', started_at = NOW(), updated_at = NOW()
