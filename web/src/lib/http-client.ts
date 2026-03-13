@@ -1,12 +1,6 @@
-/**
- * Native fetch-based HTTP client
- * Handles HTTP requests, serialization, error handling, and Server-Sent Events
- * Authentication is injected via headers when calling request()
- */
-
 import { createHttpError, type HttpRequest, type HttpResponse } from "./http-request";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 function serializeParams(params: Record<string, any>): string {
   const searchParams = new URLSearchParams();
@@ -55,6 +49,7 @@ export async function request<TResponse = unknown>(
   const fetchOptions: RequestInit = {
     method: req.method,
     headers,
+    credentials: "include",
   };
 
   if (req.body && (req.method === "POST" || req.method === "PUT" || req.method === "PATCH")) {
