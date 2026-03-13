@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { QueryKey, UseQueryOptions } from "@tanstack/react-query";
 import { request, type RequestOptions } from "@/lib/http-client";
 import type { HttpRequest } from "@/lib/http-request";
+import { useSessionStore } from "@providers/session";
 
 interface QueryStatus {
   fetchStatus: "idle" | "fetching" | "paused";
@@ -19,6 +20,7 @@ interface QueryMethods {
 
 /**
  * Base hook for API queries (GET requests)
+ * Automatically injects access token from session
  * Returns tuple format: [data, error, status, methods]
  *
  * @example
@@ -34,11 +36,16 @@ export function useApiQuery<TData = unknown, TError = unknown>(
   options?: Omit<UseQueryOptions<TData, TError>, "queryKey" | "queryFn"> & { headers?: Record<string, string> },
 ): [TData | undefined, TError | null, QueryStatus, QueryMethods] {
   const { headers, ...queryOptions } = options || {};
+  const accessToken = useSessionStore((state) => state.accessToken);
 
   const query = useQuery({
     queryKey,
     queryFn: async () => {
-      const response = await request<TData>(requestConfig, { headers } as RequestOptions);
+      const requestHeaders: Record<string, string> = { ...headers };
+      if (accessToken) {
+        requestHeaders.Authorization = `Bearer ${accessToken}`;
+      }
+      const response = await request<TData>(requestConfig, { headers: requestHeaders } as RequestOptions);
       return response.data;
     },
     ...queryOptions,

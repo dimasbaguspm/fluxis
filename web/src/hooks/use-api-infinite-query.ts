@@ -2,6 +2,7 @@ import type { QueryKey, UseInfiniteQueryOptions } from "@tanstack/react-query";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { request, type RequestOptions } from "@/lib/http-client";
 import type { HttpRequest } from "@/lib/http-request";
+import { useSessionStore } from "@providers/session";
 
 interface InfiniteQueryStatus {
   fetchStatus: "idle" | "fetching" | "paused";
@@ -25,6 +26,7 @@ interface InfiniteQueryMethods {
 
 /**
  * Base hook for paginated API queries
+ * Automatically injects access token from session
  * Returns tuple format: [pages, error, status, methods]
  *
  * @example
@@ -47,12 +49,17 @@ export function useApiInfiniteQuery<TData = unknown, TError = unknown>(
   > & { headers?: Record<string, string> },
 ): [TData[] | undefined, TError | null, InfiniteQueryStatus, InfiniteQueryMethods] {
   const { headers, ...infiniteOptions } = options || {};
+  const accessToken = useSessionStore((state) => state.accessToken);
 
   const query = useInfiniteQuery({
     queryKey,
     queryFn: async ({ pageParam }: { pageParam: number }) => {
       const requestConfig = requestConfigFactory(pageParam as number);
-      const response = await request<TData>(requestConfig, { headers } as RequestOptions);
+      const requestHeaders: Record<string, string> = { ...headers };
+      if (accessToken) {
+        requestHeaders.Authorization = `Bearer ${accessToken}`;
+      }
+      const response = await request<TData>(requestConfig, { headers: requestHeaders } as RequestOptions);
       return response.data;
     },
     ...infiniteOptions,

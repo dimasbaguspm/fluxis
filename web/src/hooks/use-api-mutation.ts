@@ -2,6 +2,7 @@ import type { UseMutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { request, type RequestOptions } from "@/lib/http-client";
 import type { HttpRequest } from "@/lib/http-request";
+import { useSessionStore } from "@providers/session";
 
 interface MutationStatus {
   status: "idle" | "pending" | "success" | "error";
@@ -18,6 +19,7 @@ interface MutationMethods<TVariables> {
 
 /**
  * Base hook for API mutations (POST, PUT, PATCH, DELETE requests)
+ * Automatically injects access token from session
  * Returns tuple format: [data, error, status, methods]
  *
  * @example
@@ -27,7 +29,7 @@ interface MutationMethods<TVariables> {
  *     path: '/auth/login',
  *     body: variables,
  *   }),
- *   { onSuccess: (data) => setToken(data.accessToken) }
+ *   { onSuccess: (data) => setSession(data) }
  * )
  *
  * mutate({ email: 'user@example.com', password: 'pass' })
@@ -37,11 +39,16 @@ export function useApiMutation<TData = unknown, TError = unknown, TVariables = v
   options?: Omit<UseMutationOptions<TData, TError, TVariables>, "mutationFn"> & { headers?: Record<string, string> },
 ): [TData | undefined, TError | null, MutationStatus, MutationMethods<TVariables>] {
   const { headers, ...mutationOptions } = options || {};
+  const accessToken = useSessionStore((state) => state.accessToken);
 
   const mutation = useMutation({
     mutationFn: async (variables: TVariables) => {
       const requestConfig = requestConfigFactory(variables);
-      const response = await request<TData>(requestConfig, { headers } as RequestOptions);
+      const requestHeaders: Record<string, string> = { ...headers };
+      if (accessToken) {
+        requestHeaders.Authorization = `Bearer ${accessToken}`;
+      }
+      const response = await request<TData>(requestConfig, { headers: requestHeaders } as RequestOptions);
       return response.data;
     },
     ...mutationOptions,
