@@ -1202,6 +1202,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"dayjs@npm:1.11.20":
+  version: 1.11.20
+  resolution: "dayjs@npm:1.11.20"
+  checksum: 10c0/8af525e2aa100c8db9923d706c42b2b2d30579faf89456619413a5c10916efc92c2b166e193c27c02eb3174b30aa440ee1e7b72b0a2876b3da651d204db848a0
+  languageName: node
+  linkType: hard
+
 "debug@npm:4, debug@npm:^4.1.0, debug@npm:^4.3.1, debug@npm:^4.3.4, debug@npm:^4.4.3":
   version: 4.4.3
   resolution: "debug@npm:4.4.3"
@@ -2329,6 +2336,7 @@ __metadata:
     "@versaur/react": "npm:1.0.16"
     "@vitejs/plugin-react": "npm:6.0.0"
     babel-plugin-react-compiler: "npm:1.0.0"
+    dayjs: "npm:1.11.20"
     globals: "npm:17.4.0"
     oxfmt: "npm:0.40.0"
     oxlint: "npm:1.55.0"
