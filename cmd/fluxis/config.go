@@ -10,6 +10,7 @@ import (
 	authConfig "github.com/dimasbaguspm/fluxis/internal/auth/service"
 	"github.com/dimasbaguspm/fluxis/pkg/cache"
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
+	ratelimit "github.com/dimasbaguspm/fluxis/pkg/rate-limit"
 )
 
 type Config struct {
@@ -18,7 +19,7 @@ type Config struct {
 	Server    ServerConfig
 	Auth      authConfig.Config
 	DataCache cache.Config
-	RateLimit cache.Config
+	RateLimit ratelimit.Config
 }
 
 type ServerConfig struct {
@@ -61,9 +62,9 @@ func LoadEnv() *Config {
 			DefaultTTL: getDuration("CACHE_DEFAULT_TTL", 15*time.Minute),
 			HMACKey:    mustEnv("CACHE_HMAC_KEY"),
 		},
-		RateLimit: cache.Config{
-			DefaultTTL: getDuration("RATE_LIMIT_CACHE_TTL", 1*time.Minute),
-			HMACKey:    getEnv("CACHE_HMAC_KEY", "fallback-hmac-key-for-rate-limit"),
+		RateLimit: ratelimit.Config{
+			MaxRequests: getInt("RATE_LIMIT_MAX_REQUESTS", 100),
+			Window:      getDuration("RATE_LIMIT_WINDOW", 1*time.Minute),
 		},
 	}
 

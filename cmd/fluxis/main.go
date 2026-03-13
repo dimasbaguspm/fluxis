@@ -13,6 +13,7 @@ import (
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
+	ratelimit "github.com/dimasbaguspm/fluxis/pkg/rate-limit"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
@@ -45,17 +46,15 @@ func main() {
 	bus := pubsub.New()
 
 	dataC := cache.New(cfg.DataCache)
-	rateLimitC := cache.New(cfg.RateLimit)
 
 	defer db.Close()
 	defer bus.Close()
 
 	app := Wire(Deps{
-		DB:             db,
-		Config:         cfg,
-		Bus:            bus,
-		DataCache:      dataC,
-		RateLimitCache: rateLimitC,
+		DB:        db,
+		Config:    cfg,
+		Bus:       bus,
+		DataCache: dataC,
 	})
 
 	httpx.InitAuth(app.Auth.Service())
@@ -95,9 +94,11 @@ func main() {
 		httpx.Handle(w, httpx.NotImplemented("endpoint is not implemented"))
 	})
 
+	rl := ratelimit.New(cfg.RateLimit)
+
 	svr := http.Server{
 		Addr:         cfg.Server.addr(),
-		Handler:      mux,
+		Handler:      rl.Wrap(mux),
 		ReadTimeout:  cfg.Server.ReadTimeout,
 		WriteTimeout: cfg.Server.WriteTimeout,
 		IdleTimeout:  cfg.Server.IdleTimeout,

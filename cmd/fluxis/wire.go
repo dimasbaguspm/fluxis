@@ -57,11 +57,10 @@ type App struct {
 }
 
 type Deps struct {
-	DB              *pgxpool.Pool
-	Config          *Config
-	Bus             pubsub.Bus
-	DataCache       cache.Cache
-	RateLimitCache  cache.Cache
+	DB        *pgxpool.Pool
+	Config    *Config
+	Bus       pubsub.Bus
+	DataCache cache.Cache
 }
 
 func Wire(d Deps) *App {
