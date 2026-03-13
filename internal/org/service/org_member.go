@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/dimasbaguspm/fluxis/internal/org/repository"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
+	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 	"github.com/dimasbaguspm/fluxis/pkg/syncx"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -94,6 +97,13 @@ func (s *Service) AddMember(ctx context.Context, orgId pgtype.UUID, p domain.Org
 		return fmt.Errorf("add org member err: %w", err)
 	}
 
+	if err := s.Bus.Publish(ctx, pubsub.OrgMemberAdded, map[string]string{
+		"orgId":  uuid.UUID(org.ID.Bytes).String(),
+		"userId": uuid.UUID(user.ID.Bytes).String(),
+	}); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.OrgMemberAdded), "error", err)
+	}
+
 	return nil
 }
 
@@ -111,6 +121,13 @@ func (s *Service) UpdateMemberRole(ctx context.Context, orgId, userId pgtype.UUI
 		return fmt.Errorf("update org member role err: %w", err)
 	}
 
+	if err := s.Bus.Publish(ctx, pubsub.OrgMemberUpdated, map[string]string{
+		"orgId":  uuid.UUID(orgId.Bytes).String(),
+		"userId": uuid.UUID(userId.Bytes).String(),
+	}); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.OrgMemberUpdated), "error", err)
+	}
+
 	return nil
 }
 
@@ -122,6 +139,13 @@ func (s *Service) RemoveMember(ctx context.Context, orgId, userId pgtype.UUID) e
 
 	if err != nil {
 		return fmt.Errorf("delete org member role err: %w", err)
+	}
+
+	if err := s.Bus.Publish(ctx, pubsub.OrgMemberRemoved, map[string]string{
+		"orgId":  uuid.UUID(orgId.Bytes).String(),
+		"userId": uuid.UUID(userId.Bytes).String(),
+	}); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.OrgMemberRemoved), "error", err)
 	}
 
 	return nil

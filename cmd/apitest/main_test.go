@@ -45,6 +45,7 @@ import (
 	userservice "github.com/dimasbaguspm/fluxis/internal/user/service"
 
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
+	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
 
 var testServer *httptest.Server
@@ -100,30 +101,38 @@ func TestMain(m *testing.M) {
 	boardRepo := boardrepo.New(pool)
 	ticketRepo := ticketrepo.New(pool)
 
+	bus := pubsub.New()
+	defer bus.Close()
+
 	userSvc := userservice.New(userservice.Deps{
 		Repo: userRepo,
 	})
 	orgSvc := orgservice.New(orgservice.Deps{
 		Repo: orgRepo,
 		User: userSvc,
+		Bus:  bus,
 	})
 	projectSvc := projectservice.New(projectservice.Deps{
 		Repo: projectRepo,
 		Org:  orgSvc,
+		Bus:  bus,
 	})
 	sprintSvc := sprintservice.New(sprintservice.Deps{
 		Repo:    sprintRepo,
 		Project: projectSvc,
+		Bus:     bus,
 	})
 	boardSvc := boardservice.New(boardservice.Deps{
 		Repo:   boardRepo,
 		Sprint: sprintSvc,
+		Bus:    bus,
 	})
 	ticketSvc := ticketservice.New(ticketservice.Deps{
 		Repo:    ticketRepo,
 		Project: projectSvc,
 		Board:   boardSvc,
 		Sprint:  sprintSvc,
+		Bus:     bus,
 	})
 	authSvc := authservice.New(authservice.Deps{
 		Users:  userSvc,

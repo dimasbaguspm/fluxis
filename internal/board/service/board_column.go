@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/dimasbaguspm/fluxis/internal/board/repository"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
+	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -91,14 +94,20 @@ func (s *Service) CreateBoardColumn(ctx context.Context, boardID pgtype.UUID, b 
 		return domain.BoardColumnModel{}, fmt.Errorf("create board column: %w", err)
 	}
 
-	return domain.BoardColumnModel{
+	result := domain.BoardColumnModel{
 		ID:        col.ID,
 		BoardID:   col.BoardID,
 		Name:      col.Name,
 		Position:  col.Position,
 		CreatedAt: col.CreatedAt.Time,
 		UpdatedAt: col.UpdatedAt.Time,
-	}, nil
+	}
+
+	if err := s.Bus.Publish(ctx, pubsub.BoardColumnCreated, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.BoardColumnCreated), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) UpdateBoardColumn(ctx context.Context, boardID, columnID pgtype.UUID, b domain.BoardColumnUpdateModel) (domain.BoardColumnModel, error) {
@@ -119,14 +128,20 @@ func (s *Service) UpdateBoardColumn(ctx context.Context, boardID, columnID pgtyp
 		return domain.BoardColumnModel{}, fmt.Errorf("update board column: %w", err)
 	}
 
-	return domain.BoardColumnModel{
+	result := domain.BoardColumnModel{
 		ID:        colUpdated.ID,
 		BoardID:   colUpdated.BoardID,
 		Name:      colUpdated.Name,
 		Position:  colUpdated.Position,
 		CreatedAt: colUpdated.CreatedAt.Time,
 		UpdatedAt: colUpdated.UpdatedAt.Time,
-	}, nil
+	}
+
+	if err := s.Bus.Publish(ctx, pubsub.BoardColumnUpdated, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.BoardColumnUpdated), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) ReorderBoardColumns(ctx context.Context, boardID pgtype.UUID, reorder domain.BoardColumnReorderModel) ([]domain.BoardColumnModel, error) {
@@ -161,6 +176,13 @@ func (s *Service) ReorderBoardColumns(ctx context.Context, boardID pgtype.UUID, 
 		})
 	}
 
+	// For reorder operations, publish the boardId to identify scope
+	// since we're returning a list and not a single entity
+	reorderPayload := map[string]string{"boardId": uuid.UUID(boardID.Bytes).String()}
+	if err := s.Bus.Publish(ctx, pubsub.BoardColumnReordered, reorderPayload); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.BoardColumnReordered), "error", err)
+	}
+
 	return result, nil
 }
 
@@ -177,6 +199,10 @@ func (s *Service) DeleteBoardColumn(ctx context.Context, boardID, columnID pgtyp
 	_, err = s.Repo.DeleteBoardColumn(ctx, columnID)
 	if err != nil {
 		return fmt.Errorf("delete board column: %w", err)
+	}
+
+	if err := s.Bus.Publish(ctx, pubsub.BoardColumnDeleted, map[string]string{"id": uuid.UUID(columnID.Bytes).String()}); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.BoardColumnDeleted), "error", err)
 	}
 
 	return nil

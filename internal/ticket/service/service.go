@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/dimasbaguspm/fluxis/internal/ticket/repository"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
+	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
 
 type Deps struct {
@@ -10,6 +11,7 @@ type Deps struct {
 	Project domain.ProjectReader
 	Board   domain.BoardReader
 	Sprint  domain.SprintReader
+	Bus     pubsub.Publisher
 }
 
 type Service struct {

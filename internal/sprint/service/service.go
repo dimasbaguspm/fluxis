@@ -3,11 +3,13 @@ package service
 import (
 	"github.com/dimasbaguspm/fluxis/internal/sprint/repository"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
+	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
 
 type Deps struct {
 	Repo    *repository.Queries
 	Project domain.ProjectReader
+	Bus     pubsub.Publisher
 }
 
 type Service struct {

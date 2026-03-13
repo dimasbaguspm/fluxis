@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/dimasbaguspm/fluxis/internal/org/repository"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
+	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 	"github.com/dimasbaguspm/fluxis/pkg/transformer"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -172,14 +175,20 @@ func (s *Service) CreateOrg(ctx context.Context, p domain.OrganisationCreateMode
 		OrgID: org.ID,
 	})
 
-	return domain.OrganisationModel{
+	result := domain.OrganisationModel{
 		ID:           org.ID,
 		Name:         org.Name,
 		Slug:         org.Slug,
 		TotalMembers: totalMembers,
 		CreatedAt:    org.CreatedAt.Time,
 		UpdatedAt:    org.UpdatedAt.Time,
-	}, nil
+	}
+
+	if err := s.Bus.Publish(ctx, pubsub.OrgCreated, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.OrgCreated), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) UpdateOrg(ctx context.Context, id pgtype.UUID, p domain.OrganisationUpdateModel) (domain.OrganisationModel, error) {
@@ -199,14 +208,20 @@ func (s *Service) UpdateOrg(ctx context.Context, id pgtype.UUID, p domain.Organi
 		OrgID: org.ID,
 	})
 
-	return domain.OrganisationModel{
+	result := domain.OrganisationModel{
 		ID:           org.ID,
 		Name:         org.Name,
 		Slug:         org.Slug,
 		TotalMembers: totalMembers,
 		CreatedAt:    org.CreatedAt.Time,
 		UpdatedAt:    org.UpdatedAt.Time,
-	}, nil
+	}
+
+	if err := s.Bus.Publish(ctx, pubsub.OrgUpdated, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.OrgUpdated), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) DeleteOrg(ctx context.Context, id pgtype.UUID) error {
@@ -214,5 +229,10 @@ func (s *Service) DeleteOrg(ctx context.Context, id pgtype.UUID) error {
 	if err != nil {
 		return fmt.Errorf("delete org: %w", err)
 	}
+
+	if err := s.Bus.Publish(ctx, pubsub.OrgDeleted, map[string]string{"id": uuid.UUID(id.Bytes).String()}); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.OrgDeleted), "error", err)
+	}
+
 	return nil
 }

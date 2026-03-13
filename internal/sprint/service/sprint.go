@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/dimasbaguspm/fluxis/internal/sprint/repository"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
+	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -97,6 +99,11 @@ func (s *Service) CreateSprint(ctx context.Context, req domain.SprintCreateModel
 	})
 	if err != nil {
 		return domain.SprintModel{}, fmt.Errorf("create sprint: %w", err)
+	}
+
+	result := toSprintModel(sprint)
+	if err := s.Bus.Publish(ctx, pubsub.SprintCreated, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.SprintCreated), "error", err)
 	}
 
 	return toSprintModel(sprint), nil
@@ -226,7 +233,12 @@ func (s *Service) UpdateSprint(ctx context.Context, id pgtype.UUID, req domain.S
 		return domain.SprintModel{}, fmt.Errorf("update sprint: %w", err)
 	}
 
-	return toSprintModel(sprint), nil
+	result := toSprintModel(sprint)
+	if err := s.Bus.Publish(ctx, pubsub.SprintUpdated, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.SprintUpdated), "error", err)
+	}
+
+	return result, nil
 }
 
 // StartSprint transitions a sprint to active status
@@ -239,7 +251,12 @@ func (s *Service) StartSprint(ctx context.Context, id pgtype.UUID) (domain.Sprin
 		return domain.SprintModel{}, fmt.Errorf("start sprint: %w", err)
 	}
 
-	return toSprintModel(sprint), nil
+	result := toSprintModel(sprint)
+	if err := s.Bus.Publish(ctx, pubsub.SprintStarted, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.SprintStarted), "error", err)
+	}
+
+	return result, nil
 }
 
 // CompleteSprint transitions a sprint to completed status
@@ -252,5 +269,10 @@ func (s *Service) CompleteSprint(ctx context.Context, id pgtype.UUID) (domain.Sp
 		return domain.SprintModel{}, fmt.Errorf("complete sprint: %w", err)
 	}
 
-	return toSprintModel(sprint), nil
+	result := toSprintModel(sprint)
+	if err := s.Bus.Publish(ctx, pubsub.SprintCompleted, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.SprintCompleted), "error", err)
+	}
+
+	return result, nil
 }

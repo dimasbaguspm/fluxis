@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/dimasbaguspm/fluxis/internal/project/repository"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
+	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -161,7 +164,7 @@ func (s *Service) CreateProject(ctx context.Context, orgId pgtype.UUID, p domain
 		return domain.ProjectModel{}, fmt.Errorf("create project: %w", err)
 	}
 
-	return domain.ProjectModel{
+	result := domain.ProjectModel{
 		ID:          project.ID,
 		OrgID:       project.OrgID,
 		Key:         project.Key,
@@ -170,7 +173,13 @@ func (s *Service) CreateProject(ctx context.Context, orgId pgtype.UUID, p domain
 		Visibility:  string(project.Visibility),
 		CreatedAt:   project.CreatedAt.Time,
 		UpdatedAt:   project.UpdatedAt.Time,
-	}, nil
+	}
+
+	if err := s.Bus.Publish(ctx, pubsub.ProjectCreated, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.ProjectCreated), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) UpdateProject(ctx context.Context, id pgtype.UUID, p domain.ProjectUpdateModel) (domain.ProjectModel, error) {
@@ -186,7 +195,7 @@ func (s *Service) UpdateProject(ctx context.Context, id pgtype.UUID, p domain.Pr
 		return domain.ProjectModel{}, fmt.Errorf("update project: %w", err)
 	}
 
-	return domain.ProjectModel{
+	result := domain.ProjectModel{
 		ID:          project.ID,
 		OrgID:       project.OrgID,
 		Key:         project.Key,
@@ -195,7 +204,13 @@ func (s *Service) UpdateProject(ctx context.Context, id pgtype.UUID, p domain.Pr
 		Visibility:  string(project.Visibility),
 		CreatedAt:   project.CreatedAt.Time,
 		UpdatedAt:   project.UpdatedAt.Time,
-	}, nil
+	}
+
+	if err := s.Bus.Publish(ctx, pubsub.ProjectUpdated, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.ProjectUpdated), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) UpdateProjectVisibility(ctx context.Context, id pgtype.UUID, p domain.ProjectVisibilityModel) (domain.ProjectModel, error) {
@@ -210,7 +225,7 @@ func (s *Service) UpdateProjectVisibility(ctx context.Context, id pgtype.UUID, p
 		return domain.ProjectModel{}, fmt.Errorf("update project visibility: %w", err)
 	}
 
-	return domain.ProjectModel{
+	result := domain.ProjectModel{
 		ID:          project.ID,
 		OrgID:       project.OrgID,
 		Key:         project.Key,
@@ -219,7 +234,13 @@ func (s *Service) UpdateProjectVisibility(ctx context.Context, id pgtype.UUID, p
 		Visibility:  string(project.Visibility),
 		CreatedAt:   project.CreatedAt.Time,
 		UpdatedAt:   project.UpdatedAt.Time,
-	}, nil
+	}
+
+	if err := s.Bus.Publish(ctx, pubsub.ProjectVisibilityUpdated, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.ProjectVisibilityUpdated), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) DeleteProject(ctx context.Context, id pgtype.UUID) error {
@@ -230,5 +251,10 @@ func (s *Service) DeleteProject(ctx context.Context, id pgtype.UUID) error {
 		}
 		return fmt.Errorf("delete project: %w", err)
 	}
+
+	if err := s.Bus.Publish(ctx, pubsub.ProjectDeleted, map[string]string{"id": uuid.UUID(id.Bytes).String()}); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.ProjectDeleted), "error", err)
+	}
+
 	return nil
 }

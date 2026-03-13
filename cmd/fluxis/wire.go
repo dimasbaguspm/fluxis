@@ -75,24 +75,29 @@ func Wire(d Deps) *App {
 	orgSvc := orgservice.New(orgservice.Deps{
 		Repo: orgRepo,
 		User: userSvc,
+		Bus:  d.Bus,
 	})
 	projectSvc := projectservice.New(projectservice.Deps{
 		Repo: projectRepo,
 		Org:  orgSvc,
+		Bus:  d.Bus,
 	})
 	sprintSvc := sprintservice.New(sprintservice.Deps{
 		Repo:    sprintRepo,
 		Project: projectSvc,
+		Bus:     d.Bus,
 	})
 	boardSvc := boardservice.New(boardservice.Deps{
 		Repo:   boardRepo,
 		Sprint: sprintSvc,
+		Bus:    d.Bus,
 	})
 	ticketSvc := ticketservice.New(ticketservice.Deps{
 		Repo:    ticketRepo,
 		Project: projectSvc,
 		Board:   boardSvc,
 		Sprint:  sprintSvc,
+		Bus:     d.Bus,
 	})
 
 	authH := authhandler.New(authSvc)

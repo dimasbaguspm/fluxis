@@ -98,3 +98,23 @@ func formatValidationErrors(errs validator.ValidationErrors) error {
 	}
 	return fmt.Errorf("%s", strings.Join(msgs, "; "))
 }
+
+// DecodePayload extracts and unmarshals the "data" key from a payload map.
+// It expects the payload to contain a "data" key with a JSON-encoded value.
+// The unmarshaled value is stored in v, which should be a pointer to a struct.
+func DecodePayload(payload map[string]string, v any) error {
+	if payload == nil {
+		return fmt.Errorf("payload is nil")
+	}
+
+	data, ok := payload["data"]
+	if !ok {
+		return fmt.Errorf("missing 'data' key in payload")
+	}
+
+	if err := json.Unmarshal([]byte(data), v); err != nil {
+		return fmt.Errorf("failed to decode payload: %w", err)
+	}
+
+	return nil
+}

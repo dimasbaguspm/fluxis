@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/dimasbaguspm/fluxis/internal/ticket/repository"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
+	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 	"github.com/dimasbaguspm/fluxis/pkg/syncx"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -159,7 +161,12 @@ func (s *Service) CreateTicket(ctx context.Context, projectID pgtype.UUID, p dom
 		return domain.TicketModel{}, fmt.Errorf("create ticket: %w", err)
 	}
 
-	return s.ticketToModel(ticket), nil
+	result := s.ticketToModel(ticket)
+	if err := s.Bus.Publish(ctx, pubsub.TicketCreated, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.TicketCreated), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) UpdateTicket(ctx context.Context, id pgtype.UUID, p domain.TicketUpdateModel) (domain.TicketModel, error) {
@@ -215,7 +222,12 @@ func (s *Service) UpdateTicket(ctx context.Context, id pgtype.UUID, p domain.Tic
 		return domain.TicketModel{}, fmt.Errorf("update ticket: %w", err)
 	}
 
-	return s.ticketToModel(ticket), nil
+	result := s.ticketToModel(ticket)
+	if err := s.Bus.Publish(ctx, pubsub.TicketUpdated, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.TicketUpdated), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) MoveTicketToBoard(ctx context.Context, id pgtype.UUID, p domain.TicketBoardMoveModel) (domain.TicketModel, error) {
@@ -260,7 +272,12 @@ func (s *Service) MoveTicketToBoard(ctx context.Context, id pgtype.UUID, p domai
 		return domain.TicketModel{}, fmt.Errorf("move ticket to board: %w", err)
 	}
 
-	return s.ticketToModel(ticket), nil
+	result := s.ticketToModel(ticket)
+	if err := s.Bus.Publish(ctx, pubsub.TicketMovedToBoard, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.TicketMovedToBoard), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) MoveTicketToSprint(ctx context.Context, id pgtype.UUID, sprintID pgtype.UUID) (domain.TicketModel, error) {
@@ -280,7 +297,12 @@ func (s *Service) MoveTicketToSprint(ctx context.Context, id pgtype.UUID, sprint
 		return domain.TicketModel{}, fmt.Errorf("move ticket to sprint: %w", err)
 	}
 
-	return s.ticketToModel(ticket), nil
+	result := s.ticketToModel(ticket)
+	if err := s.Bus.Publish(ctx, pubsub.TicketMovedToSprint, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.TicketMovedToSprint), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) MoveTicketToBoardColumn(ctx context.Context, id pgtype.UUID, p domain.TicketBoardMoveModel) (domain.TicketModel, error) {
@@ -325,7 +347,12 @@ func (s *Service) MoveTicketToBoardColumn(ctx context.Context, id pgtype.UUID, p
 		return domain.TicketModel{}, fmt.Errorf("move ticket to board column: %w", err)
 	}
 
-	return s.ticketToModel(ticket), nil
+	result := s.ticketToModel(ticket)
+	if err := s.Bus.Publish(ctx, pubsub.TicketMovedToBoardColumn, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.TicketMovedToBoardColumn), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) DeleteTicket(ctx context.Context, id pgtype.UUID) error {
@@ -336,6 +363,11 @@ func (s *Service) DeleteTicket(ctx context.Context, id pgtype.UUID) error {
 		}
 		return fmt.Errorf("delete ticket: %w", err)
 	}
+
+	if err := s.Bus.Publish(ctx, pubsub.TicketDeleted, map[string]string{"id": fmt.Sprintf("%v", id)}); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.TicketDeleted), "error", err)
+	}
+
 	return nil
 }
 

@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/dimasbaguspm/fluxis/internal/board/repository"
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
+	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 	"github.com/dimasbaguspm/fluxis/pkg/syncx"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -42,7 +45,12 @@ func (s *Service) CreateBoard(ctx context.Context, b domain.BoardCreateModel) (d
 		return domain.BoardModel{}, fmt.Errorf("create board: %w", err)
 	}
 
-	return toBoardModel(board), nil
+	result := toBoardModel(board)
+	if err := s.Bus.Publish(ctx, pubsub.BoardCreated, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.BoardCreated), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) GetBoard(ctx context.Context, id pgtype.UUID) (domain.BoardModel, error) {
@@ -154,7 +162,12 @@ func (s *Service) UpdateBoard(ctx context.Context, id pgtype.UUID, b domain.Boar
 		return domain.BoardModel{}, fmt.Errorf("update board: %w", err)
 	}
 
-	return toBoardModel(board), nil
+	result := toBoardModel(board)
+	if err := s.Bus.Publish(ctx, pubsub.BoardUpdated, httpx.EncodePayload(result)); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.BoardUpdated), "error", err)
+	}
+
+	return result, nil
 }
 
 func (s *Service) ReorderBoards(ctx context.Context, sprintID pgtype.UUID, reorder domain.BoardReorderModel) ([]domain.BoardModel, error) {
@@ -190,6 +203,10 @@ func (s *Service) ReorderBoards(ctx context.Context, sprintID pgtype.UUID, reord
 		})
 	}
 
+	if err := s.Bus.Publish(ctx, pubsub.BoardReordered, map[string]string{"sprintId": uuid.UUID(sprintID.Bytes).String()}); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.BoardReordered), "error", err)
+	}
+
 	return result, nil
 }
 
@@ -200,6 +217,10 @@ func (s *Service) DeleteBoard(ctx context.Context, id pgtype.UUID) error {
 			return ErrBoardNotFound
 		}
 		return fmt.Errorf("delete board: %w", err)
+	}
+
+	if err := s.Bus.Publish(ctx, pubsub.BoardDeleted, map[string]string{"id": uuid.UUID(id.Bytes).String()}); err != nil {
+		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.BoardDeleted), "error", err)
 	}
 
 	return nil
