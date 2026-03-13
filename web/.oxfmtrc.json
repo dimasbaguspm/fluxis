@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": ["*.yml"],
+  "endOfLine": "lf",
+  "jsxSingleQuote": true,
+  "printWidth": 80,
+  "semi": false,
+  "singleQuote": true,
+  "sortImports": {
+    "newlinesBetween": true,
+    "partitionByNewline": true,
+  },
+  "useTabs": false,
+}
