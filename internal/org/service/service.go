@@ -7,9 +7,9 @@ import (
 )
 
 type Deps struct {
-	Repo   *repository.Queries
-	User   domain.UserRead
-	Bus    pubsub.Publisher
+	Repo *repository.Queries
+	User domain.UserRead
+	Bus  pubsub.Publisher
 }
 
 type Service struct {

@@ -147,13 +147,13 @@ func TestMain(m *testing.M) {
 	boardH := boardhandler.New(boardSvc)
 	ticketH := tickethandler.New(ticketSvc)
 
-	authModule := auth.NewModule(authSvc, authH)
-	userModule := user.NewModule(userH)
-	orgModule := org.NewModule(orgH)
-	projectModule := project.NewModule(projectH)
-	sprintModule := sprint.NewModule(sprintH)
-	boardModule := board.NewModule(boardH)
-	ticketModule := ticket.NewModule(ticketH)
+	authModule := auth.NewModule(authSvc, authH, bus)
+	userModule := user.NewModule(userH, bus)
+	orgModule := org.NewModule(orgH, bus)
+	projectModule := project.NewModule(projectH, bus)
+	sprintModule := sprint.NewModule(sprintH, bus)
+	boardModule := board.NewModule(boardH, bus)
+	ticketModule := ticket.NewModule(ticketH, bus)
 
 	httpx.InitAuth(authModule.Service())
 

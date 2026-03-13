@@ -80,6 +80,15 @@ func main() {
 	app.Board.Routes(mux)
 	app.Ticket.Routes(mux)
 
+	// start event subscribers
+	go app.Auth.StartSubscriber(ctx)
+	go app.User.StartSubscriber(ctx)
+	go app.Org.StartSubscriber(ctx)
+	go app.Project.StartSubscriber(ctx)
+	go app.Sprint.StartSubscriber(ctx)
+	go app.Board.StartSubscriber(ctx)
+	go app.Ticket.StartSubscriber(ctx)
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Handle(w, httpx.NotImplemented("endpoint is not implemented"))
 	})

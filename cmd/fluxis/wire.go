@@ -109,13 +109,13 @@ func Wire(d Deps) *App {
 	ticketH := tickethandler.New(ticketSvc)
 
 	return &App{
-		Auth:    auth.NewModule(authSvc, authH),
-		User:    user.NewModule(userH),
-		Org:     org.NewModule(orgH),
-		Project: project.NewModule(projectH),
-		Sprint:  sprint.NewModule(sprintH),
-		Board:   board.NewModule(boardH),
-		Ticket:  ticket.NewModule(ticketH),
+		Auth:    auth.NewModule(authSvc, authH, d.Bus),
+		User:    user.NewModule(userH, d.Bus),
+		Org:     org.NewModule(orgH, d.Bus),
+		Project: project.NewModule(projectH, d.Bus),
+		Sprint:  sprint.NewModule(sprintH, d.Bus),
+		Board:   board.NewModule(boardH, d.Bus),
+		Ticket:  ticket.NewModule(ticketH, d.Bus),
 	}
 
 }

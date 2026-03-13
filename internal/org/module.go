@@ -1,18 +1,22 @@
 package org
 
 import (
+	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/dimasbaguspm/fluxis/internal/org/handler"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
+	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
 
 type Module struct {
-	h *handler.Handler
+	h   *handler.Handler
+	bus pubsub.Bus
 }
 
-func NewModule(h *handler.Handler) *Module {
-	return &Module{h}
+func NewModule(h *handler.Handler, bus pubsub.Bus) *Module {
+	return &Module{h: h, bus: bus}
 }
 
 func (m *Module) Routes(mux *http.ServeMux) {
@@ -25,4 +29,14 @@ func (m *Module) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /orgs/{id}/members", httpx.RequireAuth(m.h.AddOrgMember))
 	mux.HandleFunc("PATCH /orgs/{id}/members/{userId}", httpx.RequireAuth(m.h.UpdateOrgMember))
 	mux.HandleFunc("DELETE /orgs/{id}/members/{userId}", httpx.RequireAuth(m.h.DeleteOrgMember))
+}
+
+func (m *Module) StartSubscriber(ctx context.Context) {
+	slog.Info("[OrgModule]: starting subscriber")
+	handler := func(ctx context.Context, e pubsub.Event) error {
+		slog.Info("[OrgModule]: received event", "type", string(e.Type), "payload", e.Payload)
+		return nil
+	}
+
+	m.bus.Subscribe(ctx, pubsub.Channel(pubsub.Org), handler)
 }

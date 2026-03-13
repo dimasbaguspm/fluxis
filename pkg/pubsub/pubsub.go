@@ -34,6 +34,28 @@ type Bus interface {
 	Close() error
 }
 
+// Base channel constants for subscriptions
+const (
+	Auth    EventType = "auth"
+	User    EventType = "user"
+	Org     EventType = "org"
+	Project EventType = "project"
+	Sprint  EventType = "sprint"
+	Board   EventType = "board"
+	Ticket  EventType = "ticket"
+)
+
+// Event variant constants for publishing
+const (
+	AuthLogin   EventType = "auth.auth.login"
+	AuthLogout  EventType = "auth.auth.logout"
+	AuthRefresh EventType = "auth.auth.refresh"
+
+	UserCreated EventType = "user.user.created"
+	UserUpdated EventType = "user.user.updated"
+	UserDeleted EventType = "user.user.deleted"
+)
+
 const (
 	OrgCreated EventType = "org.org.created"
 	OrgUpdated EventType = "org.org.updated"
