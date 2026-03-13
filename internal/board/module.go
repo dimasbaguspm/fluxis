@@ -7,6 +7,7 @@ import (
 
 	boardcache "github.com/dimasbaguspm/fluxis/internal/board/cache"
 	"github.com/dimasbaguspm/fluxis/internal/board/handler"
+	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
@@ -42,14 +43,15 @@ func (m *Module) Routes(mux *http.ServeMux) {
 func (m *Module) StartSubscriber(ctx context.Context) {
 	slog.Info("[BoardModule]: starting bus subscriber")
 	handler := func(ctx context.Context, e pubsub.Event) error {
+		var board domain.BoardModel
+		if err := httpx.DecodePayload(e.Payload, &board); err != nil {
+			return nil
+		}
+
 		switch e.Type {
-		case pubsub.BoardUpdated, pubsub.BoardDeleted:
-			if boardID, ok := pubsub.UUIDFromPayload(e, "id"); ok {
-				m.boardCache.InvalidateSingleBoard(ctx, boardID)
-			}
-			m.boardCache.InvalidatePagedBoardColumns(ctx)
-		case pubsub.BoardColumnCreated, pubsub.BoardColumnUpdated, pubsub.BoardColumnDeleted, pubsub.BoardColumnReordered:
-			m.boardCache.InvalidatePagedBoardColumns(ctx)
+		case pubsub.BoardCreated, pubsub.BoardUpdated, pubsub.BoardDeleted:
+			m.boardCache.InvalidateSingleBoard(ctx, board.ID)
+			m.boardCache.InvalidatePagedBoards(ctx)
 		}
 		return nil
 	}

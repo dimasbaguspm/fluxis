@@ -60,7 +60,9 @@ func (h *Handler) ListSprints(w http.ResponseWriter, r *http.Request) {
 		PageSize:   httpx.QueryNumber(r, "pageSize"),
 	}
 
-	result, err := h.svc.ListSprintsPaged(r.Context(), req)
+	result, err := h.sprintCache.GetPagedSprints(r.Context(), req, func(ctx context.Context) (domain.SprintsPagedModel, error) {
+		return h.svc.ListSprintsPaged(ctx, req)
+	})
 	if err != nil {
 		httpx.Handle(w, err)
 		return

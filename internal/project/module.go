@@ -7,6 +7,7 @@ import (
 
 	projectcache "github.com/dimasbaguspm/fluxis/internal/project/cache"
 	"github.com/dimasbaguspm/fluxis/internal/project/handler"
+	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
@@ -37,16 +38,16 @@ func (m *Module) Routes(mux *http.ServeMux) {
 func (m *Module) StartSubscriber(ctx context.Context) {
 	slog.Info("[ProjectModule]: starting bus subscriber")
 	handler := func(ctx context.Context, e pubsub.Event) error {
+		var project domain.ProjectModel
+		if err := httpx.DecodePayload(e.Payload, &project); err != nil {
+			return nil
+		}
+
 		switch e.Type {
-		case pubsub.ProjectUpdated, pubsub.ProjectDeleted, pubsub.ProjectVisibilityUpdated:
-			if projectID, ok := pubsub.UUIDFromPayload(e, "id"); ok {
-				m.projectCache.InvalidateSingleProject(ctx, projectID)
-			}
-			if orgID, ok := pubsub.UUIDFromPayload(e, "orgId"); ok {
-				if key, ok := pubsub.StringFromPayload(e, "key"); ok {
-					m.projectCache.InvalidateSingleProjectByKey(ctx, orgID, key)
-				}
-			}
+		case pubsub.ProjectCreated, pubsub.ProjectUpdated, pubsub.ProjectDeleted, pubsub.ProjectVisibilityUpdated:
+			m.projectCache.InvalidateSingleProject(ctx, project.ID)
+			m.projectCache.InvalidateSingleProjectByKey(ctx, project.OrgID, project.Key)
+			m.projectCache.InvalidatePagedProjects(ctx)
 		}
 		return nil
 	}

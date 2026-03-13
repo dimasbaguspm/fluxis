@@ -7,6 +7,7 @@ import (
 
 	sprintcache "github.com/dimasbaguspm/fluxis/internal/sprint/cache"
 	"github.com/dimasbaguspm/fluxis/internal/sprint/handler"
+	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
@@ -37,18 +38,16 @@ func (m *Module) Routes(mux *http.ServeMux) {
 func (m *Module) StartSubscriber(ctx context.Context) {
 	slog.Info("[SprintModule]: starting bus subscriber")
 	handler := func(ctx context.Context, e pubsub.Event) error {
+		var sprint domain.SprintModel
+		if err := httpx.DecodePayload(e.Payload, &sprint); err != nil {
+			return nil
+		}
+
 		switch e.Type {
-		case pubsub.SprintStarted, pubsub.SprintCompleted:
-			if projectID, ok := pubsub.UUIDFromPayload(e, "projectId"); ok {
-				m.sprintCache.InvalidateSingleActiveSprint(ctx, projectID)
-			}
-			if sprintID, ok := pubsub.UUIDFromPayload(e, "id"); ok {
-				m.sprintCache.InvalidateSingleSprint(ctx, sprintID)
-			}
-		case pubsub.SprintUpdated:
-			if sprintID, ok := pubsub.UUIDFromPayload(e, "id"); ok {
-				m.sprintCache.InvalidateSingleSprint(ctx, sprintID)
-			}
+		case pubsub.SprintCreated, pubsub.SprintUpdated, pubsub.SprintStarted, pubsub.SprintCompleted:
+			m.sprintCache.InvalidateSingleActiveSprint(ctx, sprint.ProjectID)
+			m.sprintCache.InvalidateSingleSprint(ctx, sprint.ID)
+			m.sprintCache.InvalidatePagedSprints(ctx)
 		}
 		return nil
 	}

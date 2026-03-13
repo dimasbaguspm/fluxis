@@ -7,6 +7,7 @@ import (
 
 	ticketcache "github.com/dimasbaguspm/fluxis/internal/ticket/cache"
 	"github.com/dimasbaguspm/fluxis/internal/ticket/handler"
+	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
@@ -39,7 +40,16 @@ func (m *Module) Routes(mux *http.ServeMux) {
 func (m *Module) StartSubscriber(ctx context.Context) {
 	slog.Info("[TicketModule]: starting bus subscriber")
 	ticketHandler := func(ctx context.Context, e pubsub.Event) error {
+		var ticket domain.TicketModel
+		if err := httpx.DecodePayload(e.Payload, &ticket); err != nil {
+			return nil
+		}
+
 		switch e.Type {
+		case pubsub.TicketCreated, pubsub.TicketUpdated, pubsub.TicketDeleted:
+			m.ticketCache.InvalidatePagedBoardTickets(ctx)
+			m.ticketCache.InvalidatePagedSprintTickets(ctx)
+			m.ticketCache.InvalidatePagedProjectBacklog(ctx)
 		case pubsub.TicketMovedToBoard:
 			m.ticketCache.InvalidatePagedBoardTickets(ctx)
 			m.ticketCache.InvalidatePagedProjectBacklog(ctx)

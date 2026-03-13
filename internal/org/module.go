@@ -7,6 +7,7 @@ import (
 
 	orgcache "github.com/dimasbaguspm/fluxis/internal/org/cache"
 	"github.com/dimasbaguspm/fluxis/internal/org/handler"
+	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
@@ -38,8 +39,9 @@ func (m *Module) StartSubscriber(ctx context.Context) {
 	handler := func(ctx context.Context, e pubsub.Event) error {
 		switch e.Type {
 		case pubsub.OrgCreated, pubsub.OrgUpdated, pubsub.OrgDeleted:
-			if orgID, ok := pubsub.UUIDFromPayload(e, "id"); ok {
-				m.orgCache.InvalidateSingleOrg(ctx, orgID)
+			var org domain.OrganisationModel
+			if err := httpx.DecodePayload(e.Payload, &org); err == nil {
+				m.orgCache.InvalidateSingleOrg(ctx, org.ID)
 			}
 			m.orgCache.InvalidatePagedOrganizations(ctx)
 		}

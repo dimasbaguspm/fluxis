@@ -7,6 +7,7 @@ import (
 
 	usercache "github.com/dimasbaguspm/fluxis/internal/user/cache"
 	"github.com/dimasbaguspm/fluxis/internal/user/handler"
+	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
@@ -32,11 +33,14 @@ func (m *Module) Routes(mux *http.ServeMux) {
 func (m *Module) StartSubscriber(ctx context.Context) {
 	slog.Info("[UserModule]: starting bus subscriber")
 	handler := func(ctx context.Context, e pubsub.Event) error {
+		var user domain.UserModel
+		if err := httpx.DecodePayload(e.Payload, &user); err != nil {
+			return nil
+		}
+
 		switch e.Type {
-		case pubsub.UserUpdated, pubsub.UserDeleted:
-			if userID, ok := pubsub.UUIDFromPayload(e, "id"); ok {
-				m.userCache.InvalidateSingleUser(ctx, userID)
-			}
+		case pubsub.UserCreated, pubsub.UserUpdated, pubsub.UserDeleted:
+			m.userCache.InvalidateSingleUser(ctx, user.ID)
 		}
 		return nil
 	}
