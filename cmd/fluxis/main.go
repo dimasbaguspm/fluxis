@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/dimasbaguspm/fluxis/pkg/cache"
+	"github.com/dimasbaguspm/fluxis/pkg/cors"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
@@ -95,10 +96,11 @@ func main() {
 	})
 
 	rl := ratelimit.New(cfg.RateLimit)
+	cors := cors.New(cfg.CORS)
 
 	svr := http.Server{
 		Addr:         cfg.Server.addr(),
-		Handler:      rl.Wrap(mux),
+		Handler:      cors(rl.Wrap(mux)),
 		ReadTimeout:  cfg.Server.ReadTimeout,
 		WriteTimeout: cfg.Server.WriteTimeout,
 		IdleTimeout:  cfg.Server.IdleTimeout,

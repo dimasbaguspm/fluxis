@@ -9,6 +9,7 @@ import (
 
 	authConfig "github.com/dimasbaguspm/fluxis/internal/auth/service"
 	"github.com/dimasbaguspm/fluxis/pkg/cache"
+	"github.com/dimasbaguspm/fluxis/pkg/cors"
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
 	ratelimit "github.com/dimasbaguspm/fluxis/pkg/rate-limit"
 )
@@ -20,6 +21,7 @@ type Config struct {
 	Auth      authConfig.Config
 	DataCache cache.Config
 	RateLimit ratelimit.Config
+	CORS      cors.Config
 }
 
 type ServerConfig struct {
@@ -65,6 +67,12 @@ func LoadEnv() *Config {
 		RateLimit: ratelimit.Config{
 			MaxRequests: getInt("RATE_LIMIT_MAX_REQUESTS", 100),
 			Window:      getDuration("RATE_LIMIT_WINDOW", 1*time.Minute),
+		},
+		CORS: cors.Config{
+			AllowedOrigins: getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:5173"),
+			AllowedMethods: getEnv("CORS_ALLOWED_METHODS", "GET,POST,PUT,PATCH,DELETE,OPTIONS"),
+			AllowedHeaders: getEnv("CORS_ALLOWED_HEADERS", "Content-Type,Authorization"),
+			AllowedMaxAge:  getInt("CORS_MAX_AGE", 3600),
 		},
 	}
 
