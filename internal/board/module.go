@@ -37,7 +37,7 @@ func (m *Module) Routes(mux *http.ServeMux) {
 }
 
 func (m *Module) StartSubscriber(ctx context.Context) {
-	slog.Info("[BoardModule]: starting subscriber")
+	slog.Info("[BoardModule]: starting bus subscriber")
 	handler := func(ctx context.Context, e pubsub.Event) error {
 		slog.Info("[BoardModule]: received event", "type", string(e.Type), "payload", e.Payload)
 		return nil

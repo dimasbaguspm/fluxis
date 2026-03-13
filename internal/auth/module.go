@@ -31,7 +31,7 @@ func (m *Module) Service() *service.Service {
 }
 
 func (m *Module) StartSubscriber(ctx context.Context) {
-	slog.Info("[AuthModule]: starting subscriber")
+	slog.Info("[AuthModule]: starting bus subscriber")
 	handler := func(ctx context.Context, e pubsub.Event) error {
 		slog.Info("[AuthModule]: received event", "type", string(e.Type), "payload", e.Payload)
 		return nil

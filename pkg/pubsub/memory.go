@@ -14,6 +14,7 @@ type memoryBus struct {
 }
 
 func New() Bus {
+	slog.Info("[PubSub]: Initializing in-memory pub/sub bus")
 	return &memoryBus{subs: make(map[string][]chan Event)}
 }
 
