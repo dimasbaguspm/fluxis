@@ -36,6 +36,7 @@ import (
 	ticketrepo "github.com/dimasbaguspm/fluxis/internal/ticket/repository"
 	ticketservice "github.com/dimasbaguspm/fluxis/internal/ticket/service"
 
+	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -53,6 +54,7 @@ type Deps struct {
 	DB     *pgxpool.Pool
 	RDB    *redis.Client
 	Config *Config
+	Bus    pubsub.Bus
 }
 
 func Wire(d Deps) *App {
