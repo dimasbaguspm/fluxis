@@ -7,14 +7,17 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "fmt": "oxfmt --check",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "generate-types": "node scripts/generate-types.js"
   },
   "dependencies": {
+    "@tanstack/react-query": "5.90.21",
     "@versaur/core": "0.0.12",
     "@versaur/icons": "1.0.0",
     "@versaur/react": "1.0.16",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-router": "7.13.1"
   },
   "devDependencies": {
     "@babel/core": "7.29.0",

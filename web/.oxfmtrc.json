@@ -8,7 +8,6 @@
   "singleQuote": true,
   "sortImports": {
     "newlinesBetween": true,
-    "partitionByNewline": true,
   },
   "useTabs": false,
 }
