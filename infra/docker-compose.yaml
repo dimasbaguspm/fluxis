@@ -17,6 +17,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - JWT_ACCESS_SECRET=123861239812839
       - JWT_REFRESH_SECRET=masdhaisjdhausd
+      - CACHE_HMAC_KEY=asdasdasdasdasdasjdhaiusdha
 
   postgres:
     image: postgres:18-alpine

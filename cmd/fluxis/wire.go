@@ -4,7 +4,6 @@ import (
 	"github.com/dimasbaguspm/fluxis/internal/auth"
 	authhandler "github.com/dimasbaguspm/fluxis/internal/auth/handler"
 	authservice "github.com/dimasbaguspm/fluxis/internal/auth/service"
-	"github.com/redis/go-redis/v9"
 
 	"github.com/dimasbaguspm/fluxis/internal/user"
 	userhandler "github.com/dimasbaguspm/fluxis/internal/user/handler"
@@ -36,6 +35,7 @@ import (
 	ticketrepo "github.com/dimasbaguspm/fluxis/internal/ticket/repository"
 	ticketservice "github.com/dimasbaguspm/fluxis/internal/ticket/service"
 
+	"github.com/dimasbaguspm/fluxis/pkg/cache"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -52,9 +52,9 @@ type App struct {
 
 type Deps struct {
 	DB     *pgxpool.Pool
-	RDB    *redis.Client
 	Config *Config
 	Bus    pubsub.Bus
+	Cache  cache.RedisClient
 }
 
 func Wire(d Deps) *App {

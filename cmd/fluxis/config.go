@@ -8,6 +8,7 @@ import (
 	"time"
 
 	authConfig "github.com/dimasbaguspm/fluxis/internal/auth/service"
+	"github.com/dimasbaguspm/fluxis/pkg/cache"
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
 	"github.com/dimasbaguspm/fluxis/pkg/redis"
 )
@@ -18,6 +19,7 @@ type Config struct {
 	Redis  redis.Config
 	Server ServerConfig
 	Auth   authConfig.Config
+	Cache  cache.Config
 }
 
 type ServerConfig struct {
@@ -59,6 +61,10 @@ func LoadEnv() *Config {
 			AccessTokenExpiry:  getDuration("JWT_ACCESS_EXPIRY", 15*time.Minute),
 			RefreshTokenExpiry: getDuration("JWT_REFRESH_EXPIRY", 7*24*time.Hour),
 			BcryptCost:         getInt("BCRYPT_COST", 12),
+		},
+		Cache: cache.Config{
+			DefaultTTL: getDuration("CACHE_DEFAULT_TTL", 15*time.Minute),
+			HMACKey:    mustEnv("CACHE_HMAC_KEY"),
 		},
 	}
 

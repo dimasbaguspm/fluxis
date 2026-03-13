@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/dimasbaguspm/fluxis/pkg/cache"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
@@ -43,7 +44,9 @@ func main() {
 	postgres.RunMigration(cfg.DB)
 
 	rdb := redis.MustConnect(ctx, cfg.Redis)
+
 	bus := pubsub.New()
+	cache := cache.New(cfg.Cache, rdb)
 
 	defer db.Close()
 	defer rdb.Close()
@@ -51,9 +54,9 @@ func main() {
 
 	app := Wire(Deps{
 		DB:     db,
-		RDB:    rdb,
 		Config: cfg,
 		Bus:    bus,
+		Cache:  cache,
 	})
 
 	httpx.InitAuth(app.Auth.Service())
