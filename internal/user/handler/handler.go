@@ -1,11 +1,23 @@
 package handler
 
-import "github.com/dimasbaguspm/fluxis/internal/user/service"
+import (
+	"github.com/dimasbaguspm/fluxis/internal/user/cache"
+	"github.com/dimasbaguspm/fluxis/internal/user/service"
+)
 
-type Handler struct {
-	svc *service.Service
+type Deps struct {
+	Svc       *service.Service
+	UserCache *cache.UserCache
 }
 
-func New(svc *service.Service) *Handler {
-	return &Handler{svc}
+type Handler struct {
+	svc       *service.Service
+	userCache *cache.UserCache
+}
+
+func New(deps Deps) *Handler {
+	return &Handler{
+		svc:       deps.Svc,
+		userCache: deps.UserCache,
+	}
 }

@@ -6,31 +6,37 @@ import (
 	authservice "github.com/dimasbaguspm/fluxis/internal/auth/service"
 
 	"github.com/dimasbaguspm/fluxis/internal/user"
+	usercache "github.com/dimasbaguspm/fluxis/internal/user/cache"
 	userhandler "github.com/dimasbaguspm/fluxis/internal/user/handler"
 	userrepo "github.com/dimasbaguspm/fluxis/internal/user/repository"
 	userservice "github.com/dimasbaguspm/fluxis/internal/user/service"
 
 	"github.com/dimasbaguspm/fluxis/internal/org"
+	orgcache "github.com/dimasbaguspm/fluxis/internal/org/cache"
 	orghandler "github.com/dimasbaguspm/fluxis/internal/org/handler"
 	orgrepo "github.com/dimasbaguspm/fluxis/internal/org/repository"
 	orgservice "github.com/dimasbaguspm/fluxis/internal/org/service"
 
 	"github.com/dimasbaguspm/fluxis/internal/project"
+	projectcache "github.com/dimasbaguspm/fluxis/internal/project/cache"
 	projecthandler "github.com/dimasbaguspm/fluxis/internal/project/handler"
 	projectrepo "github.com/dimasbaguspm/fluxis/internal/project/repository"
 	projectservice "github.com/dimasbaguspm/fluxis/internal/project/service"
 
 	"github.com/dimasbaguspm/fluxis/internal/sprint"
+	sprintcache "github.com/dimasbaguspm/fluxis/internal/sprint/cache"
 	sprinthandler "github.com/dimasbaguspm/fluxis/internal/sprint/handler"
 	sprintrepo "github.com/dimasbaguspm/fluxis/internal/sprint/repository"
 	sprintservice "github.com/dimasbaguspm/fluxis/internal/sprint/service"
 
 	"github.com/dimasbaguspm/fluxis/internal/board"
+	boardcache "github.com/dimasbaguspm/fluxis/internal/board/cache"
 	boardhandler "github.com/dimasbaguspm/fluxis/internal/board/handler"
 	boardrepo "github.com/dimasbaguspm/fluxis/internal/board/repository"
 	boardservice "github.com/dimasbaguspm/fluxis/internal/board/service"
 
 	"github.com/dimasbaguspm/fluxis/internal/ticket"
+	ticketcache "github.com/dimasbaguspm/fluxis/internal/ticket/cache"
 	tickethandler "github.com/dimasbaguspm/fluxis/internal/ticket/handler"
 	ticketrepo "github.com/dimasbaguspm/fluxis/internal/ticket/repository"
 	ticketservice "github.com/dimasbaguspm/fluxis/internal/ticket/service"
@@ -54,7 +60,7 @@ type Deps struct {
 	DB     *pgxpool.Pool
 	Config *Config
 	Bus    pubsub.Bus
-	Cache  cache.RedisClient
+	Cache  cache.Cache
 }
 
 func Wire(d Deps) *App {
@@ -100,22 +106,47 @@ func Wire(d Deps) *App {
 		Bus:     d.Bus,
 	})
 
+	userC := usercache.New(d.Cache)
+	orgC := orgcache.New(d.Cache)
+	projectC := projectcache.New(d.Cache)
+	sprintC := sprintcache.New(d.Cache)
+	boardC := boardcache.New(d.Cache)
+	ticketC := ticketcache.New(d.Cache)
+
 	authH := authhandler.New(authSvc)
-	userH := userhandler.New(userSvc)
-	orgH := orghandler.New(orgSvc)
-	projectH := projecthandler.New(projectSvc)
-	sprintH := sprinthandler.New(sprintSvc)
-	boardH := boardhandler.New(boardSvc)
-	ticketH := tickethandler.New(ticketSvc)
+	userH := userhandler.New(userhandler.Deps{
+		Svc:       userSvc,
+		UserCache: userC,
+	})
+	orgH := orghandler.New(orghandler.Deps{
+		Svc:     orgSvc,
+		OrgCache: orgC,
+	})
+	projectH := projecthandler.New(projecthandler.Deps{
+		Svc:          projectSvc,
+		ProjectCache: projectC,
+	})
+	sprintH := sprinthandler.New(sprinthandler.Deps{
+		Svc:        sprintSvc,
+		SprintCache: sprintC,
+	})
+	boardH := boardhandler.New(boardhandler.Deps{
+		Svc:        boardSvc,
+		BoardCache: boardC,
+	})
+	ticketH := tickethandler.New(tickethandler.Deps{
+		Svc:        ticketSvc,
+		TicketCache: ticketC,
+	})
 
 	return &App{
 		Auth:    auth.NewModule(authSvc, authH, d.Bus),
-		User:    user.NewModule(userH, d.Bus),
-		Org:     org.NewModule(orgH, d.Bus),
-		Project: project.NewModule(projectH, d.Bus),
-		Sprint:  sprint.NewModule(sprintH, d.Bus),
-		Board:   board.NewModule(boardH, d.Bus),
-		Ticket:  ticket.NewModule(ticketH, d.Bus),
+		User:    user.NewModule(userH, userC, d.Bus),
+		Org:     org.NewModule(orgH, orgC, d.Bus),
+		Project: project.NewModule(projectH, projectC, d.Bus),
+		Sprint:  sprint.NewModule(sprintH, sprintC, d.Bus),
+		Board:   board.NewModule(boardH, boardC, d.Bus),
+		Ticket:  ticket.NewModule(ticketH, ticketC, d.Bus),
 	}
 
 }

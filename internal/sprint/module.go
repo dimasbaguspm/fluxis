@@ -5,18 +5,24 @@ import (
 	"log/slog"
 	"net/http"
 
+	sprintcache "github.com/dimasbaguspm/fluxis/internal/sprint/cache"
 	"github.com/dimasbaguspm/fluxis/internal/sprint/handler"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
 
 type Module struct {
-	h   *handler.Handler
-	bus pubsub.Bus
+	h            *handler.Handler
+	sprintCache  *sprintcache.SprintCache
+	bus          pubsub.Bus
 }
 
-func NewModule(h *handler.Handler, bus pubsub.Bus) *Module {
-	return &Module{h, bus}
+func NewModule(h *handler.Handler, c *sprintcache.SprintCache, bus pubsub.Bus) *Module {
+	return &Module{
+		h:           h,
+		sprintCache: c,
+		bus:         bus,
+	}
 }
 
 func (m *Module) Routes(mux *http.ServeMux) {
@@ -31,7 +37,19 @@ func (m *Module) Routes(mux *http.ServeMux) {
 func (m *Module) StartSubscriber(ctx context.Context) {
 	slog.Info("[SprintModule]: starting bus subscriber")
 	handler := func(ctx context.Context, e pubsub.Event) error {
-		slog.Info("[SprintModule]: received event", "type", string(e.Type), "payload", e.Payload)
+		switch e.Type {
+		case pubsub.SprintStarted, pubsub.SprintCompleted:
+			if projectID, ok := pubsub.UUIDFromPayload(e, "projectId"); ok {
+				m.sprintCache.InvalidateSingleActiveSprint(ctx, projectID)
+			}
+			if sprintID, ok := pubsub.UUIDFromPayload(e, "id"); ok {
+				m.sprintCache.InvalidateSingleSprint(ctx, sprintID)
+			}
+		case pubsub.SprintUpdated:
+			if sprintID, ok := pubsub.UUIDFromPayload(e, "id"); ok {
+				m.sprintCache.InvalidateSingleSprint(ctx, sprintID)
+			}
+		}
 		return nil
 	}
 

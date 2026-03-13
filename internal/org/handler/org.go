@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
@@ -29,7 +30,9 @@ func (h *Handler) ListOrgs(w http.ResponseWriter, r *http.Request) {
 		SortOrder:  httpx.QueryString(r, "sortOrder"),
 	}
 
-	result, err := h.svc.SearchOrganisations(r.Context(), req)
+	result, err := h.orgCache.GetPagedOrganizations(r.Context(), req, func(ctx context.Context) (domain.OrganisationPagedModel, error) {
+		return h.svc.SearchOrganisations(ctx, req)
+	})
 	if err != nil {
 		httpx.Handle(w, err)
 		return
@@ -88,7 +91,9 @@ func (h *Handler) GetOrg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := h.svc.GetOrgById(r.Context(), id)
+	org, err := h.orgCache.GetSingleOrg(r.Context(), id, func(ctx context.Context) (domain.OrganisationModel, error) {
+		return h.svc.GetOrgById(ctx, id)
+	})
 	if err != nil {
 		httpx.Handle(w, err)
 		return

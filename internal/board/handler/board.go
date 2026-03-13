@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
@@ -59,7 +60,9 @@ func (h *Handler) ListBoards(w http.ResponseWriter, r *http.Request) {
 		PageSize:   httpx.QueryNumber(r, "pageSize"),
 	}
 
-	result, err := h.svc.ListBoards(r.Context(), req)
+	result, err := h.boardCache.GetPagedBoards(r.Context(), req, func(ctx context.Context) (domain.BoardsPagedModel, error) {
+		return h.svc.ListBoards(ctx, req)
+	})
 	if err != nil {
 		httpx.Handle(w, err)
 		return
@@ -88,7 +91,9 @@ func (h *Handler) GetBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	board, err := h.svc.GetBoard(r.Context(), id)
+	board, err := h.boardCache.GetSingleBoard(r.Context(), id, func(ctx context.Context) (domain.BoardModel, error) {
+		return h.svc.GetBoard(ctx, id)
+	})
 	if err != nil {
 		httpx.Handle(w, err)
 		return

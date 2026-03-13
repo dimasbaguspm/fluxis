@@ -2,16 +2,20 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"time"
 )
 
+var ErrMiss = errors.New("cache: miss")
+
 type Config struct {
-	DefaultTTL time.Duration // default 15 minutes
-	HMACKey    string        // required for signing cache keys
+	DefaultTTL time.Duration
+	HMACKey    string
 }
 
 type Cache interface {
 	Set(ctx context.Context, key string, value []byte, ttl time.Duration) error
 	Get(ctx context.Context, key string) ([]byte, error)
 	Delete(ctx context.Context, key string) error
+	GetConfig() Config
 }

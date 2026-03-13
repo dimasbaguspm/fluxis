@@ -5,20 +5,23 @@ import (
 	"log/slog"
 	"net/http"
 
+	boardcache "github.com/dimasbaguspm/fluxis/internal/board/cache"
 	"github.com/dimasbaguspm/fluxis/internal/board/handler"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
 
 type Module struct {
-	handler *handler.Handler
-	bus     pubsub.Bus
+	handler    *handler.Handler
+	boardCache *boardcache.BoardCache
+	bus        pubsub.Bus
 }
 
-func NewModule(h *handler.Handler, bus pubsub.Bus) *Module {
+func NewModule(h *handler.Handler, c *boardcache.BoardCache, bus pubsub.Bus) *Module {
 	return &Module{
-		handler: h,
-		bus:     bus,
+		handler:    h,
+		boardCache: c,
+		bus:        bus,
 	}
 }
 
@@ -39,7 +42,15 @@ func (m *Module) Routes(mux *http.ServeMux) {
 func (m *Module) StartSubscriber(ctx context.Context) {
 	slog.Info("[BoardModule]: starting bus subscriber")
 	handler := func(ctx context.Context, e pubsub.Event) error {
-		slog.Info("[BoardModule]: received event", "type", string(e.Type), "payload", e.Payload)
+		switch e.Type {
+		case pubsub.BoardUpdated, pubsub.BoardDeleted:
+			if boardID, ok := pubsub.UUIDFromPayload(e, "id"); ok {
+				m.boardCache.InvalidateSingleBoard(ctx, boardID)
+			}
+			m.boardCache.InvalidatePagedBoardColumns(ctx)
+		case pubsub.BoardColumnCreated, pubsub.BoardColumnUpdated, pubsub.BoardColumnDeleted, pubsub.BoardColumnReordered:
+			m.boardCache.InvalidatePagedBoardColumns(ctx)
+		}
 		return nil
 	}
 

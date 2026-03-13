@@ -5,18 +5,24 @@ import (
 	"log/slog"
 	"net/http"
 
+	ticketcache "github.com/dimasbaguspm/fluxis/internal/ticket/cache"
 	"github.com/dimasbaguspm/fluxis/internal/ticket/handler"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
 
 type Module struct {
-	h   *handler.Handler
-	bus pubsub.Bus
+	h            *handler.Handler
+	ticketCache  *ticketcache.TicketCache
+	bus          pubsub.Bus
 }
 
-func NewModule(h *handler.Handler, bus pubsub.Bus) *Module {
-	return &Module{h, bus}
+func NewModule(h *handler.Handler, c *ticketcache.TicketCache, bus pubsub.Bus) *Module {
+	return &Module{
+		h:           h,
+		ticketCache: c,
+		bus:         bus,
+	}
 }
 
 func (m *Module) Routes(mux *http.ServeMux) {
@@ -32,10 +38,28 @@ func (m *Module) Routes(mux *http.ServeMux) {
 
 func (m *Module) StartSubscriber(ctx context.Context) {
 	slog.Info("[TicketModule]: starting bus subscriber")
-	handler := func(ctx context.Context, e pubsub.Event) error {
-		slog.Info("[TicketModule]: received event", "type", string(e.Type), "payload", e.Payload)
+	ticketHandler := func(ctx context.Context, e pubsub.Event) error {
+		switch e.Type {
+		case pubsub.TicketMovedToBoard:
+			m.ticketCache.InvalidatePagedBoardTickets(ctx)
+			m.ticketCache.InvalidatePagedProjectBacklog(ctx)
+		case pubsub.TicketMovedToBoardColumn:
+			m.ticketCache.InvalidatePagedBoardTickets(ctx)
+		case pubsub.TicketMovedToSprint:
+			m.ticketCache.InvalidatePagedSprintTickets(ctx)
+			m.ticketCache.InvalidatePagedProjectBacklog(ctx)
+		}
 		return nil
 	}
 
-	m.bus.Subscribe(ctx, pubsub.Channel(pubsub.Ticket), handler)
+	sprintHandler := func(ctx context.Context, e pubsub.Event) error {
+		switch e.Type {
+		case pubsub.SprintCompleted:
+			m.ticketCache.InvalidatePagedSprintTickets(ctx)
+		}
+		return nil
+	}
+
+	m.bus.Subscribe(ctx, pubsub.Channel(pubsub.Ticket), ticketHandler)
+	m.bus.Subscribe(ctx, pubsub.Channel(pubsub.Sprint), sprintHandler)
 }

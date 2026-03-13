@@ -13,7 +13,6 @@ import (
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
-	"github.com/dimasbaguspm/fluxis/pkg/redis"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
@@ -43,13 +42,10 @@ func main() {
 	db := postgres.MustConnect(ctx, cfg.DB)
 	postgres.RunMigration(cfg.DB)
 
-	rdb := redis.MustConnect(ctx, cfg.Redis)
-
 	bus := pubsub.New()
-	cache := cache.New(cfg.Cache, rdb)
+	cache := cache.New(cfg.Cache)
 
 	defer db.Close()
-	defer rdb.Close()
 	defer bus.Close()
 
 	app := Wire(Deps{

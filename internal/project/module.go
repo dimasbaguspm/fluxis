@@ -5,18 +5,24 @@ import (
 	"log/slog"
 	"net/http"
 
+	projectcache "github.com/dimasbaguspm/fluxis/internal/project/cache"
 	"github.com/dimasbaguspm/fluxis/internal/project/handler"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
 
 type Module struct {
-	h   *handler.Handler
-	bus pubsub.Bus
+	h              *handler.Handler
+	projectCache   *projectcache.ProjectCache
+	bus            pubsub.Bus
 }
 
-func NewModule(h *handler.Handler, bus pubsub.Bus) *Module {
-	return &Module{h: h, bus: bus}
+func NewModule(h *handler.Handler, c *projectcache.ProjectCache, bus pubsub.Bus) *Module {
+	return &Module{
+		h:            h,
+		projectCache: c,
+		bus:          bus,
+	}
 }
 
 func (m *Module) Routes(mux *http.ServeMux) {
@@ -31,7 +37,17 @@ func (m *Module) Routes(mux *http.ServeMux) {
 func (m *Module) StartSubscriber(ctx context.Context) {
 	slog.Info("[ProjectModule]: starting bus subscriber")
 	handler := func(ctx context.Context, e pubsub.Event) error {
-		slog.Info("[ProjectModule]: received event", "type", string(e.Type), "payload", e.Payload)
+		switch e.Type {
+		case pubsub.ProjectUpdated, pubsub.ProjectDeleted, pubsub.ProjectVisibilityUpdated:
+			if projectID, ok := pubsub.UUIDFromPayload(e, "id"); ok {
+				m.projectCache.InvalidateSingleProject(ctx, projectID)
+			}
+			if orgID, ok := pubsub.UUIDFromPayload(e, "orgId"); ok {
+				if key, ok := pubsub.StringFromPayload(e, "key"); ok {
+					m.projectCache.InvalidateSingleProjectByKey(ctx, orgID, key)
+				}
+			}
+		}
 		return nil
 	}
 

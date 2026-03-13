@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
@@ -88,7 +89,9 @@ func (h *Handler) GetSprint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sprint, err := h.svc.GetSprint(r.Context(), id)
+	sprint, err := h.sprintCache.GetSingleSprint(r.Context(), id, func(ctx context.Context) (domain.SprintModel, error) {
+		return h.svc.GetSprint(ctx, id)
+	})
 	if err != nil {
 		httpx.Handle(w, err)
 		return

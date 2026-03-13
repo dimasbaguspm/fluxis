@@ -5,18 +5,20 @@ import (
 	"log/slog"
 	"net/http"
 
+	orgcache "github.com/dimasbaguspm/fluxis/internal/org/cache"
 	"github.com/dimasbaguspm/fluxis/internal/org/handler"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 )
 
 type Module struct {
-	h   *handler.Handler
-	bus pubsub.Bus
+	h        *handler.Handler
+	orgCache *orgcache.OrgCache
+	bus      pubsub.Bus
 }
 
-func NewModule(h *handler.Handler, bus pubsub.Bus) *Module {
-	return &Module{h: h, bus: bus}
+func NewModule(h *handler.Handler, c *orgcache.OrgCache, bus pubsub.Bus) *Module {
+	return &Module{h: h, orgCache: c, bus: bus}
 }
 
 func (m *Module) Routes(mux *http.ServeMux) {
@@ -34,7 +36,13 @@ func (m *Module) Routes(mux *http.ServeMux) {
 func (m *Module) StartSubscriber(ctx context.Context) {
 	slog.Info("[OrgModule]: starting bus subscriber")
 	handler := func(ctx context.Context, e pubsub.Event) error {
-		slog.Info("[OrgModule]: received event", "type", string(e.Type), "payload", e.Payload)
+		switch e.Type {
+		case pubsub.OrgCreated, pubsub.OrgUpdated, pubsub.OrgDeleted:
+			if orgID, ok := pubsub.UUIDFromPayload(e, "id"); ok {
+				m.orgCache.InvalidateSingleOrg(ctx, orgID)
+			}
+			m.orgCache.InvalidatePagedOrganizations(ctx)
+		}
 		return nil
 	}
 
