@@ -10,16 +10,15 @@ import (
 	authConfig "github.com/dimasbaguspm/fluxis/internal/auth/service"
 	"github.com/dimasbaguspm/fluxis/pkg/cache"
 	"github.com/dimasbaguspm/fluxis/pkg/postgres"
-	"github.com/dimasbaguspm/fluxis/pkg/redis"
 )
 
 type Config struct {
-	Env    string
-	DB     postgres.Config
-	Redis  redis.Config
-	Server ServerConfig
-	Auth   authConfig.Config
-	Cache  cache.Config
+	Env       string
+	DB        postgres.Config
+	Server    ServerConfig
+	Auth      authConfig.Config
+	DataCache cache.Config
+	RateLimit cache.Config
 }
 
 type ServerConfig struct {
@@ -51,10 +50,6 @@ func LoadEnv() *Config {
 			MaxConns: getInt("DB_MAX_CONNS", 25),
 			MinConns: getInt("DB_MIN_CONNS", 5),
 		},
-		Redis: redis.Config{
-			Addr:     getEnv("REDIS_ADDR", "redis:6379"),
-			Password: getEnv("REDIS_PASSWORD", ""),
-		},
 		Auth: authConfig.Config{
 			AccessTokenSecret:  mustEnv("JWT_ACCESS_SECRET"),
 			RefreshTokenSecret: mustEnv("JWT_REFRESH_SECRET"),
@@ -62,9 +57,13 @@ func LoadEnv() *Config {
 			RefreshTokenExpiry: getDuration("JWT_REFRESH_EXPIRY", 7*24*time.Hour),
 			BcryptCost:         getInt("BCRYPT_COST", 12),
 		},
-		Cache: cache.Config{
+		DataCache: cache.Config{
 			DefaultTTL: getDuration("CACHE_DEFAULT_TTL", 15*time.Minute),
 			HMACKey:    mustEnv("CACHE_HMAC_KEY"),
+		},
+		RateLimit: cache.Config{
+			DefaultTTL: getDuration("RATE_LIMIT_CACHE_TTL", 1*time.Minute),
+			HMACKey:    getEnv("CACHE_HMAC_KEY", "fallback-hmac-key-for-rate-limit"),
 		},
 	}
 

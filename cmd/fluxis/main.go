@@ -43,16 +43,19 @@ func main() {
 	postgres.RunMigration(cfg.DB)
 
 	bus := pubsub.New()
-	cache := cache.New(cfg.Cache)
+
+	dataC := cache.New(cfg.DataCache)
+	rateLimitC := cache.New(cfg.RateLimit)
 
 	defer db.Close()
 	defer bus.Close()
 
 	app := Wire(Deps{
-		DB:     db,
-		Config: cfg,
-		Bus:    bus,
-		Cache:  cache,
+		DB:             db,
+		Config:         cfg,
+		Bus:            bus,
+		DataCache:      dataC,
+		RateLimitCache: rateLimitC,
 	})
 
 	httpx.InitAuth(app.Auth.Service())

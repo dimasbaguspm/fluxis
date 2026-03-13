@@ -10,11 +10,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       - DATABASE_URL=postgres://fluxis:fluxis@postgres:5432/fluxis?sslmode=disable
-      - REDIS_URL=redis://redis:6379
       - JWT_ACCESS_SECRET=123861239812839
       - JWT_REFRESH_SECRET=masdhaisjdhausd
       - CACHE_HMAC_KEY=asdasdasdasdasdasjdhaiusdha
@@ -35,19 +32,6 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:8-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
 volumes:
   postgres_data:
-  redis_data:
   go_cache:

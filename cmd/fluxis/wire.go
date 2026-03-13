@@ -57,10 +57,11 @@ type App struct {
 }
 
 type Deps struct {
-	DB     *pgxpool.Pool
-	Config *Config
-	Bus    pubsub.Bus
-	Cache  cache.Cache
+	DB              *pgxpool.Pool
+	Config          *Config
+	Bus             pubsub.Bus
+	DataCache       cache.Cache
+	RateLimitCache  cache.Cache
 }
 
 func Wire(d Deps) *App {
@@ -106,12 +107,12 @@ func Wire(d Deps) *App {
 		Bus:     d.Bus,
 	})
 
-	userC := usercache.New(d.Cache)
-	orgC := orgcache.New(d.Cache)
-	projectC := projectcache.New(d.Cache)
-	sprintC := sprintcache.New(d.Cache)
-	boardC := boardcache.New(d.Cache)
-	ticketC := ticketcache.New(d.Cache)
+	userC := usercache.New(d.DataCache)
+	orgC := orgcache.New(d.DataCache)
+	projectC := projectcache.New(d.DataCache)
+	sprintC := sprintcache.New(d.DataCache)
+	boardC := boardcache.New(d.DataCache)
+	ticketC := ticketcache.New(d.DataCache)
 
 	authH := authhandler.New(authSvc)
 	userH := userhandler.New(userhandler.Deps{
@@ -119,7 +120,7 @@ func Wire(d Deps) *App {
 		UserCache: userC,
 	})
 	orgH := orghandler.New(orghandler.Deps{
-		Svc:     orgSvc,
+		Svc:      orgSvc,
 		OrgCache: orgC,
 	})
 	projectH := projecthandler.New(projecthandler.Deps{
@@ -127,7 +128,7 @@ func Wire(d Deps) *App {
 		ProjectCache: projectC,
 	})
 	sprintH := sprinthandler.New(sprinthandler.Deps{
-		Svc:        sprintSvc,
+		Svc:         sprintSvc,
 		SprintCache: sprintC,
 	})
 	boardH := boardhandler.New(boardhandler.Deps{
@@ -135,7 +136,7 @@ func Wire(d Deps) *App {
 		BoardCache: boardC,
 	})
 	ticketH := tickethandler.New(tickethandler.Deps{
-		Svc:        ticketSvc,
+		Svc:         ticketSvc,
 		TicketCache: ticketC,
 	})
 

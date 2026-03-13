@@ -6,12 +6,11 @@ import (
 	"time"
 )
 
-// MemoryCache is a thread-safe, in-process cache implementation.
-// TTL is enforced on Get; no background eviction.
 type MemoryCache struct {
 	mu    sync.RWMutex
 	cache map[string]*cacheEntry
 	cfg   Config
+	done  chan struct{}
 }
 
 type cacheEntry struct {
@@ -20,10 +19,13 @@ type cacheEntry struct {
 }
 
 func New(cfg Config) *MemoryCache {
-	return &MemoryCache{
+	mc := &MemoryCache{
 		cache: make(map[string]*cacheEntry),
 		cfg:   cfg,
+		done:  make(chan struct{}),
 	}
+	go mc.cleanupLoop()
+	return mc
 }
 
 func (m *MemoryCache) Set(ctx context.Context, key string, value []byte, ttl time.Duration) error {
@@ -61,4 +63,51 @@ func (m *MemoryCache) Delete(ctx context.Context, key string) error {
 
 func (m *MemoryCache) GetConfig() Config {
 	return m.cfg
+}
+
+func (m *MemoryCache) cleanupLoop() {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			m.cleanup()
+		case <-m.done:
+			return
+		}
+	}
+}
+
+func (m *MemoryCache) cleanup() {
+	const batchSize = 100
+
+	for {
+		m.mu.Lock()
+		batch := make([]string, 0, batchSize)
+		now := time.Now()
+
+		for key, entry := range m.cache {
+			if now.After(entry.expiry) {
+				batch = append(batch, key)
+				if len(batch) >= batchSize {
+					break
+				}
+			}
+		}
+
+		for _, key := range batch {
+			delete(m.cache, key)
+		}
+		m.mu.Unlock()
+
+		if len(batch) < batchSize {
+			break
+		}
+	}
+}
+
+func (m *MemoryCache) Close() error {
+	close(m.done)
+	return nil
 }
