@@ -14,15 +14,33 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-// API Response envelope
+// API Response - success is direct data, error is wrapped
 type apiResponse[T any] struct {
-	Data  *T        `json:"data"`
-	Error *apiError `json:"error"`
+	Data  *T        `json:"-"`
+	Error *apiError `json:"error,omitempty"`
 }
 
 type apiError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
+}
+
+func (r *apiResponse[T]) UnmarshalJSON(b []byte) error {
+	var errResp struct {
+		Error *apiError `json:"error"`
+	}
+	if err := json.Unmarshal(b, &errResp); err == nil && errResp.Error != nil {
+		r.Error = errResp.Error
+		return nil
+	}
+
+	// Otherwise, unmarshal as direct data
+	var data T
+	if err := json.Unmarshal(b, &data); err != nil {
+		return err
+	}
+	r.Data = &data
+	return nil
 }
 
 func uuidToString(u pgtype.UUID) string {
@@ -37,7 +55,7 @@ func stringToUUID(s string) pgtype.UUID {
 }
 
 // Generic request/response helper
-func do[T any](tb testing.TB, method, path string, body interface{}, token string) (int, apiResponse[T]) {
+func do[T any](tb testing.TB, method, path string, body any, token string) (int, apiResponse[T]) {
 	var bodyReader io.Reader
 	if body != nil {
 		bodyBytes, err := json.Marshal(body)
@@ -69,14 +87,12 @@ func do[T any](tb testing.TB, method, path string, body interface{}, token strin
 	}
 
 	var result apiResponse[T]
-	// Skip unmarshaling for empty bodies (e.g., 204 No Content)
 	if len(respBody) > 0 {
 		if err := json.Unmarshal(respBody, &result); err != nil {
 			tb.Logf("Response body: %s", string(respBody))
 			tb.Fatalf("failed to unmarshal response: %v", err)
 		}
 	}
-
 	return resp.StatusCode, result
 }
 

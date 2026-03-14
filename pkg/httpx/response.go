@@ -5,17 +5,14 @@ import (
 	"net/http"
 )
 
-// envelope is the consistent response shape for every API response.
+// Error responses use an envelope with ErrBlock
+// Success responses write data directly (no envelope)
 //
-// Success:  { "data": <payload>,  "meta": <optional> }
+// Success:  <payload> (written directly)
 // Error:    { "error": { "message": "...", "code": "..." } }
-//
-// Frontend always knows where to look — no guessing between
-// { message } vs { error } vs { errors } vs bare payloads.
 
-type envelope struct {
-	Data  any       `json:"data,omitempty"`
-	Error *ErrBlock `json:"error,omitempty"`
+type errorEnvelope struct {
+	Error *ErrBlock `json:"error"`
 }
 
 type ErrBlock struct {
@@ -24,23 +21,23 @@ type ErrBlock struct {
 }
 
 func OK(w http.ResponseWriter, data any) {
-	write(w, http.StatusOK, envelope{Data: data})
+	write(w, http.StatusOK, data)
 }
 
 func Created(w http.ResponseWriter, data any) {
-	write(w, http.StatusCreated, envelope{Data: data})
+	write(w, http.StatusCreated, data)
 }
 
 func Error(w http.ResponseWriter, status int, message string) {
-	write(w, status, envelope{Error: &ErrBlock{Message: message}})
+	write(w, status, errorEnvelope{Error: &ErrBlock{Message: message}})
 }
 
 func ErrorCode(w http.ResponseWriter, status int, message, code string) {
-	write(w, status, envelope{Error: &ErrBlock{Message: message, Code: code}})
+	write(w, status, errorEnvelope{Error: &ErrBlock{Message: message, Code: code}})
 }
 
 func InternalError(w http.ResponseWriter, err error) {
-	write(w, http.StatusInternalServerError, envelope{
+	write(w, http.StatusInternalServerError, errorEnvelope{
 		Error: &ErrBlock{Message: "something went wrong"},
 	})
 }
