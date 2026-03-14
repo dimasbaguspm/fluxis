@@ -1,8 +1,7 @@
 import type { UseMutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { request, type RequestOptions } from "@/lib/http-client";
-import type { HttpRequest } from "@/lib/http-request";
-import { useSessionStore } from "@providers/session";
+import type { HttpRequest } from "../use-fetcher";
+import { useFetcher } from "../use-fetcher";
 
 interface MutationStatus {
   status: "idle" | "pending" | "success" | "error";
@@ -12,10 +11,7 @@ interface MutationStatus {
   isIdle: boolean;
 }
 
-interface MutationMethods<TVariables> {
-  mutate: (variables: TVariables) => void;
-  mutateAsync: (variables: TVariables) => Promise<any>;
-}
+type MutationMethod<TVariables> = (variables: TVariables) => Promise<any>;
 
 /**
  * Base hook for API mutations (POST, PUT, PATCH, DELETE requests)
@@ -36,20 +32,17 @@ interface MutationMethods<TVariables> {
  */
 export function useApiMutation<TData = unknown, TError = unknown, TVariables = void>(
   requestConfigFactory: (variables: TVariables) => HttpRequest,
-  options?: Omit<UseMutationOptions<TData, TError, TVariables>, "mutationFn"> & { headers?: Record<string, string> },
-): [TData | undefined, TError | null, MutationStatus, MutationMethods<TVariables>] {
+  options?: Omit<UseMutationOptions<TData, TError, TVariables>, "mutationFn"> & {
+    headers?: Record<string, string>;
+  },
+): [MutationMethod<TVariables>, TError | null, MutationStatus] {
   const { headers, ...mutationOptions } = options || {};
-  const accessToken = useSessionStore((state) => state.accessToken);
+  const fetcher = useFetcher();
 
   const mutation = useMutation({
     mutationFn: async (variables: TVariables) => {
       const requestConfig = requestConfigFactory(variables);
-      const requestHeaders: Record<string, string> = { ...headers };
-      if (accessToken) {
-        requestHeaders.Authorization = `Bearer ${accessToken}`;
-      }
-      const response = await request<TData>(requestConfig, { headers: requestHeaders } as RequestOptions);
-      return response.data;
+      return fetcher<TData>(requestConfig, headers);
     },
     ...mutationOptions,
   });
@@ -62,10 +55,5 @@ export function useApiMutation<TData = unknown, TError = unknown, TVariables = v
     isIdle: mutation.isIdle,
   };
 
-  const methods: MutationMethods<TVariables> = {
-    mutate: mutation.mutate,
-    mutateAsync: mutation.mutateAsync,
-  };
-
-  return [mutation.data, mutation.error as TError | null, status, methods];
+  return [mutation.mutateAsync, mutation.error as TError | null, status];
 }

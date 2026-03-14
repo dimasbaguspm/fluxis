@@ -1,6 +1,6 @@
 import { DEEP_LINKS } from "@constants/page-routes";
-import { useRegister } from "@hooks/api/use-auth";
-import { useSessionStore } from "@providers/session";
+import { useRegister } from "@hooks/use-api";
+import { useSessionHandler } from "@providers/session";
 import { AppLayout, ButtonGroup, FormGroup } from "@versaur/react/blocks";
 import { EmailInput, PasswordInput, TextInput } from "@versaur/react/forms";
 import { Button } from "@versaur/react/primitive";
@@ -16,14 +16,10 @@ interface SignUpFormInputs {
 
 export const SignUpPage = () => {
   const navigate = useNavigate();
-  const setSession = useSessionStore((state) => state.setSession);
-  const [, , { isPending }, { mutate }] = useRegister({
+  const { setTokens } = useSessionHandler();
+  const [registerUser, , { isPending }] = useRegister({
     onSuccess: (data) => {
-      setSession({
-        user: null,
-        accessToken: data.accessToken || null,
-        refreshToken: data.refreshToken || null,
-      });
+      setTokens(data.accessToken || "", data.refreshToken || "");
       navigate(DEEP_LINKS.DASHBOARD);
     },
   });
@@ -44,8 +40,8 @@ export const SignUpPage = () => {
 
   const password = watch("password");
 
-  const onSubmit = (data: SignUpFormInputs) => {
-    mutate({
+  const onSubmit = async (data: SignUpFormInputs) => {
+    await registerUser({
       displayName: data.displayName,
       email: data.email,
       password: data.password,

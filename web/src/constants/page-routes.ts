@@ -6,7 +6,7 @@
 export const PAGES = {
   SIGN_IN: "/sign-in",
   SIGN_UP: "/sign-up",
-  DASHBOARD: "/dashboard",
+  DASHBOARD: "/",
   ORGANIZATIONS: "/organizations",
   PROJECTS: "/projects",
   BOARDS: "/boards",

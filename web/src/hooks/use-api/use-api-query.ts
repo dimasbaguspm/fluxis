@@ -1,8 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
 import type { QueryKey, UseQueryOptions } from "@tanstack/react-query";
-import { request, type RequestOptions } from "@/lib/http-client";
-import type { HttpRequest } from "@/lib/http-request";
-import { useSessionStore } from "@providers/session";
+import { useQuery } from "@tanstack/react-query";
+import type { HttpRequest } from "../use-fetcher";
+import { useFetcher } from "../use-fetcher";
 
 interface QueryStatus {
   fetchStatus: "idle" | "fetching" | "paused";
@@ -33,20 +32,17 @@ interface QueryMethods {
 export function useApiQuery<TData = unknown, TError = unknown>(
   queryKey: QueryKey,
   requestConfig: HttpRequest,
-  options?: Omit<UseQueryOptions<TData, TError>, "queryKey" | "queryFn"> & { headers?: Record<string, string> },
+  options?: Omit<UseQueryOptions<TData, TError>, "queryKey" | "queryFn"> & {
+    headers?: Record<string, string>;
+  },
 ): [TData | undefined, TError | null, QueryStatus, QueryMethods] {
   const { headers, ...queryOptions } = options || {};
-  const accessToken = useSessionStore((state) => state.accessToken);
+  const fetcher = useFetcher();
 
   const query = useQuery({
     queryKey,
     queryFn: async () => {
-      const requestHeaders: Record<string, string> = { ...headers };
-      if (accessToken) {
-        requestHeaders.Authorization = `Bearer ${accessToken}`;
-      }
-      const response = await request<TData>(requestConfig, { headers: requestHeaders } as RequestOptions);
-      return response.data;
+      return fetcher<TData>(requestConfig, headers);
     },
     ...queryOptions,
   });

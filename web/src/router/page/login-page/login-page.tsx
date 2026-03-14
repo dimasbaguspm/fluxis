@@ -1,6 +1,6 @@
 import { DEEP_LINKS } from "@/constants";
-import { useLogin } from "@hooks/api/use-auth";
-import { useSessionStore } from "@providers/session";
+import { useSessionHandler } from "@/providers/session";
+import { useLogin } from "@hooks/use-api";
 import { AppLayout, ButtonGroup, FormGroup } from "@versaur/react/blocks";
 import { EmailInput, PasswordInput } from "@versaur/react/forms";
 import { Button } from "@versaur/react/primitive";
@@ -14,14 +14,10 @@ interface LoginFormInputs {
 
 export const LoginPage = () => {
   const navigate = useNavigate();
-  const setSession = useSessionStore((state) => state.setSession);
-  const [, , { isPending }, { mutate }] = useLogin({
+  const { setTokens } = useSessionHandler();
+  const [signIn, , { isPending }] = useLogin({
     onSuccess: (data) => {
-      setSession({
-        user: null,
-        accessToken: data.accessToken || null,
-        refreshToken: data.refreshToken || null,
-      });
+      setTokens(data.accessToken || null, data.refreshToken || null);
       navigate(DEEP_LINKS.DASHBOARD);
     },
   });
@@ -34,8 +30,8 @@ export const LoginPage = () => {
     defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = (data: LoginFormInputs) => {
-    mutate(data);
+  const onSubmit = async (data: LoginFormInputs) => {
+    await signIn(data);
   };
 
   return (

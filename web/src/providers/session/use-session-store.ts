@@ -1,21 +1,17 @@
+import type { DomainUserModel } from "@/interfaces/openapi.generated";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Session, User } from "./types";
+import { useShallow } from "zustand/shallow";
 
 interface SessionStore {
-  user: User | null;
+  user: DomainUserModel | null;
   accessToken: string | null;
   refreshToken: string | null;
-  setSession: (session: Session | null) => void;
-  setUser: (user: User | null) => void;
+  setUser: (user: DomainUserModel | null) => void;
   setTokens: (accessToken: string | null, refreshToken: string | null) => void;
   logout: () => void;
 }
 
-/**
- * Session store with localStorage persistence
- * Manages user authentication state across the app
- */
 export const useSessionStore = create<SessionStore>()(
   persist(
     (set) => ({
@@ -23,17 +19,8 @@ export const useSessionStore = create<SessionStore>()(
       accessToken: null,
       refreshToken: null,
 
-      setSession: (session) => {
-        set({
-          user: session?.user ?? null,
-          accessToken: session?.accessToken ?? null,
-          refreshToken: session?.refreshToken ?? null,
-        });
-      },
-
       setUser: (user) => set({ user }),
       setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
-
       logout: () => {
         set({ user: null, accessToken: null, refreshToken: null });
       },
@@ -43,3 +30,25 @@ export const useSessionStore = create<SessionStore>()(
     },
   ),
 );
+
+type SessionState = Pick<SessionStore, "accessToken" | "refreshToken" | "user">;
+
+export const useSessionState = (): SessionState =>
+  useSessionStore(
+    useShallow((state: SessionStore) => ({
+      accessToken: state.accessToken,
+      refreshToken: state.refreshToken,
+      user: state.user,
+    })),
+  );
+
+type SessionHandler = Pick<SessionStore, "setTokens" | "setUser" | "logout">;
+
+export const useSessionHandler = (): SessionHandler =>
+  useSessionStore(
+    useShallow((state: SessionStore) => ({
+      setTokens: state.setTokens,
+      setUser: state.setUser,
+      logout: state.logout,
+    })),
+  );

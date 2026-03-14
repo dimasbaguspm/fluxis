@@ -1,5 +1,5 @@
+import { SessionHydrator, useSessionState } from "@/providers/session";
 import { DEEP_LINKS, PAGES, ROUTE_GROUPS } from "@constants/page-routes";
-import { useSessionStore } from "@providers/session";
 import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { BoardsPage } from "./boards-page";
 import { DashboardPage } from "./dashboard-page";
@@ -11,15 +11,20 @@ import { SettingsPage } from "./settings-page";
 import { SignUpPage } from "./sign-up-page";
 
 function ProtectedRoute() {
-  const accessToken = useSessionStore((state) => state.accessToken);
+  const { accessToken } = useSessionState();
   if (!accessToken) {
     return <Navigate to={DEEP_LINKS.SIGN_IN} replace />;
   }
-  return <Outlet />;
+
+  return (
+    <SessionHydrator>
+      <Outlet />
+    </SessionHydrator>
+  );
 }
 
 function UnprotectedRoute() {
-  const accessToken = useSessionStore((state) => state.accessToken);
+  const { accessToken } = useSessionState();
   if (accessToken) {
     return <Navigate to={DEEP_LINKS.DASHBOARD} replace />;
   }

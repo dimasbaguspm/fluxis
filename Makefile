@@ -1,4 +1,4 @@
-.PHONY: init dev build run down logs sqlc swagger apitest vet
+.PHONY: init dev build run down logs sqlc swagger apitest vet web
 
 init:
 	go mod download
@@ -29,3 +29,6 @@ vet:
 
 apitest:
 	go test -v -count=1 -timeout=120s ./cmd/apitest/...
+
+web:
+	cd web && yarn dev

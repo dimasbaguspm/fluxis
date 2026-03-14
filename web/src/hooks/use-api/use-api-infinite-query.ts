@@ -1,8 +1,7 @@
 import type { QueryKey, UseInfiniteQueryOptions } from "@tanstack/react-query";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { request, type RequestOptions } from "@/lib/http-client";
-import type { HttpRequest } from "@/lib/http-request";
-import { useSessionStore } from "@providers/session";
+import type { HttpRequest } from "../use-fetcher";
+import { useFetcher } from "../use-fetcher";
 
 interface InfiniteQueryStatus {
   fetchStatus: "idle" | "fetching" | "paused";
@@ -49,18 +48,13 @@ export function useApiInfiniteQuery<TData = unknown, TError = unknown>(
   > & { headers?: Record<string, string> },
 ): [TData[] | undefined, TError | null, InfiniteQueryStatus, InfiniteQueryMethods] {
   const { headers, ...infiniteOptions } = options || {};
-  const accessToken = useSessionStore((state) => state.accessToken);
+  const fetcher = useFetcher();
 
   const query = useInfiniteQuery({
     queryKey,
     queryFn: async ({ pageParam }: { pageParam: number }) => {
       const requestConfig = requestConfigFactory(pageParam as number);
-      const requestHeaders: Record<string, string> = { ...headers };
-      if (accessToken) {
-        requestHeaders.Authorization = `Bearer ${accessToken}`;
-      }
-      const response = await request<TData>(requestConfig, { headers: requestHeaders } as RequestOptions);
-      return response.data;
+      return fetcher<TData>(requestConfig, headers);
     },
     ...infiniteOptions,
   });

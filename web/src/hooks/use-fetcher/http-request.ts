@@ -23,7 +23,7 @@ export function createHttpError(status: number, data: unknown, message: string):
   return new HttpError(status, data, message);
 }
 
-class HttpError extends Error {
+export class HttpError extends Error {
   status: number;
   data: unknown;
 

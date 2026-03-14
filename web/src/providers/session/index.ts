@@ -1,2 +1,2 @@
-export { useSessionStore } from "./use-session-store";
-export type { Session, User, Auth } from "./types";
+export { SessionHydrator } from "./session-hydrator";
+export { useSessionHandler, useSessionState, useSessionStore } from "./use-session-store";
