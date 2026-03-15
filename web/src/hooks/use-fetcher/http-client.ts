@@ -72,12 +72,13 @@ export async function request<TResponse = unknown>(
       break;
     case "json":
     default:
-      data = response.ok ? await response.json() : null;
+      data = await response.json();
   }
 
-  // Handle errors
   if (!response.ok) {
-    throw createHttpError(response.status, data, `HTTP ${response.status}: ${response.statusText}`);
+    const errorMessage =
+      (data as any)?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+    throw createHttpError(response.status, data, errorMessage);
   }
 
   // Build response headers
