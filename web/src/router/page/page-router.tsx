@@ -3,11 +3,11 @@ import { DEEP_LINKS, PAGES, ROUTE_GROUPS } from "@constants/page-routes";
 import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { BoardsPage } from "./boards-page";
 import { DashboardPage } from "./dashboard-page";
-import { LoginPage } from "./login-page";
 import { OrganizationsPage } from "./organizations-page";
 import { ProfilePage } from "./profile-page";
 import { ProjectsPage } from "./projects-page";
 import { SettingsPage } from "./settings-page";
+import { SignInPage } from "./sign-in-page";
 import { SignUpPage } from "./sign-up-page";
 
 function ProtectedRoute() {
@@ -41,7 +41,7 @@ export const router = createBrowserRouter([
         children: [
           {
             path: PAGES.SIGN_IN,
-            element: <LoginPage />,
+            element: <SignInPage />,
           },
           {
             path: PAGES.SIGN_UP,

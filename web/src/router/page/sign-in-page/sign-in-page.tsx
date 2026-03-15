@@ -9,12 +9,12 @@ import { Banner, Button, Heading, Text } from "@versaur/react/primitive";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router";
 
-interface LoginFormInputs {
+interface SignInFormInputs {
   email: string;
   password: string;
 }
 
-export const LoginPage = () => {
+export const SignInPage = () => {
   const navigate = useNavigate();
   const { setTokens } = useSessionHandler();
   const [signIn, err, { isPending }] = useLogin({
@@ -28,11 +28,11 @@ export const LoginPage = () => {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormInputs>({
+  } = useForm<SignInFormInputs>({
     defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = async (data: LoginFormInputs) => {
+  const onSubmit = async (data: SignInFormInputs) => {
     await signIn(data);
   };
 
