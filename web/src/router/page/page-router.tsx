@@ -1,3 +1,4 @@
+import { Layout } from "@/components/layout";
 import { SessionHydrator, useSessionState } from "@/providers/session";
 import { DEEP_LINKS, PAGES, ROUTE_GROUPS } from "@constants/page-routes";
 import { createBrowserRouter, Navigate, Outlet } from "react-router";
@@ -18,7 +19,9 @@ function ProtectedRoute() {
 
   return (
     <SessionHydrator>
-      <Outlet />
+      <Layout>
+        <Outlet />
+      </Layout>
     </SessionHydrator>
   );
 }
