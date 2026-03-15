@@ -1,5 +1,7 @@
 import { Layout } from "@/components/layout";
+import { DrawerProvider } from "@/providers/drawer";
 import { SessionHydrator, useSessionState } from "@/providers/session";
+import { DrawerRouter } from "@/router/drawer";
 import { DEEP_LINKS, PAGES, ROUTE_GROUPS } from "@constants/page-routes";
 import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { BoardsPage } from "./boards-page";
@@ -19,9 +21,10 @@ function ProtectedRoute() {
 
   return (
     <SessionHydrator>
-      <Layout>
-        <Outlet />
-      </Layout>
+      <DrawerProvider>
+        <Layout />
+        <DrawerRouter />
+      </DrawerProvider>
     </SessionHydrator>
   );
 }

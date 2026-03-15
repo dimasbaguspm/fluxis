@@ -49,7 +49,7 @@ export const SidebarNavigation = () => {
           <Avatar size="sm" className={cx(vMr2)}>
             {userInitials}
           </Avatar>
-          Profile
+          {user?.displayName}
         </Sidebar.Item>
       </Sidebar.Footer>
     </Sidebar>

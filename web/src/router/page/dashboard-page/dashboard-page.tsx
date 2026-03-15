@@ -1,14 +1,24 @@
-import { AppLayout } from "@versaur/react/blocks";
+import { SearchIcon } from "@versaur/icons";
+import { PageHeader } from "@versaur/react/blocks";
+import { Badge, ButtonIcon } from "@versaur/react/primitive";
 
 export const DashboardPage = () => {
   return (
-    <AppLayout>
-      <AppLayout.Body>
-        <AppLayout.Main>
-          <h1>Dashboard</h1>
-          <p>Welcome to Fluxis Dashboard</p>
-        </AppLayout.Main>
-      </AppLayout.Body>
-    </AppLayout>
+    <>
+      <PageHeader
+        title={
+          <PageHeader.Title
+            action={<ButtonIcon aria-label="Search" as={SearchIcon} variant="ghost" />}
+          >
+            Dashboard
+          </PageHeader.Title>
+        }
+        subtitle={
+          <PageHeader.Subtitle additionalInfo={<Badge variant="info">8 total</Badge>}>
+            Manage your projects and settings
+          </PageHeader.Subtitle>
+        }
+      />
+    </>
   );
 };

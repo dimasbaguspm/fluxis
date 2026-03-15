@@ -1,8 +1,8 @@
 import { AppLayout } from "@versaur/react/blocks";
 import { MobileBreakpoint, TabletOrDesktopBreakpoint } from "@versaur/react/utils";
 import { Outlet } from "react-router";
-import { SidebarNavigation } from "./sidebar-navigation";
 import { BottomBarNavigation } from "./bottom-bar-navigation";
+import { SidebarNavigation } from "./sidebar-navigation";
 
 export const Layout = () => {
   return (
