@@ -1,3 +1,5 @@
+import type { DrawerParamsMap, GetDrawerParams } from "@constants/drawer-params";
+
 export type DrawerParams = Record<string, string | number> | null;
 export type DrawerState = Record<string, unknown> | null;
 
@@ -6,17 +8,21 @@ export interface OpenDrawerOptions {
   state?: DrawerState;
 }
 
-export type OpenDrawerFunc = <Params extends DrawerParams>(
-  id: string,
-  params?: Params,
+export type OpenDrawerFunc = <DrawerId extends string, Params extends DrawerParams = null>(
+  id: DrawerId,
+  params?: Params extends null ? GetDrawerParams<DrawerId> : Params,
   opts?: OpenDrawerOptions,
 ) => void;
 
 export type CloseDrawerFunc = () => void;
 
-export interface DrawerProviderModel<Params = DrawerParams, State = DrawerState> {
+export interface DrawerProviderModel<
+  DrawerId extends string = string,
+  Params = DrawerId extends keyof DrawerParamsMap ? DrawerParamsMap[DrawerId] : DrawerParams,
+  State = DrawerState,
+> {
   isOpen: boolean;
-  drawerId: string | null;
+  drawerId: DrawerId | null;
   params: Params;
   state: State;
   openDrawer: OpenDrawerFunc;

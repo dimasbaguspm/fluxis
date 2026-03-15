@@ -6,6 +6,7 @@ import type {
   DomainOrganisationModel,
   DomainOrganisationPagedModel,
   DomainOrganisationUpdateModel,
+  HttpxErrBlock,
 } from "@interfaces/openapi.generated";
 import type { UseQueryOptions } from "@tanstack/react-query";
 import { useApiMutation } from "../use-api-mutation";
@@ -59,7 +60,7 @@ export function useGetOrg(
  * Create a new organisation
  */
 export function useCreateOrg() {
-  return useApiMutation<DomainOrganisationModel, unknown, DomainOrganisationCreateModel>(
+  return useApiMutation<DomainOrganisationModel, HttpxErrBlock, DomainOrganisationCreateModel>(
     (variables) => ({
       method: "POST",
       path: "/orgs",
