@@ -45,7 +45,7 @@ func LoadEnv() *Config {
 			Host:         getEnv("HOST", "0.0.0.0"),
 			Port:         getEnv("PORT", "8080"),
 			ReadTimeout:  getDuration("SERVER_READ_TIMEOUT", 5*time.Second),
-			WriteTimeout: getDuration("SERVER_WRITE_TIMEOUT", 10*time.Second),
+			WriteTimeout: getDuration("SERVER_WRITE_TIMEOUT", 5*time.Minute),
 			IdleTimeout:  getDuration("SERVER_IDLE_TIMEOUT", 60*time.Second),
 		},
 		DB: postgres.Config{
@@ -71,7 +71,7 @@ func LoadEnv() *Config {
 		CORS: cors.Config{
 			AllowedOrigins: getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:5173"),
 			AllowedMethods: getEnv("CORS_ALLOWED_METHODS", "GET,POST,PUT,PATCH,DELETE,OPTIONS"),
-			AllowedHeaders: getEnv("CORS_ALLOWED_HEADERS", "Content-Type,Authorization"),
+			AllowedHeaders: getEnv("CORS_ALLOWED_HEADERS", "Content-Type,Authorization,Accept,Accept-Language"),
 			AllowedMaxAge:  getInt("CORS_MAX_AGE", 3600),
 		},
 	}
