@@ -95,7 +95,7 @@ export async function request<TResponse = unknown>(
 }
 
 /**
- * Open a Server-Sent Events connection
+ * Open a Server-Sent Events connection with authentication support via fetch + ReadableStream
  * @param path - API endpoint path
  * @param onMessage - Callback when message is received
  * @param onError - Callback when error occurs
@@ -106,28 +106,87 @@ export function streamEvents<TMessage = unknown>(
   path: string,
   onMessage: (data: TMessage) => void,
   onError?: (error: Error) => void,
+  options?: RequestOptions,
 ): () => void {
   const url = `${API_BASE_URL}${path}`;
+  const abortController = new AbortController();
 
-  const eventSource = new EventSource(url);
+  const headers: Record<string, string> = {
+    Accept: "text/event-stream",
+    ...options?.headers,
+  };
 
-  eventSource.addEventListener("message", (event) => {
+  const connectStream = async () => {
     try {
-      const data = JSON.parse(event.data) as TMessage;
-      onMessage(data);
+      const response = await fetch(url, {
+        method: "GET",
+        headers,
+        signal: abortController.signal,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("Response body is not readable");
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let eventData = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+
+          // Blank line signals end of event
+          if (!trimmed) {
+            if (eventData) {
+              try {
+                const data = JSON.parse(eventData) as TMessage;
+                onMessage(data);
+              } catch (error) {
+                const parseError = new Error(
+                  error instanceof Error ? error.message : "Failed to parse SSE message",
+                );
+                onError?.(parseError);
+              }
+              eventData = "";
+            }
+            continue;
+          }
+
+          // Skip comments and event type declarations
+          if (trimmed.startsWith(":") || trimmed.startsWith("event:")) {
+            continue;
+          }
+
+          // Accumulate data lines
+          if (trimmed.startsWith("data:")) {
+            const dataValue = trimmed.slice(5).trim();
+            eventData += dataValue;
+          }
+        }
+      }
     } catch (error) {
-      const parseError = new Error(
-        error instanceof Error ? error.message : "Failed to parse SSE message",
-      );
-      onError?.(parseError);
+      if (error instanceof Error && error.name !== "AbortError") {
+        onError?.(error);
+      }
     }
-  });
+  };
 
-  eventSource.addEventListener("error", () => {
-    const error = new Error("SSE connection error");
-    onError?.(error);
-    eventSource.close();
-  });
+  connectStream();
 
-  return () => eventSource.close();
+  return () => abortController.abort();
 }

@@ -1,5 +1,6 @@
 import { Layout } from "@/components/layout";
 import { DrawerProvider } from "@/providers/drawer";
+import { NotifierProvider } from "@/providers/notifier";
 import { SessionHydrator, useSessionState } from "@/providers/session";
 import { DrawerRouter } from "@/router/drawer";
 import { DEEP_LINKS, PAGES, ROUTE_GROUPS } from "@constants/page-routes";
@@ -21,10 +22,12 @@ function ProtectedRoute() {
 
   return (
     <SessionHydrator>
-      <DrawerProvider>
-        <Layout />
-        <DrawerRouter />
-      </DrawerProvider>
+      <NotifierProvider>
+        <DrawerProvider>
+          <Layout />
+          <DrawerRouter />
+        </DrawerProvider>
+      </NotifierProvider>
     </SessionHydrator>
   );
 }

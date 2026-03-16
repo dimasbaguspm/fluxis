@@ -1,15 +1,20 @@
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { useDrawer } from "@/providers/drawer";
+import { useNotifier } from "@/providers/notifier";
 import { MenuIcon, PlusIcon } from "@versaur/icons";
 import { PageHeader, Table } from "@versaur/react/blocks";
 import { ButtonIcon, Text } from "@versaur/react/primitive";
 
 export const OrganizationsPage = () => {
   const { openDrawer } = useDrawer();
+  const {event} = useNotifier()
 
   const handleOnAddButtonClick = () => {
     openDrawer(DRAWER_ROUTES.CREATE_ORGANISATION);
   };
+
+  console.log("Received notification event:", event);
+
   return (
     <>
       <PageHeader
