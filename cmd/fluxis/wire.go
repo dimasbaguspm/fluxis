@@ -41,19 +41,24 @@ import (
 	ticketrepo "github.com/dimasbaguspm/fluxis/internal/ticket/repository"
 	ticketservice "github.com/dimasbaguspm/fluxis/internal/ticket/service"
 
+	"github.com/dimasbaguspm/fluxis/internal/notification"
+	notificationhandler "github.com/dimasbaguspm/fluxis/internal/notification/handler"
+	notificationsvc "github.com/dimasbaguspm/fluxis/internal/notification/service"
+
 	"github.com/dimasbaguspm/fluxis/pkg/cache"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type App struct {
-	Auth    *auth.Module
-	User    *user.Module
-	Org     *org.Module
-	Project *project.Module
-	Sprint  *sprint.Module
-	Board   *board.Module
-	Ticket  *ticket.Module
+	Auth         *auth.Module
+	User         *user.Module
+	Org          *org.Module
+	Project      *project.Module
+	Sprint       *sprint.Module
+	Board        *board.Module
+	Ticket       *ticket.Module
+	Notification *notification.Module
 }
 
 type Deps struct {
@@ -105,6 +110,7 @@ func Wire(d Deps) *App {
 		Sprint:  sprintSvc,
 		Bus:     d.Bus,
 	})
+	notificationSvc := notificationsvc.New(notificationsvc.Deps{Bus: d.Bus})
 
 	userC := usercache.New(d.DataCache)
 	orgC := orgcache.New(d.DataCache)
@@ -139,14 +145,17 @@ func Wire(d Deps) *App {
 		TicketCache: ticketC,
 	})
 
+	notificationH := notificationhandler.New(notificationhandler.Deps{Service: notificationSvc})
+
 	return &App{
-		Auth:    auth.NewModule(authSvc, authH, d.Bus),
-		User:    user.NewModule(userH, userC, d.Bus),
-		Org:     org.NewModule(orgH, orgC, d.Bus),
-		Project: project.NewModule(projectH, projectC, d.Bus),
-		Sprint:  sprint.NewModule(sprintH, sprintC, d.Bus),
-		Board:   board.NewModule(boardH, boardC, d.Bus),
-		Ticket:  ticket.NewModule(ticketH, ticketC, d.Bus),
+		Auth:         auth.NewModule(authSvc, authH, d.Bus),
+		User:         user.NewModule(userH, userC, d.Bus),
+		Org:          org.NewModule(orgH, orgC, d.Bus),
+		Project:      project.NewModule(projectH, projectC, d.Bus),
+		Sprint:       sprint.NewModule(sprintH, sprintC, d.Bus),
+		Board:        board.NewModule(boardH, boardC, d.Bus),
+		Ticket:       ticket.NewModule(ticketH, ticketC, d.Bus),
+		Notification: notification.NewModule(notificationH),
 	}
 
 }

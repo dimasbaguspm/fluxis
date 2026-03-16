@@ -81,6 +81,7 @@ func main() {
 	app.Sprint.Routes(mux)
 	app.Board.Routes(mux)
 	app.Ticket.Routes(mux)
+	app.Notification.Routes(mux)
 
 	// start event subscribers
 	go app.Auth.StartSubscriber(ctx)

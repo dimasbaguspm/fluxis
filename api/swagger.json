@@ -857,6 +857,43 @@
                 }
             }
         },
+        "/notifications": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Opens a Server-Sent Events stream that broadcasts all domain events (ticket, sprint, board, org, project, user) in real-time",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "notification"
+                ],
+                "summary": "Stream domain events",
+                "responses": {
+                    "200": {
+                        "description": "Event stream with events in format: event: \u003ctype\u003e\\\\ndata: \u003cJSON\u003e\\\\n\\\\n",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrBlock"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrBlock"
+                        }
+                    }
+                }
+            }
+        },
         "/orgs": {
             "get": {
                 "security": [

@@ -44,6 +44,10 @@ import (
 	ticketrepo "github.com/dimasbaguspm/fluxis/internal/ticket/repository"
 	ticketservice "github.com/dimasbaguspm/fluxis/internal/ticket/service"
 
+	"github.com/dimasbaguspm/fluxis/internal/notification"
+	notificationhandler "github.com/dimasbaguspm/fluxis/internal/notification/handler"
+	notificationsvc "github.com/dimasbaguspm/fluxis/internal/notification/service"
+
 	"github.com/dimasbaguspm/fluxis/internal/user"
 	usercache "github.com/dimasbaguspm/fluxis/internal/user/cache"
 	userhandler "github.com/dimasbaguspm/fluxis/internal/user/handler"
@@ -181,9 +185,12 @@ func TestMain(m *testing.M) {
 		BoardCache: boardC,
 	})
 	ticketH := tickethandler.New(tickethandler.Deps{
-		Svc:        ticketSvc,
+		Svc:         ticketSvc,
 		TicketCache: ticketC,
 	})
+
+	notificationSvc := notificationsvc.New(notificationsvc.Deps{Bus: bus})
+	notificationHdlr := notificationhandler.New(notificationhandler.Deps{Service: notificationSvc})
 
 	authModule := auth.NewModule(authSvc, authH, bus)
 	userModule := user.NewModule(userH, userC, bus)
@@ -192,6 +199,7 @@ func TestMain(m *testing.M) {
 	sprintModule := sprint.NewModule(sprintH, sprintC, bus)
 	boardModule := board.NewModule(boardH, boardC, bus)
 	ticketModule := ticket.NewModule(ticketH, ticketC, bus)
+	notificationModule := notification.NewModule(notificationHdlr)
 
 	httpx.InitAuth(authModule.Service())
 
@@ -203,6 +211,7 @@ func TestMain(m *testing.M) {
 	sprintModule.Routes(mux)
 	boardModule.Routes(mux)
 	ticketModule.Routes(mux)
+	notificationModule.Routes(mux)
 
 	testServer = httptest.NewServer(mux)
 	defer testServer.Close()
