@@ -16,6 +16,7 @@ import { SettingsPage } from "./settings-page";
 import { SignInPage } from "./sign-in-page";
 import { SignUpPage } from "./sign-up-page";
 import { SprintsPage } from "./sprints-page";
+import { TicketsPage } from "./tickets-page";
 
 function CacheInvalidator() {
   const queryClient = useQueryClient();
@@ -96,6 +97,10 @@ export const router = createBrowserRouter([
           {
             path: PAGES.BOARDS,
             element: <BoardsPage />,
+          },
+          {
+            path: PAGES.TICKETS,
+            element: <TicketsPage />,
           },
           {
             path: PAGES.SETTINGS,

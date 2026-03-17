@@ -32,6 +32,14 @@ export interface UpdateBoardDrawerParams {
   boardId: string;
 }
 
+export interface CreateTicketDrawerParams {
+  projectId?: string;
+}
+
+export interface UpdateTicketDrawerParams {
+  ticketId: string;
+}
+
 /**
  * Mapping of drawer routes to their specific param types
  */
@@ -44,6 +52,8 @@ export type DrawerParamsMap = {
   [DRAWER_ROUTES.UPDATE_SPRINT]: UpdateSprintDrawerParams;
   [DRAWER_ROUTES.CREATE_BOARD]: CreateBoardDrawerParams | null;
   [DRAWER_ROUTES.UPDATE_BOARD]: UpdateBoardDrawerParams;
+  [DRAWER_ROUTES.CREATE_TICKET]: CreateTicketDrawerParams | null;
+  [DRAWER_ROUTES.UPDATE_TICKET]: UpdateTicketDrawerParams;
 };
 
 /**

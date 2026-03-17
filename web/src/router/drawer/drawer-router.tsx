@@ -9,6 +9,8 @@ import { CreateSprintDrawer } from "./create-sprint-drawer";
 import { UpdateSprintDrawer } from "./update-sprint-drawer";
 import { CreateBoardDrawer } from "./create-board-drawer";
 import { UpdateBoardDrawer } from "./update-board-drawer";
+import { CreateTicketDrawer } from "./create-ticket-drawer";
+import { UpdateTicketDrawer } from "./update-ticket-drawer";
 
 export function DrawerRouter() {
   const { isOpen, drawerId, closeDrawer } = useDrawer();
@@ -22,6 +24,8 @@ export function DrawerRouter() {
     if (drawerId === DRAWER_ROUTES.UPDATE_SPRINT) return <UpdateSprintDrawer />;
     if (drawerId === DRAWER_ROUTES.CREATE_BOARD) return <CreateBoardDrawer />;
     if (drawerId === DRAWER_ROUTES.UPDATE_BOARD) return <UpdateBoardDrawer />;
+    if (drawerId === DRAWER_ROUTES.CREATE_TICKET) return <CreateTicketDrawer />;
+    if (drawerId === DRAWER_ROUTES.UPDATE_TICKET) return <UpdateTicketDrawer />;
     return null;
   }
 

@@ -7,6 +7,8 @@ export const DRAWER_ROUTES = {
   UPDATE_SPRINT: "update-sprint",
   CREATE_BOARD: "create-board",
   UPDATE_BOARD: "update-board",
+  CREATE_TICKET: "create-ticket",
+  UPDATE_TICKET: "update-ticket",
 } as const;
 
 export type DrawerRouteId = (typeof DRAWER_ROUTES)[keyof typeof DRAWER_ROUTES];

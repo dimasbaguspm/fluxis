@@ -11,6 +11,7 @@ export const PAGES = {
   PROJECTS: "/projects",
   SPRINTS: "/sprints",
   BOARDS: "/boards",
+  TICKETS: "/tickets",
   SETTINGS: "/settings",
   PROFILE: "/profile",
 } as const;
@@ -41,6 +42,10 @@ export const DEEP_LINKS = {
   // Boards
   BOARDS: PAGES.BOARDS,
   BOARD_DETAILS: (boardId: string) => `/boards/${boardId}`,
+
+  // Tickets
+  TICKETS: PAGES.TICKETS,
+  TICKET_DETAILS: (ticketId: string) => `/tickets/${ticketId}`,
 
   // Settings
   SETTINGS: PAGES.SETTINGS,
