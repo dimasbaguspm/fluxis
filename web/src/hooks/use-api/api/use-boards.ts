@@ -7,6 +7,7 @@ import type {
   DomainBoardModel,
   DomainBoardsPagedModel,
   DomainBoardUpdateModel,
+  HttpxErrBlock,
 } from "@interfaces/openapi.generated";
 import type { UseQueryOptions } from "@tanstack/react-query";
 import { useApiMutation } from "../use-api-mutation";
@@ -60,7 +61,7 @@ export function useGetBoard(
  * Create a new board
  */
 export function useCreateBoard() {
-  return useApiMutation<DomainBoardModel, unknown, DomainBoardCreateModel>((variables) => ({
+  return useApiMutation<DomainBoardModel, HttpxErrBlock, DomainBoardCreateModel>((variables) => ({
     method: "POST",
     path: "/boards",
     body: variables,
@@ -73,7 +74,7 @@ export function useCreateBoard() {
 export function useUpdateBoard() {
   return useApiMutation<
     DomainBoardModel,
-    unknown,
+    HttpxErrBlock,
     { boardId: string; data: DomainBoardUpdateModel }
   >((variables) => ({
     method: "PATCH",
@@ -86,7 +87,7 @@ export function useUpdateBoard() {
  * Delete a board
  */
 export function useDeleteBoard() {
-  return useApiMutation<void, unknown, string>((boardId) => ({
+  return useApiMutation<void, HttpxErrBlock, string>((boardId) => ({
     method: "DELETE",
     path: `/boards/${boardId}`,
   }));
@@ -96,13 +97,15 @@ export function useDeleteBoard() {
  * Reorder boards
  */
 export function useReorderBoards() {
-  return useApiMutation<DomainBoardModel[], unknown, { sprintId: string; boardIds: string[] }>(
-    (variables) => ({
-      method: "PATCH",
-      path: `/boards/reorder`,
-      body: { sprintId: variables.sprintId, boardIds: variables.boardIds },
-    }),
-  );
+  return useApiMutation<
+    DomainBoardModel[],
+    HttpxErrBlock,
+    { sprintId: string; boardIds: string[] }
+  >((variables) => ({
+    method: "PATCH",
+    path: `/boards/reorder`,
+    body: { sprintId: variables.sprintId, boardIds: variables.boardIds },
+  }));
 }
 
 interface ListBoardColumnsParams {

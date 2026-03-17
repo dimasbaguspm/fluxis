@@ -76,7 +76,7 @@ export function useCreateOrg() {
 export function useUpdateOrg() {
   return useApiMutation<
     DomainOrganisationModel,
-    unknown,
+    HttpxErrBlock,
     { id: string; data: DomainOrganisationUpdateModel }
   >((variables) => ({
     method: "PATCH",
@@ -89,7 +89,7 @@ export function useUpdateOrg() {
  * Delete an organisation
  */
 export function useDeleteOrg() {
-  return useApiMutation<void, unknown, string>((orgId) => ({
+  return useApiMutation<void, HttpxErrBlock, string>((orgId) => ({
     method: "DELETE",
     path: `/orgs/${orgId}`,
   }));
@@ -128,7 +128,7 @@ export function useListOrgMembers(
 export function useAddOrgMember() {
   return useApiMutation<
     void,
-    unknown,
+    HttpxErrBlock,
     { orgId: string; data: DomainOrganisationMemberCreateModel }
   >((variables) => ({
     method: "POST",
@@ -143,7 +143,7 @@ export function useAddOrgMember() {
 export function useUpdateOrgMember() {
   return useApiMutation<
     void,
-    unknown,
+    HttpxErrBlock,
     { orgId: string; userId: string; data: DomainOrganisationMemberUpdateModel }
   >((variables) => ({
     method: "PATCH",
@@ -156,7 +156,7 @@ export function useUpdateOrgMember() {
  * Remove a member from an organisation
  */
 export function useRemoveOrgMember() {
-  return useApiMutation<void, unknown, { orgId: string; userId: string }>((variables) => ({
+  return useApiMutation<void, HttpxErrBlock, { orgId: string; userId: string }>((variables) => ({
     method: "DELETE",
     path: `/orgs/${variables.orgId}/members/${variables.userId}`,
   }));

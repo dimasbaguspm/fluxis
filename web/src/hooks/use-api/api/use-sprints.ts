@@ -3,6 +3,7 @@ import type {
   DomainSprintModel,
   DomainSprintsPagedModel,
   DomainSprintUpdateModel,
+  HttpxErrBlock,
 } from "@interfaces/openapi.generated";
 import type { UseQueryOptions } from "@tanstack/react-query";
 import { useApiMutation } from "../use-api-mutation";
@@ -56,7 +57,7 @@ export function useGetSprint(
  * Create a new sprint
  */
 export function useCreateSprint() {
-  return useApiMutation<DomainSprintModel, unknown, DomainSprintCreateModel>((variables) => ({
+  return useApiMutation<DomainSprintModel, HttpxErrBlock, DomainSprintCreateModel>((variables) => ({
     method: "POST",
     path: "/sprints",
     body: variables,
@@ -69,7 +70,7 @@ export function useCreateSprint() {
 export function useUpdateSprint() {
   return useApiMutation<
     DomainSprintModel,
-    unknown,
+    HttpxErrBlock,
     { sprintId: string; data: DomainSprintUpdateModel }
   >((variables) => ({
     method: "PATCH",
@@ -82,7 +83,7 @@ export function useUpdateSprint() {
  * Start a sprint
  */
 export function useStartSprint() {
-  return useApiMutation<DomainSprintModel, unknown, string>((sprintId) => ({
+  return useApiMutation<DomainSprintModel, HttpxErrBlock, string>((sprintId) => ({
     method: "POST",
     path: `/sprints/${sprintId}/start`,
   }));
@@ -92,7 +93,7 @@ export function useStartSprint() {
  * Complete a sprint
  */
 export function useCompleteSprint() {
-  return useApiMutation<DomainSprintModel, unknown, string>((sprintId) => ({
+  return useApiMutation<DomainSprintModel, HttpxErrBlock, string>((sprintId) => ({
     method: "POST",
     path: `/sprints/${sprintId}/complete`,
   }));

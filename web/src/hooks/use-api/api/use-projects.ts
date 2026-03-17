@@ -3,6 +3,7 @@ import type {
   DomainProjectModel,
   DomainProjectsPagedModel,
   DomainProjectUpdateModel,
+  HttpxErrBlock,
 } from "@interfaces/openapi.generated";
 import type { UseQueryOptions } from "@tanstack/react-query";
 import { useApiMutation } from "../use-api-mutation";
@@ -58,7 +59,7 @@ export function useGetProject(
 export function useCreateProject() {
   return useApiMutation<
     DomainProjectModel,
-    unknown,
+    HttpxErrBlock,
     { orgId: string; data: DomainProjectCreateModel }
   >((variables) => ({
     method: "POST",
@@ -73,7 +74,7 @@ export function useCreateProject() {
 export function useUpdateProject() {
   return useApiMutation<
     DomainProjectModel,
-    unknown,
+    HttpxErrBlock,
     { projectId: string; data: DomainProjectUpdateModel }
   >((variables) => ({
     method: "PATCH",
@@ -88,7 +89,7 @@ export function useUpdateProject() {
 export function useUpdateProjectVisibility() {
   return useApiMutation<
     DomainProjectModel,
-    unknown,
+    HttpxErrBlock,
     { projectId: string; visibility: "public" | "private" }
   >((variables) => ({
     method: "PATCH",
@@ -101,7 +102,7 @@ export function useUpdateProjectVisibility() {
  * Delete a project
  */
 export function useDeleteProject() {
-  return useApiMutation<void, unknown, string>((projectId) => ({
+  return useApiMutation<void, HttpxErrBlock, string>((projectId) => ({
     method: "DELETE",
     path: `/projects/${projectId}`,
   }));

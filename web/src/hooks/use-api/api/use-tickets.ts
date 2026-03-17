@@ -4,6 +4,7 @@ import type {
   DomainTicketModel,
   DomainTicketsPagedModel,
   DomainTicketUpdateModel,
+  HttpxErrBlock,
 } from "@interfaces/openapi.generated";
 import type { UseQueryOptions } from "@tanstack/react-query";
 import { useApiMutation } from "../use-api-mutation";
@@ -60,7 +61,7 @@ export function useGetTicket(
 export function useCreateTicket() {
   return useApiMutation<
     DomainTicketModel,
-    unknown,
+    HttpxErrBlock,
     { projectId: string; data: DomainTicketCreateModel }
   >((variables) => ({
     method: "POST",
@@ -75,7 +76,7 @@ export function useCreateTicket() {
 export function useUpdateTicket() {
   return useApiMutation<
     DomainTicketModel,
-    unknown,
+    HttpxErrBlock,
     { ticketId: string; data: DomainTicketUpdateModel }
   >((variables) => ({
     method: "PATCH",
@@ -88,7 +89,7 @@ export function useUpdateTicket() {
  * Delete a ticket
  */
 export function useDeleteTicket() {
-  return useApiMutation<void, unknown, string>((ticketId) => ({
+  return useApiMutation<void, HttpxErrBlock, string>((ticketId) => ({
     method: "DELETE",
     path: `/tickets/${ticketId}`,
   }));
@@ -100,7 +101,7 @@ export function useDeleteTicket() {
 export function useMoveBoardColumn() {
   return useApiMutation<
     DomainTicketModel,
-    unknown,
+    HttpxErrBlock,
     { ticketId: string; move: DomainTicketBoardMoveModel }
   >((variables) => ({
     method: "PATCH",
@@ -115,7 +116,7 @@ export function useMoveBoardColumn() {
 export function useMoveToBoard() {
   return useApiMutation<
     DomainTicketModel,
-    unknown,
+    HttpxErrBlock,
     { ticketId: string; move: DomainTicketBoardMoveModel }
   >((variables) => ({
     method: "PATCH",
@@ -128,7 +129,7 @@ export function useMoveToBoard() {
  * Move ticket to a sprint
  */
 export function useMoveToSprint() {
-  return useApiMutation<DomainTicketModel, unknown, { ticketId: string; sprintId: string }>(
+  return useApiMutation<DomainTicketModel, HttpxErrBlock, { ticketId: string; sprintId: string }>(
     (variables) => ({
       method: "PATCH",
       path: `/tickets/${variables.ticketId}/move-to-sprint`,
