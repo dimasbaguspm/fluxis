@@ -11,6 +11,7 @@ import type {
 import type { UseQueryOptions } from "@tanstack/react-query";
 import { useApiMutation } from "../use-api-mutation";
 import { useApiQuery } from "../use-api-query";
+import { queryKeys } from "../query-keys";
 
 interface ListOrgsParams {
   id?: string[];
@@ -29,7 +30,7 @@ export function useListOrgs(
   options?: Omit<UseQueryOptions<DomainOrganisationPagedModel>, "queryKey" | "queryFn">,
 ) {
   return useApiQuery(
-    ["orgs", params],
+    queryKeys.orgs.list(params),
     {
       method: "GET",
       path: "/orgs",
@@ -47,7 +48,7 @@ export function useGetOrg(
   options?: Omit<UseQueryOptions<DomainOrganisationModel>, "queryKey" | "queryFn">,
 ) {
   return useApiQuery(
-    ["orgs", orgId],
+    queryKeys.orgs.detail(orgId),
     {
       method: "GET",
       path: `/orgs/${orgId}`,
@@ -111,7 +112,7 @@ export function useListOrgMembers(
   options?: Omit<UseQueryOptions<DomainOrganisationMembersPagedModel>, "queryKey" | "queryFn">,
 ) {
   return useApiQuery(
-    ["orgs", orgId, "members", params],
+    queryKeys.orgs.members.list(orgId, params),
     {
       method: "GET",
       path: `/orgs/${orgId}/members`,

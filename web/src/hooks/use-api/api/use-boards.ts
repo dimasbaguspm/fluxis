@@ -11,6 +11,7 @@ import type {
 import type { UseQueryOptions } from "@tanstack/react-query";
 import { useApiMutation } from "../use-api-mutation";
 import { useApiQuery } from "../use-api-query";
+import { queryKeys } from "../query-keys";
 
 interface ListBoardsParams {
   id?: string[];
@@ -28,7 +29,7 @@ export function useListBoards(
   options?: Omit<UseQueryOptions<DomainBoardsPagedModel>, "queryKey" | "queryFn">,
 ) {
   return useApiQuery(
-    ["boards", params],
+    queryKeys.boards.list(params),
     {
       method: "GET",
       path: "/boards",
@@ -46,7 +47,7 @@ export function useGetBoard(
   options?: Omit<UseQueryOptions<DomainBoardModel>, "queryKey" | "queryFn">,
 ) {
   return useApiQuery(
-    ["boards", boardId],
+    queryKeys.boards.detail(boardId),
     {
       method: "GET",
       path: `/boards/${boardId}`,
@@ -121,7 +122,7 @@ export function useListBoardColumns(
   options?: Omit<UseQueryOptions<DomainBoardColumnsPagedModel>, "queryKey" | "queryFn">,
 ) {
   return useApiQuery(
-    ["boards", boardId, "columns", params],
+    queryKeys.boards.columns.list(boardId, params),
     {
       method: "GET",
       path: `/boards/${boardId}/columns`,

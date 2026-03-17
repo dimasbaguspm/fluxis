@@ -7,6 +7,7 @@ import type {
 import type { UseQueryOptions } from "@tanstack/react-query";
 import { useApiMutation } from "../use-api-mutation";
 import { useApiQuery } from "../use-api-query";
+import { queryKeys } from "../query-keys";
 
 interface ListSprintsParams {
   id?: string[];
@@ -24,7 +25,7 @@ export function useListSprints(
   options?: Omit<UseQueryOptions<DomainSprintsPagedModel>, "queryKey" | "queryFn">,
 ) {
   return useApiQuery(
-    ["sprints", params],
+    queryKeys.sprints.list(params),
     {
       method: "GET",
       path: "/sprints",
@@ -42,7 +43,7 @@ export function useGetSprint(
   options?: Omit<UseQueryOptions<DomainSprintModel>, "queryKey" | "queryFn">,
 ) {
   return useApiQuery(
-    ["sprints", sprintId],
+    queryKeys.sprints.detail(sprintId),
     {
       method: "GET",
       path: `/sprints/${sprintId}`,

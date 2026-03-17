@@ -2,6 +2,9 @@ export { useApiInfiniteQuery } from "./use-api-infinite-query";
 export { useApiMutation } from "./use-api-mutation";
 export { useApiQuery } from "./use-api-query";
 
+export { queryKeys } from "./query-keys";
+export { invalidateQueriesByEvent } from "./invalidate-cache";
+
 export { useLogin, useRefreshToken, useRegister } from "./api/use-auth";
 
 export { useCurrentUser } from "./api/use-user";

@@ -1,9 +1,11 @@
+import { invalidateQueriesByEvent } from "@/hooks/use-api";
 import { Layout } from "@/components/layout";
 import { DrawerProvider } from "@/providers/drawer";
 import { NotifierProvider } from "@/providers/notifier";
 import { SessionHydrator, useSessionState } from "@/providers/session";
 import { DrawerRouter } from "@/router/drawer";
 import { DEEP_LINKS, PAGES, ROUTE_GROUPS } from "@constants/page-routes";
+import { useQueryClient } from "@tanstack/react-query";
 import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { BoardsPage } from "./boards-page";
 import { DashboardPage } from "./dashboard-page";
@@ -14,6 +16,23 @@ import { SettingsPage } from "./settings-page";
 import { SignInPage } from "./sign-in-page";
 import { SignUpPage } from "./sign-up-page";
 
+function CacheInvalidator() {
+  const queryClient = useQueryClient();
+
+  return (
+    <NotifierProvider
+      onNotified={(event) => {
+        invalidateQueriesByEvent(queryClient, event);
+      }}
+    >
+      <DrawerProvider>
+        <Layout />
+        <DrawerRouter />
+      </DrawerProvider>
+    </NotifierProvider>
+  );
+}
+
 function ProtectedRoute() {
   const { accessToken } = useSessionState();
   if (!accessToken) {
@@ -22,12 +41,7 @@ function ProtectedRoute() {
 
   return (
     <SessionHydrator>
-      <NotifierProvider>
-        <DrawerProvider>
-          <Layout />
-          <DrawerRouter />
-        </DrawerProvider>
-      </NotifierProvider>
+      <CacheInvalidator />
     </SessionHydrator>
   );
 }

@@ -7,6 +7,7 @@ import type {
 import type { UseQueryOptions } from "@tanstack/react-query";
 import { useApiMutation } from "../use-api-mutation";
 import { useApiQuery } from "../use-api-query";
+import { queryKeys } from "../query-keys";
 
 interface ListProjectsParams {
   id?: string[];
@@ -24,7 +25,7 @@ export function useListProjects(
   options?: Omit<UseQueryOptions<DomainProjectsPagedModel>, "queryKey" | "queryFn">,
 ) {
   return useApiQuery(
-    ["projects", params],
+    queryKeys.projects.list(params),
     {
       method: "GET",
       path: "/projects",
@@ -42,7 +43,7 @@ export function useGetProject(
   options?: Omit<UseQueryOptions<DomainProjectModel>, "queryKey" | "queryFn">,
 ) {
   return useApiQuery(
-    ["projects", projectId],
+    queryKeys.projects.detail(projectId),
     {
       method: "GET",
       path: `/projects/${projectId}`,

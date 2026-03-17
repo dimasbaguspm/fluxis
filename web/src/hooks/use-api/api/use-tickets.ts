@@ -8,6 +8,7 @@ import type {
 import type { UseQueryOptions } from "@tanstack/react-query";
 import { useApiMutation } from "../use-api-mutation";
 import { useApiQuery } from "../use-api-query";
+import { queryKeys } from "../query-keys";
 
 interface ListTicketsParams {
   boardId?: string[];
@@ -26,7 +27,7 @@ export function useListTickets(
   options?: Omit<UseQueryOptions<DomainTicketsPagedModel>, "queryKey" | "queryFn">,
 ) {
   return useApiQuery(
-    ["tickets", params],
+    queryKeys.tickets.list(params),
     {
       method: "GET",
       path: "/tickets",
@@ -44,7 +45,7 @@ export function useGetTicket(
   options?: Omit<UseQueryOptions<DomainTicketModel>, "queryKey" | "queryFn">,
 ) {
   return useApiQuery(
-    ["tickets", ticketId],
+    queryKeys.tickets.detail(ticketId),
     {
       method: "GET",
       path: `/tickets/${ticketId}`,
