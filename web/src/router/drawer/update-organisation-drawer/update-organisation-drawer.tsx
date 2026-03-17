@@ -1,17 +1,13 @@
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { useGetOrg, useUpdateOrg } from "@/hooks/use-api";
-import { cx } from "@/lib/cx";
 import { useDrawer } from "@/providers/drawer";
-import { vGap4 } from "@versaur/core/utilities";
-import { ButtonGroup, Drawer, FormGroup } from "@versaur/react/blocks";
-import { TextInput } from "@versaur/react/forms";
-import { Banner, Button } from "@versaur/react/primitive";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-
-interface UpdateOrganisationFormInputs {
-  name: string;
-}
+import { ButtonGroup, Drawer, NoResults } from "@versaur/react/blocks";
+import { Banner, Button, Loader } from "@versaur/react/primitive";
+import { When } from "@/lib/when";
+import { SearchXIcon } from "@versaur/icons";
+import { UPDATE_ORGANISATION_FORM_ID } from "./constants";
+import { UpdateOrganisationForm } from "./form";
+import type { UpdateOrganisationFormInputs } from "./types";
 
 export const UpdateOrganisationDrawer = () => {
   const { closeDrawer, params } = useDrawer<typeof DRAWER_ROUTES.UPDATE_ORGANISATION>();
@@ -20,39 +16,14 @@ export const UpdateOrganisationDrawer = () => {
   const [org, , { isLoading: isLoadingOrg }] = useGetOrg(orgId);
   const [updateOrg, err, { isPending }] = useUpdateOrg();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-  } = useForm<UpdateOrganisationFormInputs>({
-    defaultValues: { name: "" },
-  });
-
-  useEffect(() => {
-    if (org?.name) {
-      setValue("name", org.name);
-    }
-  }, [org?.name, setValue]);
-
   const onSubmit = async (data: UpdateOrganisationFormInputs) => {
     if (!orgId) return;
     await updateOrg({
       id: orgId,
       data: { name: data.name },
     });
-    reset();
     closeDrawer();
   };
-
-  const errorMessage = (() => {
-    if (!err) return null;
-    if (typeof err === "object" && err !== null && "message" in err) {
-      return String((err as any).message);
-    }
-    return "Failed to update organisation";
-  })();
 
   return (
     <>
@@ -60,29 +31,24 @@ export const UpdateOrganisationDrawer = () => {
         <Drawer.Title>Update Organisation</Drawer.Title>
       </Drawer.Header>
       <Drawer.Body>
-        <FormGroup onSubmit={handleSubmit(onSubmit)} className={cx(vGap4)}>
-          {errorMessage ? (
-            <FormGroup.Field>
-              <Banner variant="warning">{errorMessage}</Banner>
-            </FormGroup.Field>
-          ) : null}
-          <FormGroup.Field>
-            <TextInput
-              placeholder="Organisation Name"
-              label="Organisation Name"
-              required
-              disabled={isLoadingOrg}
-              error={errors.name?.message}
-              {...register("name", {
-                required: "Organisation name is required",
-                minLength: {
-                  value: 1,
-                  message: "Organisation name must not be empty",
-                },
-              })}
+        <When condition={isLoadingOrg}>
+          <Loader type="bar" />
+        </When>
+        <When condition={!isLoadingOrg}>
+          <When condition={!org}>
+            <NoResults
+              icon={SearchXIcon}
+              title="Organisation not found"
+              subtitle="We couldn't find the organisation you're looking for"
             />
-          </FormGroup.Field>
-        </FormGroup>
+          </When>
+          <When condition={!!org}>
+            <When condition={err?.message}>
+              <Banner variant="warning">{err?.message}</Banner>
+            </When>
+            <UpdateOrganisationForm organisation={org!} onSubmit={onSubmit} />
+          </When>
+        </When>
       </Drawer.Body>
       <Drawer.Footer>
         <ButtonGroup fluid>
@@ -90,11 +56,12 @@ export const UpdateOrganisationDrawer = () => {
             Cancel
           </Button>
           <Button
-            onClick={handleSubmit(onSubmit)}
+            type="submit"
+            form={UPDATE_ORGANISATION_FORM_ID}
             loading={isPending || isLoadingOrg}
             disabled={isPending || isLoadingOrg}
           >
-            {isPending ? "Updating..." : isLoadingOrg ? "Loading..." : "Update"}
+            Update
           </Button>
         </ButtonGroup>
       </Drawer.Footer>
