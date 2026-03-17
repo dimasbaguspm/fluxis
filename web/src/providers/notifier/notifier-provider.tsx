@@ -14,24 +14,24 @@ interface NotifierProviderProps {
 export function NotifierProvider({ children, onNotified }: NotifierProviderProps) {
   const [event, setEvent] = useState<NotifierEvent | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const connect = useStreamEvents();
+  const connect = useStreamEvents<{ type: string; payload: unknown }>({
+    serverTimeout: 300_000,
+    threshold: 30_000,
+  });
 
   useEffect(() => {
-    const unsubscribe = connect<{ type: string; payload: unknown }>(
-      "/notifications",
-      {
-        onMessage: (notification: unknown) => {
-          const raw = notification as { type: string; payload: unknown };
-          const translatedEvent = translateEvent(raw);
-          setEvent(translatedEvent);
-          onNotified?.(translatedEvent);
-        },
-        onError: (error) => {
-          console.error("[Notifier] Stream error:", error);
-          setIsConnected(false);
-        },
-      }
-    );
+    const unsubscribe = connect("/notifications", {
+      onMessage: (notification) => {
+        const translatedEvent = translateEvent(notification);
+        setEvent(translatedEvent);
+        onNotified?.(translatedEvent);
+      },
+      onError: (error) => {
+        console.error("[Notifier] Stream error:", error);
+        setIsConnected(false);
+      },
+      onClosed: () => setIsConnected(false),
+    });
 
     setIsConnected(true);
 

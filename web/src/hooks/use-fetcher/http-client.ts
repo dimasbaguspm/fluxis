@@ -29,6 +29,10 @@ export interface RequestOptions {
   headers?: Record<string, string>;
 }
 
+export interface StreamOptions extends RequestOptions {
+  onClosed?: () => void;
+}
+
 export async function request<TResponse = unknown>(
   req: HttpRequest,
   options?: RequestOptions,
@@ -99,14 +103,14 @@ export async function request<TResponse = unknown>(
  * @param path - API endpoint path
  * @param onMessage - Callback when message is received
  * @param onError - Callback when error occurs
- * @param options - Request options including headers for authentication
+ * @param options - Request options including headers for authentication and onClosed callback
  * @returns Function to close the connection
  */
 export function streamEvents<TMessage = unknown>(
   path: string,
   onMessage: (data: TMessage) => void,
   onError?: (error: Error) => void,
-  options?: RequestOptions,
+  options?: StreamOptions,
 ): () => void {
   const url = `${API_BASE_URL}${path}`;
   const abortController = new AbortController();
@@ -140,7 +144,10 @@ export function streamEvents<TMessage = unknown>(
       while (true) {
         const { done, value } = await reader.read();
 
-        if (done) break;
+        if (done) {
+          options?.onClosed?.();
+          break;
+        }
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
