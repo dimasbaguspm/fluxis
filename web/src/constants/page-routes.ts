@@ -9,6 +9,7 @@ export const PAGES = {
   DASHBOARD: "/",
   ORGANIZATIONS: "/organizations",
   PROJECTS: "/projects",
+  SPRINTS: "/sprints",
   BOARDS: "/boards",
   SETTINGS: "/settings",
   PROFILE: "/profile",
@@ -32,6 +33,10 @@ export const DEEP_LINKS = {
   PROJECT_BOARD: (projectId: string) => `/projects/${projectId}/boards`,
   PROJECT_BOARD_DETAIL: (projectId: string, boardId: string) =>
     `/projects/${projectId}/boards/${boardId}`,
+
+  // Sprints
+  SPRINTS: PAGES.SPRINTS,
+  SPRINT_DETAILS: (sprintId: string) => `/sprints/${sprintId}`,
 
   // Boards
   BOARDS: PAGES.BOARDS,

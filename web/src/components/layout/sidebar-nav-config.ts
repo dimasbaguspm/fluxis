@@ -1,10 +1,4 @@
-import {
-  ClipboardIcon,
-  GridIcon,
-  HomeIcon,
-  SettingsIcon,
-  UserIcon,
-} from "@versaur/icons";
+import { ClipboardIcon, GridIcon, HomeIcon, SettingsIcon, UserIcon } from "@versaur/icons";
 import { DEEP_LINKS } from "@constants/page-routes";
 
 export interface NavItem {
@@ -30,6 +24,12 @@ export const SIDEBAR_NAV_ITEMS: NavItem[] = [
   {
     label: "Projects",
     href: DEEP_LINKS.PROJECTS,
+    icon: ClipboardIcon,
+    section: "main",
+  },
+  {
+    label: "Sprints",
+    href: DEEP_LINKS.SPRINTS,
     icon: ClipboardIcon,
     section: "main",
   },

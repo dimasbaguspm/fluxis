@@ -1,32 +1,32 @@
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { dateFormat, FormatDate } from "@/lib";
-import { useListBoards } from "@/hooks/use-api";
+import { useListSprints } from "@/hooks/use-api";
 import { useDrawer } from "@/providers/drawer";
 import { MenuIcon, PlusIcon } from "@versaur/icons";
 import { PageHeader, Table } from "@versaur/react/blocks";
 import { ButtonIcon, Text } from "@versaur/react/primitive";
 
-export const BoardsPage = () => {
+export const SprintsPage = () => {
   const { openDrawer } = useDrawer();
-  const [boards, error, { isLoading }] = useListBoards();
+  const [sprints, error, { isLoading }] = useListSprints();
 
   const handleOnAddButtonClick = () => {
-    openDrawer(DRAWER_ROUTES.CREATE_BOARD);
+    openDrawer(DRAWER_ROUTES.CREATE_SPRINT);
   };
 
-  const handleOnEditBoard = (boardId: string) => {
-    openDrawer(DRAWER_ROUTES.UPDATE_BOARD, { boardId: boardId });
+  const handleOnEditSprint = (sprintId: string) => {
+    openDrawer(DRAWER_ROUTES.UPDATE_SPRINT, { sprintId: sprintId });
   };
 
   if (isLoading) {
-    return <div>Loading boards...</div>;
+    return <div>Loading sprints...</div>;
   }
 
   if (error) {
-    return <div>Error loading boards</div>;
+    return <div>Error loading sprints</div>;
   }
 
-  const boardsList = boards?.items || [];
+  const sprintsList = sprints?.items || [];
 
   return (
     <>
@@ -35,19 +35,19 @@ export const BoardsPage = () => {
           <PageHeader.Title
             action={
               <ButtonIcon
-                aria-label="Add board"
+                aria-label="Add sprint"
                 as={PlusIcon}
                 variant="ghost"
                 onClick={handleOnAddButtonClick}
               />
             }
           >
-            Boards
+            Sprints
           </PageHeader.Title>
         }
-        subtitle={<PageHeader.Subtitle>Manage your boards</PageHeader.Subtitle>}
+        subtitle={<PageHeader.Subtitle>Manage your sprints</PageHeader.Subtitle>}
       />
-      <Table columns="40px 2fr 1fr 1fr 100px">
+      <Table columns="40px 2fr 1fr 1fr 1fr 100px">
         <Table.Toolbar
           leftContent={(selectedIds) => (
             <Text size="xs">
@@ -65,24 +65,32 @@ export const BoardsPage = () => {
             <Table.Checkbox isMain />
           </Table.Col>
           <Table.Col as="th">Name</Table.Col>
-          <Table.Col as="th">Position</Table.Col>
-          <Table.Col as="th">Updated</Table.Col>
+          <Table.Col as="th">Status</Table.Col>
+          <Table.Col as="th">Planned Start</Table.Col>
+          <Table.Col as="th">Planned End</Table.Col>
           <Table.Col as="th">Actions</Table.Col>
         </Table.Header>
         <Table.Body>
-          {boardsList.map((board) => (
-            <Table.Row key={board.id}>
+          {sprintsList.map((sprint) => (
+            <Table.Row key={sprint.id}>
               <Table.Col as="td" variant="checkbox">
-                <Table.Checkbox rowId={board.id} />
+                <Table.Checkbox rowId={sprint.id} />
               </Table.Col>
-              <Table.Col as="td">{board.name}</Table.Col>
-              <Table.Col as="td" variant="numeric">
-                {board.position}
+              <Table.Col as="td">{sprint.name}</Table.Col>
+              <Table.Col as="td">{sprint.status}</Table.Col>
+              <Table.Col as="td">
+                {sprint.plannedStartedAt
+                  ? dateFormat(sprint.plannedStartedAt, FormatDate.ShortDate)
+                  : "-"}
               </Table.Col>
-              <Table.Col as="td">{dateFormat(board.updatedAt, FormatDate.ShortDate)}</Table.Col>
+              <Table.Col as="td">
+                {sprint.plannedCompletedAt
+                  ? dateFormat(sprint.plannedCompletedAt, FormatDate.ShortDate)
+                  : "-"}
+              </Table.Col>
               <Table.Col as="td" variant="action">
                 <Table.Action icon={MenuIcon}>
-                  <Table.ActionItem onClick={() => handleOnEditBoard(board.id)}>
+                  <Table.ActionItem onClick={() => handleOnEditSprint(sprint.id)}>
                     Edit
                   </Table.ActionItem>
                 </Table.Action>

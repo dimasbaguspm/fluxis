@@ -15,6 +15,7 @@ import { ProjectsPage } from "./projects-page";
 import { SettingsPage } from "./settings-page";
 import { SignInPage } from "./sign-in-page";
 import { SignUpPage } from "./sign-up-page";
+import { SprintsPage } from "./sprints-page";
 
 function CacheInvalidator() {
   const queryClient = useQueryClient();
@@ -87,6 +88,10 @@ export const router = createBrowserRouter([
           {
             path: PAGES.PROJECTS,
             element: <ProjectsPage />,
+          },
+          {
+            path: PAGES.SPRINTS,
+            element: <SprintsPage />,
           },
           {
             path: PAGES.BOARDS,
