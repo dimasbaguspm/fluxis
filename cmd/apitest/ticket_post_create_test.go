@@ -24,10 +24,11 @@ func TestTicket_Create_Success(t *testing.T) {
 
 	// Create ticket
 	title := randomTicketTitle()
-	statusCode, resp := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
-		Title:    title,
-		Type:     "story",
-		Priority: "high",
+	statusCode, resp := do[domain.TicketModel](t, "POST", "/tickets", domain.TicketCreateModel{
+		ProjectID: stringToUUID(projectID),
+		Title:     title,
+		Type:      "story",
+		Priority:  "high",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated {
@@ -64,28 +65,15 @@ func TestTicket_Create_Success(t *testing.T) {
 func TestTicket_Create_Unauthenticated(t *testing.T) {
 	projectID := "550e8400-e29b-41d4-a716-446655440000"
 
-	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
-		Title:    "Test Ticket",
-		Type:     "story",
-		Priority: "medium",
+	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets", domain.TicketCreateModel{
+		ProjectID: stringToUUID(projectID),
+		Title:     "Test Ticket",
+		Type:      "story",
+		Priority:  "medium",
 	}, "")
 
 	if statusCode != http.StatusUnauthorized {
 		t.Fatalf("expected status 401, got %d", statusCode)
-	}
-}
-
-func TestTicket_Create_InvalidProjectId(t *testing.T) {
-	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
-
-	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId=invalid-uuid", domain.TicketCreateModel{
-		Title:    "Test Ticket",
-		Type:     "story",
-		Priority: "medium",
-	}, tokens.AccessToken)
-
-	if statusCode != http.StatusBadRequest {
-		t.Fatalf("expected status 400, got %d", statusCode)
 	}
 }
 
@@ -104,10 +92,11 @@ func TestTicket_Create_InvalidTicketType(t *testing.T) {
 	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
 	projectID := uuidToString(project.ID)
 
-	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
-		Title:    "Test Ticket",
-		Type:     "invalid",
-		Priority: "medium",
+	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets", domain.TicketCreateModel{
+		ProjectID: stringToUUID(projectID),
+		Title:     "Test Ticket",
+		Type:      "invalid",
+		Priority:  "medium",
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusBadRequest {
@@ -130,10 +119,11 @@ func TestTicket_Create_MissingTitle(t *testing.T) {
 	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
 	projectID := uuidToString(project.ID)
 
-	status, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
-		Title:    "",
-		Type:     "story",
-		Priority: "high",
+	status, _ := do[domain.TicketModel](t, "POST", "/tickets", domain.TicketCreateModel{
+		ProjectID: stringToUUID(projectID),
+		Title:     "",
+		Type:      "story",
+		Priority:  "high",
 	}, tokens.AccessToken)
 
 	if status != http.StatusBadRequest {
@@ -156,10 +146,11 @@ func TestTicket_Create_MissingType(t *testing.T) {
 	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
 	projectID := uuidToString(project.ID)
 
-	status, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
-		Title:    "Test Ticket",
-		Type:     "",
-		Priority: "high",
+	status, _ := do[domain.TicketModel](t, "POST", "/tickets", domain.TicketCreateModel{
+		ProjectID: stringToUUID(projectID),
+		Title:     "Test Ticket",
+		Type:      "",
+		Priority:  "high",
 	}, tokens.AccessToken)
 
 	if status != http.StatusBadRequest {
@@ -182,10 +173,11 @@ func TestTicket_Create_MissingPriority(t *testing.T) {
 	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
 	projectID := uuidToString(project.ID)
 
-	status, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
-		Title:    "Test Ticket",
-		Type:     "story",
-		Priority: "",
+	status, _ := do[domain.TicketModel](t, "POST", "/tickets", domain.TicketCreateModel{
+		ProjectID: stringToUUID(projectID),
+		Title:     "Test Ticket",
+		Type:      "story",
+		Priority:  "",
 	}, tokens.AccessToken)
 
 	if status != http.StatusBadRequest {
@@ -208,28 +200,15 @@ func TestTicket_Create_InvalidPriority(t *testing.T) {
 	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
 	projectID := uuidToString(project.ID)
 
-	status, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
-		Title:    "Test Ticket",
-		Type:     "story",
-		Priority: "ultra",
+	status, _ := do[domain.TicketModel](t, "POST", "/tickets", domain.TicketCreateModel{
+		ProjectID: stringToUUID(projectID),
+		Title:     "Test Ticket",
+		Type:      "story",
+		Priority:  "ultra",
 	}, tokens.AccessToken)
 
 	if status != http.StatusBadRequest {
 		t.Fatalf("expected status 400, got %d", status)
-	}
-}
-
-func TestTicket_Create_MissingProjectId(t *testing.T) {
-	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
-
-	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets", domain.TicketCreateModel{
-		Title:    "Test Ticket",
-		Type:     "story",
-		Priority: "high",
-	}, tokens.AccessToken)
-
-	if statusCode != http.StatusBadRequest {
-		t.Fatalf("expected status 400, got %d", statusCode)
 	}
 }
 
@@ -238,10 +217,11 @@ func TestTicket_Create_NonExistentProject(t *testing.T) {
 
 	nonExistentProjectID := "550e8400-e29b-41d4-a716-446655440000"
 
-	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets?projectId="+nonExistentProjectID, domain.TicketCreateModel{
-		Title:    "Test Ticket",
-		Type:     "story",
-		Priority: "high",
+	statusCode, _ := do[domain.TicketModel](t, "POST", "/tickets", domain.TicketCreateModel{
+		ProjectID: stringToUUID(nonExistentProjectID),
+		Title:     "Test Ticket",
+		Type:      "story",
+		Priority:  "high",
 	}, tokens.AccessToken)
 
 	// Non-existent project can result in either 404 or 500 depending on when the error is caught

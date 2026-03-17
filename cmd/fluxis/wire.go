@@ -108,6 +108,7 @@ func Wire(d Deps) *App {
 		Project: projectSvc,
 		Board:   boardSvc,
 		Sprint:  sprintSvc,
+		User:    userSvc,
 		Bus:     d.Bus,
 	})
 	notificationSvc := notificationsvc.New(notificationsvc.Deps{Bus: d.Bus})

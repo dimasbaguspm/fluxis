@@ -70,6 +70,7 @@ type TicketModel struct {
 }
 
 type TicketCreateModel struct {
+	ProjectID   pgtype.UUID `json:"projectId" validate:"required"`
 	Type        string      `json:"type" validate:"required,oneof=bug story task epic"`
 	Priority    string      `json:"priority" validate:"required,oneof=low medium high critical"`
 	Title       string      `json:"title" validate:"required,min=1,max=255"`
@@ -103,7 +104,7 @@ type TicketReader interface {
 }
 
 type TicketWriter interface {
-	CreateTicket(ctx context.Context, projectID pgtype.UUID, p TicketCreateModel) (TicketModel, error)
+	CreateTicket(ctx context.Context, p TicketCreateModel) (TicketModel, error)
 	UpdateTicket(ctx context.Context, id pgtype.UUID, p TicketUpdateModel) (TicketModel, error)
 	MoveTicketToBoard(ctx context.Context, id pgtype.UUID, p TicketBoardMoveModel) (TicketModel, error)
 	MoveTicketToSprint(ctx context.Context, id pgtype.UUID, sprintID pgtype.UUID) (TicketModel, error)

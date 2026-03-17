@@ -149,6 +149,7 @@ func TestMain(m *testing.M) {
 		Project: projectSvc,
 		Board:   boardSvc,
 		Sprint:  sprintSvc,
+		User:    userSvc,
 		Bus:     bus,
 	})
 	authSvc := authservice.New(authservice.Deps{

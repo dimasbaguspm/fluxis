@@ -11,6 +11,7 @@ type Deps struct {
 	Project domain.ProjectReader
 	Board   domain.BoardReader
 	Sprint  domain.SprintReader
+	User    domain.UserRead
 	Bus     pubsub.Publisher
 }
 

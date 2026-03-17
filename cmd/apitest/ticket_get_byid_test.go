@@ -67,11 +67,12 @@ func TestTicket_GetByID_ResponseStructure(t *testing.T) {
 	ticketType := "story"
 	priority := "high"
 
-	statusCode, createResp := do[domain.TicketModel](t, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
+	statusCode, createResp := do[domain.TicketModel](t, "POST", "/tickets", domain.TicketCreateModel{
+		ProjectID:   stringToUUID(projectID),
 		Title:       title,
-		Description: description,
 		Type:        ticketType,
 		Priority:    priority,
+		Description: description,
 	}, tokens.AccessToken)
 
 	if statusCode != http.StatusCreated || createResp.Data == nil {

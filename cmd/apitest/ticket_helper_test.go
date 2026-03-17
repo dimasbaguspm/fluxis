@@ -8,10 +8,11 @@ import (
 )
 
 func createTicket(tb testing.TB, projectID string, token string, title, ticketType, priority string) domain.TicketModel {
-	statusCode, resp := do[domain.TicketModel](tb, "POST", "/tickets?projectId="+projectID, domain.TicketCreateModel{
-		Title:    title,
-		Type:     ticketType,
-		Priority: priority,
+	statusCode, resp := do[domain.TicketModel](tb, "POST", "/tickets", domain.TicketCreateModel{
+		ProjectID: stringToUUID(projectID),
+		Title:     title,
+		Type:      ticketType,
+		Priority:  priority,
 	}, token)
 
 	if statusCode != http.StatusCreated {

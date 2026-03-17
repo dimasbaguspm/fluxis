@@ -2271,13 +2271,6 @@
                 "summary": "Create a ticket",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Project ID",
-                        "name": "projectId",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
                         "description": "Ticket payload",
                         "name": "body",
                         "in": "body",
@@ -3365,6 +3358,7 @@
             "type": "object",
             "required": [
                 "priority",
+                "projectId",
                 "title",
                 "type"
             ],
@@ -3386,6 +3380,9 @@
                         "high",
                         "critical"
                     ]
+                },
+                "projectId": {
+                    "type": "string"
                 },
                 "sprintId": {
                     "type": "string"

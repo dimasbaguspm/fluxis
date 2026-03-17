@@ -74,7 +74,6 @@ func (h *Handler) GetTicket(w http.ResponseWriter, r *http.Request) {
 //	@Tags			ticket
 //	@Accept			json
 //	@Produce		json
-//	@Param			projectId	query		string						true	"Project ID"
 //	@Param			body		body		domain.TicketCreateModel	true	"Ticket payload"
 //	@Success		201			{object}	domain.TicketModel
 //	@Failure		400			{object}	httpx.ErrBlock
@@ -83,19 +82,13 @@ func (h *Handler) GetTicket(w http.ResponseWriter, r *http.Request) {
 //	@Security		BearerAuth
 //	@Router			/tickets [post]
 func (h *Handler) CreateTicket(w http.ResponseWriter, r *http.Request) {
-	projectID, err := httpx.QueryUUID(r, "projectId")
-	if err != nil {
-		httpx.Handle(w, err)
-		return
-	}
-
 	var req domain.TicketCreateModel
 	if err := httpx.DecodeAndValidate(r, &req); err != nil {
 		httpx.Handle(w, httpx.BadRequest(err.Error()))
 		return
 	}
 
-	ticket, err := h.svc.CreateTicket(r.Context(), projectID, req)
+	ticket, err := h.svc.CreateTicket(r.Context(), req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return

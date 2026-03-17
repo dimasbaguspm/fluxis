@@ -115,22 +115,48 @@ func (s *Service) GetTicketByKey(ctx context.Context, projectID pgtype.UUID, key
 	return s.ticketToModel(ticket), nil
 }
 
-func (s *Service) CreateTicket(ctx context.Context, projectID pgtype.UUID, p domain.TicketCreateModel) (domain.TicketModel, error) {
+func (s *Service) CreateTicket(ctx context.Context, p domain.TicketCreateModel) (domain.TicketModel, error) {
 	userID := httpx.MustUserID(ctx)
 
-	// Validate project exists before creating ticket
-	_, err := s.Project.GetProjectById(ctx, projectID)
+	var project domain.ProjectModel
+	var assignee domain.UserModel
+	var key string
+
+	err := syncx.Run(ctx,
+		func(ctx context.Context) error {
+			pjt, err := s.Project.GetProjectById(ctx, p.ProjectID)
+			if err != nil {
+				return fmt.Errorf("create ticket: %w", err)
+			}
+			project = pjt
+			return nil
+		},
+		func(ctx context.Context) error {
+			k, err := s.Repo.GenerateTicketKey(ctx, p.ProjectID)
+			if err != nil {
+				return fmt.Errorf("generate ticket key: %w", err)
+			}
+			key = k
+			return nil
+		},
+		func(ctx context.Context) error {
+			if !p.AssigneeID.Valid {
+				return nil
+			}
+
+			a, err := s.User.GetSingleUserById(ctx, p.AssigneeID)
+			if err != nil {
+				return fmt.Errorf("create ticket: %w", err)
+			}
+			assignee = a
+			return nil
+		},
+	)
+
 	if err != nil {
 		return domain.TicketModel{}, err
 	}
 
-	// Generate ticket key
-	key, err := s.Repo.GenerateTicketKey(ctx, projectID)
-	if err != nil {
-		return domain.TicketModel{}, fmt.Errorf("generate ticket key: %w", err)
-	}
-
-	// Convert DueDate to pgtype.Date if provided
 	var dueDate pgtype.Date
 	if !p.DueDate.IsZero() {
 		dueDate = pgtype.Date{
@@ -139,24 +165,19 @@ func (s *Service) CreateTicket(ctx context.Context, projectID pgtype.UUID, p dom
 		}
 	}
 
-	// Convert AssigneeID
-	assigneeID := pgtype.UUID{Valid: false}
-	if p.AssigneeID.Valid {
-		assigneeID = p.AssigneeID
-	}
-
 	ticket, err := s.Repo.CreateTicket(ctx, repository.CreateTicketParams{
-		ProjectID:   projectID,
+		ProjectID:   project.ID,
 		Key:         key,
 		Type:        repository.TicketType(p.Type),
 		Priority:    repository.TicketPriority(p.Priority),
 		Title:       p.Title,
 		Description: pgtype.Text{String: p.Description, Valid: p.Description != ""},
 		ReporterID:  userID,
-		AssigneeID:  assigneeID,
+		AssigneeID:  assignee.ID,
 		StoryPoints: pgtype.Int4{Int32: p.StoryPoints, Valid: p.StoryPoints > 0},
 		DueDate:     dueDate,
 	})
+
 	if err != nil {
 		return domain.TicketModel{}, fmt.Errorf("create ticket: %w", err)
 	}
@@ -170,7 +191,6 @@ func (s *Service) CreateTicket(ctx context.Context, projectID pgtype.UUID, p dom
 }
 
 func (s *Service) UpdateTicket(ctx context.Context, id pgtype.UUID, p domain.TicketUpdateModel) (domain.TicketModel, error) {
-	// Fetch current ticket to preserve values for optional fields
 	currentTicket, err := s.Repo.GetTicket(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -179,7 +199,6 @@ func (s *Service) UpdateTicket(ctx context.Context, id pgtype.UUID, p domain.Tic
 		return domain.TicketModel{}, fmt.Errorf("get ticket: %w", err)
 	}
 
-	// Convert DueDate to pgtype.Date if provided
 	var dueDate pgtype.Date
 	if !p.DueDate.IsZero() {
 		dueDate = pgtype.Date{
@@ -188,7 +207,6 @@ func (s *Service) UpdateTicket(ctx context.Context, id pgtype.UUID, p domain.Tic
 		}
 	}
 
-	// Convert AssigneeID
 	assigneeID := pgtype.UUID{Valid: false}
 	if p.AssigneeID.Valid {
 		assigneeID = p.AssigneeID
