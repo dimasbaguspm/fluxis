@@ -1,3 +1,4 @@
+import type { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { useCreateProject } from "@/hooks/use-api";
 import { cx } from "@/lib/cx";
 import { useDrawer } from "@/providers/drawer";
@@ -16,7 +17,7 @@ interface CreateProjectFormInputs {
 }
 
 export const CreateProjectDrawer = () => {
-  const { closeDrawer, params } = useDrawer();
+  const { closeDrawer, params } = useDrawer<typeof DRAWER_ROUTES.CREATE_PROJECT>();
   const [createProject, err, { isPending }] = useCreateProject();
 
   const {
@@ -55,7 +56,9 @@ export const CreateProjectDrawer = () => {
         <FormGroup onSubmit={handleSubmit(onSubmit)} className={cx(vGap4)}>
           {err && (
             <FormGroup.Field>
-              <Banner variant="warning">{(err as any)?.message || "Failed to create project"}</Banner>
+              <Banner variant="warning">
+                {(err as any)?.message || "Failed to create project"}
+              </Banner>
             </FormGroup.Field>
           )}
           <FormGroup.Field>

@@ -1,3 +1,4 @@
+import type { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { useCreateBoard } from "@/hooks/use-api";
 import { cx } from "@/lib/cx";
 import { useDrawer } from "@/providers/drawer";
@@ -13,7 +14,7 @@ interface CreateBoardFormInputs {
 }
 
 export const CreateBoardDrawer = () => {
-  const { closeDrawer, params } = useDrawer();
+  const { closeDrawer, params } = useDrawer<typeof DRAWER_ROUTES.CREATE_BOARD>();
   const [createBoard, err, { isPending }] = useCreateBoard();
 
   const {

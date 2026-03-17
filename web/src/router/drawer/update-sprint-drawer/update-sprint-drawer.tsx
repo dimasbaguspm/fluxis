@@ -1,5 +1,6 @@
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { useGetSprint, useUpdateSprint } from "@/hooks/use-api";
+import { dateFormat, FormatDate } from "@/lib";
 import { cx } from "@/lib/cx";
 import { useDrawer } from "@/providers/drawer";
 import { vGap4 } from "@versaur/core/utilities";
@@ -43,8 +44,11 @@ export const UpdateSprintDrawer = () => {
     if (sprint?.name) {
       setValue("name", sprint.name);
       setValue("goal", sprint.goal ?? "");
-      setValue("plannedStartedAt", sprint.plannedStartedAt ?? "");
-      setValue("plannedCompletedAt", sprint.plannedCompletedAt ?? "");
+      setValue("plannedStartedAt", dateFormat(sprint.plannedStartedAt, FormatDate.ShortDate) ?? "");
+      setValue(
+        "plannedCompletedAt",
+        dateFormat(sprint.plannedCompletedAt, FormatDate.ShortDate) ?? "",
+      );
     }
   }, [sprint?.name, sprint?.goal, sprint?.plannedStartedAt, sprint?.plannedCompletedAt, setValue]);
 

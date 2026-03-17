@@ -1,3 +1,4 @@
+import { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { useCreateOrg } from "@/hooks/use-api";
 import { cx } from "@/lib/cx";
 import { useDrawer } from "@/providers/drawer";
@@ -12,7 +13,7 @@ interface CreateOrganisationFormInputs {
 }
 
 export const CreateOrganisationDrawer = () => {
-  const { closeDrawer } = useDrawer();
+  const { closeDrawer } = useDrawer<typeof DRAWER_ROUTES.CREATE_ORGANISATION>();
   const [createOrg, err, { isPending }] = useCreateOrg();
 
   const {
