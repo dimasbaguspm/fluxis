@@ -20,7 +20,7 @@ export const UpdateSprintDrawer = () => {
   const onSubmit = async (data: UpdateSprintFormInputs) => {
     if (!sprintId) return;
     await updateSprint({
-      sprintId: sprintId,
+      sprintId,
       data: {
         name: data.name,
         goal: data.goal,

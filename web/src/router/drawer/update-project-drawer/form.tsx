@@ -3,6 +3,7 @@ import { vGap4 } from "@versaur/core/utilities";
 import { FormGroup } from "@versaur/react/blocks";
 import { TextInput } from "@versaur/react/forms";
 import { useForm } from "react-hook-form";
+import { SelectOrganisationsInput } from "@/components/ui";
 import { UPDATE_PROJECT_FORM_ID } from "./constants";
 import type { UpdateProjectFormInputs } from "./types";
 import type { DomainProjectModel } from "@/interfaces/openapi.generated";
@@ -17,6 +18,7 @@ export const UpdateProjectForm = ({ onSubmit, project }: UpdateProjectFormProps)
     register,
     formState: { errors },
     handleSubmit,
+    control,
   } = useForm<UpdateProjectFormInputs>({
     mode: "all",
     defaultValues: {
@@ -28,6 +30,9 @@ export const UpdateProjectForm = ({ onSubmit, project }: UpdateProjectFormProps)
 
   return (
     <FormGroup id={UPDATE_PROJECT_FORM_ID} onSubmit={handleSubmit(onSubmit)} className={cx(vGap4)}>
+      <FormGroup.Field>
+        <SelectOrganisationsInput control={control} name="orgId" required />
+      </FormGroup.Field>
       <FormGroup.Field>
         <TextInput
           placeholder="Project Name"

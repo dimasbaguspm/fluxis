@@ -1,12 +1,13 @@
 import { FormGroup } from "@versaur/react/blocks";
 import { TextInput } from "@versaur/react/forms";
 import { useForm } from "react-hook-form";
+import { SelectProjectsInput } from "@/components/ui";
 import { CREATE_SPRINT_FORM_ID } from "./constants";
 import type { CreateSprintFormInputs } from "./types";
 
 interface CreateSprintFormProps {
   onSubmit: (data: CreateSprintFormInputs) => void;
-  projectId: string;
+  projectId?: string;
 }
 
 export const CreateSprintForm = ({
@@ -17,10 +18,11 @@ export const CreateSprintForm = ({
     register,
     formState: { errors },
     handleSubmit,
+    control,
   } = useForm<CreateSprintFormInputs>({
     mode: "all",
     defaultValues: {
-      projectId,
+      projectId: projectId ?? "",
       name: "",
       goal: "",
       plannedStartedAt: "",
@@ -31,16 +33,7 @@ export const CreateSprintForm = ({
   return (
     <FormGroup id={CREATE_SPRINT_FORM_ID} onSubmit={handleSubmit(onSubmit)}>
       <FormGroup.Field>
-        <TextInput
-          placeholder="Project ID"
-          label="Project ID"
-          required
-          disabled
-          error={errors.projectId?.message}
-          {...register("projectId", {
-            required: "Project ID is required",
-          })}
-        />
+        <SelectProjectsInput control={control} name="projectId" required />
       </FormGroup.Field>
       <FormGroup.Field>
         <TextInput

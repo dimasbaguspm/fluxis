@@ -21,6 +21,7 @@ export const UpdateBoardDrawer = () => {
     await updateBoard({
       boardId: boardId,
       data: {
+        sprintId: data.sprintId,
         name: data.name,
       },
     });

@@ -1,12 +1,13 @@
 import { FormGroup } from "@versaur/react/blocks";
 import { TextInput } from "@versaur/react/forms";
 import { useForm } from "react-hook-form";
+import { SelectSprintsInput } from "@/components/ui";
 import { CREATE_BOARD_FORM_ID } from "./constants";
 import type { CreateBoardFormInputs } from "./types";
 
 interface CreateBoardFormProps {
   onSubmit: (data: CreateBoardFormInputs) => void;
-  sprintId: string;
+  sprintId?: string;
 }
 
 export const CreateBoardForm = ({
@@ -17,10 +18,11 @@ export const CreateBoardForm = ({
     register,
     formState: { errors },
     handleSubmit,
+    control,
   } = useForm<CreateBoardFormInputs>({
     mode: "all",
     defaultValues: {
-      sprintId,
+      sprintId: sprintId ?? "",
       name: "",
     },
   });
@@ -28,16 +30,7 @@ export const CreateBoardForm = ({
   return (
     <FormGroup id={CREATE_BOARD_FORM_ID} onSubmit={handleSubmit(onSubmit)}>
       <FormGroup.Field>
-        <TextInput
-          placeholder="Sprint ID"
-          label="Sprint ID"
-          required
-          disabled
-          error={errors.sprintId?.message}
-          {...register("sprintId", {
-            required: "Sprint ID is required",
-          })}
-        />
+        <SelectSprintsInput control={control} name="sprintId" required />
       </FormGroup.Field>
       <FormGroup.Field>
         <TextInput
