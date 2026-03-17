@@ -1,17 +1,13 @@
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { useGetBoard, useUpdateBoard } from "@/hooks/use-api";
-import { cx } from "@/lib/cx";
 import { useDrawer } from "@/providers/drawer";
-import { vGap4 } from "@versaur/core/utilities";
-import { ButtonGroup, Drawer, FormGroup } from "@versaur/react/blocks";
-import { TextInput } from "@versaur/react/forms";
-import { Banner, Button } from "@versaur/react/primitive";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-
-interface UpdateBoardFormInputs {
-  name: string;
-}
+import { ButtonGroup, Drawer, NoResults } from "@versaur/react/blocks";
+import { Banner, Button, Loader } from "@versaur/react/primitive";
+import { When } from "@/lib/when";
+import { SearchXIcon } from "@versaur/icons";
+import { UPDATE_BOARD_FORM_ID } from "./constants";
+import { UpdateBoardForm } from "./form";
+import type { UpdateBoardFormInputs } from "./types";
 
 export const UpdateBoardDrawer = () => {
   const { closeDrawer, params } = useDrawer<typeof DRAWER_ROUTES.UPDATE_BOARD>();
@@ -19,22 +15,6 @@ export const UpdateBoardDrawer = () => {
 
   const [board, , { isLoading: isLoadingBoard }] = useGetBoard(boardId);
   const [updateBoard, err, { isPending }] = useUpdateBoard();
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-  } = useForm<UpdateBoardFormInputs>({
-    defaultValues: { name: "" },
-  });
-
-  useEffect(() => {
-    if (board?.name) {
-      setValue("name", board.name);
-    }
-  }, [board?.name, setValue]);
 
   const onSubmit = async (data: UpdateBoardFormInputs) => {
     if (!boardId) return;
@@ -44,17 +24,8 @@ export const UpdateBoardDrawer = () => {
         name: data.name,
       },
     });
-    reset();
     closeDrawer();
   };
-
-  const errorMessage = (() => {
-    if (!err) return null;
-    if (typeof err === "object" && err !== null && "message" in err) {
-      return String((err as any).message);
-    }
-    return "Failed to update board";
-  })();
 
   return (
     <>
@@ -62,25 +33,24 @@ export const UpdateBoardDrawer = () => {
         <Drawer.Title>Update Board</Drawer.Title>
       </Drawer.Header>
       <Drawer.Body>
-        <FormGroup onSubmit={handleSubmit(onSubmit)} className={cx(vGap4)}>
-          {errorMessage ? (
-            <FormGroup.Field>
-              <Banner variant="warning">{errorMessage}</Banner>
-            </FormGroup.Field>
-          ) : null}
-          <FormGroup.Field>
-            <TextInput
-              placeholder="Board Name"
-              label="Name"
-              required
-              disabled={isLoadingBoard}
-              error={errors.name?.message}
-              {...register("name", {
-                required: "Board name is required",
-              })}
+        <When condition={isLoadingBoard}>
+          <Loader type="bar" />
+        </When>
+        <When condition={!isLoadingBoard}>
+          <When condition={!board}>
+            <NoResults
+              icon={SearchXIcon}
+              title="Board not found"
+              subtitle="We couldn't find the board you're looking for"
             />
-          </FormGroup.Field>
-        </FormGroup>
+          </When>
+          <When condition={!!board}>
+            <When condition={err?.message}>
+              <Banner variant="warning">{err?.message}</Banner>
+            </When>
+            <UpdateBoardForm board={board!} onSubmit={onSubmit} />
+          </When>
+        </When>
       </Drawer.Body>
       <Drawer.Footer>
         <ButtonGroup fluid>
@@ -88,11 +58,12 @@ export const UpdateBoardDrawer = () => {
             Cancel
           </Button>
           <Button
-            onClick={handleSubmit(onSubmit)}
+            type="submit"
+            form={UPDATE_BOARD_FORM_ID}
             loading={isPending || isLoadingBoard}
             disabled={isPending || isLoadingBoard}
           >
-            {isPending ? "Updating..." : isLoadingBoard ? "Loading..." : "Update"}
+            Update
           </Button>
         </ButtonGroup>
       </Drawer.Footer>
