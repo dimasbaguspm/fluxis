@@ -1,42 +1,45 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useStreamEvents } from "@/hooks/use-fetcher";
-import type { NotificationEvent, NotifierContextType } from "./types";
+import type { NotifierContextType, NotifierEvent } from "./types";
+import { translateEvent } from "./helpers";
 
 const NotifierContext = createContext<NotifierContextType | null>(null);
 NotifierContext.displayName = "NotifierContext";
 
 interface NotifierProviderProps {
   children: React.ReactNode;
+  onNotified?: (event: NotifierEvent) => void;
 }
 
-export function NotifierProvider({ children }: NotifierProviderProps) {
-  const [event, setEvent] = useState<NotificationEvent | null>(null);
+export function NotifierProvider({ children, onNotified }: NotifierProviderProps) {
+  const [event, setEvent] = useState<NotifierEvent | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const connect = useStreamEvents();
 
   useEffect(() => {
-    console.log("[Notifier] Setting up stream connection");
-    const unsubscribe = connect<NotificationEvent>("/notifications", {
-      onMessage: (notification: unknown) => {
-        const event = notification as NotificationEvent;
-        console.log("[Notifier] Received event:", event.type);
-        setEvent(event);
-      },
-      onError: (error) => {
-        console.error("[Notifier] Stream error:", error);
-        setIsConnected(false);
-      },
-    });
+    const unsubscribe = connect<{ type: string; payload: unknown }>(
+      "/notifications",
+      {
+        onMessage: (notification: unknown) => {
+          const raw = notification as { type: string; payload: unknown };
+          const translatedEvent = translateEvent(raw);
+          setEvent(translatedEvent);
+          onNotified?.(translatedEvent);
+        },
+        onError: (error) => {
+          console.error("[Notifier] Stream error:", error);
+          setIsConnected(false);
+        },
+      }
+    );
 
     setIsConnected(true);
-    console.log("[Notifier] Stream connected");
 
     return () => {
-      console.log("[Notifier] Cleaning up stream");
       unsubscribe();
       setIsConnected(false);
     };
-  }, [connect]);
+  }, [connect, onNotified]);
 
   const value: NotifierContextType = {
     event,

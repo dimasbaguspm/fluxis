@@ -122,7 +122,6 @@ export function streamEvents<TMessage = unknown>(
         method: "GET",
         headers,
         signal: abortController.signal,
-        credentials: "include",
       });
 
       if (!response.ok) {

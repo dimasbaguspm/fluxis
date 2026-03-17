@@ -1,9 +1,35 @@
-export interface NotificationEvent {
+import type {
+  DomainAuthModel,
+  DomainBoardColumnModel,
+  DomainBoardModel,
+  DomainOrganisationMemberModel,
+  DomainOrganisationModel,
+  DomainProjectModel,
+  DomainSprintModel,
+  DomainTicketModel,
+  DomainUserModel,
+} from "@/interfaces/openapi.generated";
+
+/**
+ * Typed notification event with entity type, action, and payload
+ */
+export interface NotifierEvent {
   type: string;
-  payload: unknown;
+  action: string;
+  payload:
+    | DomainAuthModel
+    | DomainUserModel
+    | DomainOrganisationModel
+    | DomainOrganisationMemberModel
+    | DomainProjectModel
+    | DomainSprintModel
+    | DomainBoardModel
+    | DomainBoardColumnModel
+    | DomainTicketModel
+    | unknown;
 }
 
 export interface NotifierContextType {
-  event: NotificationEvent | null;
+  event: NotifierEvent | null;
   isConnected: boolean;
 }
