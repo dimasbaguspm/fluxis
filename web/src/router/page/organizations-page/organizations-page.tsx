@@ -1,19 +1,32 @@
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
+import { dateFormat, FormatDate } from "@/lib";
+import { useListOrgs } from "@/hooks/use-api";
 import { useDrawer } from "@/providers/drawer";
-import { useNotifier } from "@/providers/notifier";
 import { MenuIcon, PlusIcon } from "@versaur/icons";
 import { PageHeader, Table } from "@versaur/react/blocks";
 import { ButtonIcon, Text } from "@versaur/react/primitive";
 
 export const OrganizationsPage = () => {
   const { openDrawer } = useDrawer();
-  const {event} = useNotifier()
+  const [orgs, error, { isLoading }] = useListOrgs();
 
   const handleOnAddButtonClick = () => {
     openDrawer(DRAWER_ROUTES.CREATE_ORGANISATION);
   };
 
-  console.log("Received notification event:", event);
+  const handleOnEditOrganisation = (orgId: string) => {
+    openDrawer(DRAWER_ROUTES.UPDATE_ORGANISATION, { orgId: orgId });
+  };
+
+  if (isLoading) {
+    return <div>Loading organizations...</div>;
+  }
+
+  if (error) {
+    return <div>Error loading organizations</div>;
+  }
+
+  const organizations = orgs?.items || [];
 
   return (
     <>
@@ -34,7 +47,7 @@ export const OrganizationsPage = () => {
         }
         subtitle={<PageHeader.Subtitle>Manage your projects and settings</PageHeader.Subtitle>}
       />
-      <Table columns="40px 2fr 1fr 1fr 1fr 100px">
+      <Table columns="40px 2fr 1fr 1fr 100px">
         <Table.Toolbar
           leftContent={(selectedIds) => (
             <Text size="xs">
@@ -51,67 +64,32 @@ export const OrganizationsPage = () => {
           <Table.Col as="th" variant="checkbox">
             <Table.Checkbox isMain />
           </Table.Col>
-          <Table.Col as="th">Product</Table.Col>
-          <Table.Col as="th">Category</Table.Col>
-          <Table.Col as="th">Price</Table.Col>
-          <Table.Col as="th">Stock</Table.Col>
+          <Table.Col as="th">Name</Table.Col>
+          <Table.Col as="th">Members</Table.Col>
+          <Table.Col as="th">Updated</Table.Col>
           <Table.Col as="th">Actions</Table.Col>
         </Table.Header>
         <Table.Body>
-          {["1", "2", "3"].map((rowId) => (
-            <Table.Row key={rowId}>
+          {organizations.map((org) => (
+            <Table.Row key={org.id}>
               <Table.Col as="td" variant="checkbox">
-                <Table.Checkbox rowId={rowId} />
+                <Table.Checkbox rowId={org.id} />
               </Table.Col>
-              <Table.DoubleLine
-                as="td"
-                title={`Premium Widget ${rowId}`}
-                subtitle={`SKU: PWG-2024-00${rowId}`}
-                size="md"
-              />
-              <Table.Col as="td">Electronics</Table.Col>
+              <Table.Col as="td">{org.name}</Table.Col>
               <Table.Col as="td" variant="numeric">
-                $199.99
+                {org.totalMembers || 0}
               </Table.Col>
-              <Table.Col as="td" variant="numeric">
-                {12 + Number(rowId)}
-              </Table.Col>
+              <Table.Col as="td">{dateFormat(org.updatedAt, FormatDate.ShortDate)}</Table.Col>
               <Table.Col as="td" variant="action">
                 <Table.Action icon={MenuIcon}>
-                  <Table.ActionItem
-                    onClick={() => {
-                      // eslint-disable-next-line no-console
-                      console.log(`Edit ${rowId}`);
-                    }}
-                  >
+                  <Table.ActionItem onClick={() => handleOnEditOrganisation(org.id)}>
                     Edit
-                  </Table.ActionItem>
-                  <Table.ActionItem
-                    onClick={() => {
-                      // eslint-disable-next-line no-console
-                      console.log(`Delete ${rowId}`);
-                    }}
-                  >
-                    Delete
                   </Table.ActionItem>
                 </Table.Action>
               </Table.Col>
             </Table.Row>
           ))}
         </Table.Body>
-        <Table.Footer>
-          <Table.Col as="td" area="span 2">
-            Total
-          </Table.Col>
-          <Table.Col as="td">3 items</Table.Col>
-          <Table.Col as="td" variant="numeric">
-            $599.97
-          </Table.Col>
-          <Table.Col as="td" variant="numeric">
-            39 units
-          </Table.Col>
-          <Table.Col as="td" />
-        </Table.Footer>
       </Table>
     </>
   );
