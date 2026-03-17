@@ -1,32 +1,15 @@
 import type { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { useCreateBoard } from "@/hooks/use-api";
-import { cx } from "@/lib/cx";
 import { useDrawer } from "@/providers/drawer";
-import { vGap4 } from "@versaur/core/utilities";
-import { ButtonGroup, Drawer, FormGroup } from "@versaur/react/blocks";
-import { TextInput } from "@versaur/react/forms";
+import { ButtonGroup, Drawer } from "@versaur/react/blocks";
 import { Banner, Button } from "@versaur/react/primitive";
-import { useForm } from "react-hook-form";
-
-interface CreateBoardFormInputs {
-  sprintId: string;
-  name: string;
-}
+import { CREATE_BOARD_FORM_ID } from "./constants";
+import { CreateBoardForm } from "./form";
+import type { CreateBoardFormInputs } from "./types";
 
 export const CreateBoardDrawer = () => {
   const { closeDrawer, params } = useDrawer<typeof DRAWER_ROUTES.CREATE_BOARD>();
   const [createBoard, err, { isPending }] = useCreateBoard();
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<CreateBoardFormInputs>({
-    defaultValues: {
-      sprintId: params?.sprintId ?? "",
-      name: "",
-    },
-  });
 
   const onSubmit = async (data: CreateBoardFormInputs) => {
     await createBoard({
@@ -42,43 +25,25 @@ export const CreateBoardDrawer = () => {
         <Drawer.Title>Create Board</Drawer.Title>
       </Drawer.Header>
       <Drawer.Body>
-        <FormGroup onSubmit={handleSubmit(onSubmit)} className={cx(vGap4)}>
-          {err && (
-            <FormGroup.Field>
-              <Banner variant="warning">{(err as any)?.message || "Failed to create board"}</Banner>
-            </FormGroup.Field>
-          )}
-          <FormGroup.Field>
-            <TextInput
-              placeholder="Sprint ID"
-              label="Sprint ID"
-              required
-              error={errors.sprintId?.message}
-              {...register("sprintId", {
-                required: "Sprint ID is required",
-              })}
-            />
-          </FormGroup.Field>
-          <FormGroup.Field>
-            <TextInput
-              placeholder="Board Name"
-              label="Name"
-              required
-              error={errors.name?.message}
-              {...register("name", {
-                required: "Board name is required",
-              })}
-            />
-          </FormGroup.Field>
-        </FormGroup>
+        {err && (
+          <Banner variant="warning" style={{ marginBottom: "1rem" }}>
+            {err?.message}
+          </Banner>
+        )}
+        <CreateBoardForm sprintId={params?.sprintId ?? ""} onSubmit={onSubmit} />
       </Drawer.Body>
       <Drawer.Footer>
         <ButtonGroup fluid>
           <Button variant="ghost" onClick={closeDrawer}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit(onSubmit)} loading={isPending} disabled={isPending}>
-            {isPending ? "Creating..." : "Create"}
+          <Button
+            type="submit"
+            form={CREATE_BOARD_FORM_ID}
+            loading={isPending}
+            disabled={isPending}
+          >
+            Create
           </Button>
         </ButtonGroup>
       </Drawer.Footer>
