@@ -2786,6 +2786,8 @@
         "domain.BoardColumnModel": {
             "type": "object",
             "required": [
+                "boardId",
+                "id",
                 "name"
             ],
             "properties": {
@@ -2861,7 +2863,9 @@
         "domain.BoardModel": {
             "type": "object",
             "required": [
-                "name"
+                "id",
+                "name",
+                "sprintId"
             ],
             "properties": {
                 "createdAt": {
@@ -2954,6 +2958,13 @@
         },
         "domain.OrganisationMemberModel": {
             "type": "object",
+            "required": [
+                "email",
+                "joinedAt",
+                "name",
+                "role",
+                "userId"
+            ],
             "properties": {
                 "email": {
                     "type": "string"
@@ -2962,10 +2973,16 @@
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                 },
                 "role": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "admin",
+                        "member",
+                        "viewer"
+                    ]
                 },
                 "userId": {
                     "type": "string"
@@ -3229,7 +3246,9 @@
         "domain.SprintModel": {
             "type": "object",
             "required": [
+                "id",
                 "name",
+                "projectId",
                 "status"
             ],
             "properties": {

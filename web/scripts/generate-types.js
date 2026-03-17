@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..");
 const swaggerPath = path.resolve(projectRoot, "..", "api", "swagger.json");
-const outputDir = path.resolve(projectRoot, "src", "types");
+const outputDir = path.resolve(projectRoot, "src", "interfaces");
 const outputFile = path.resolve(outputDir, "openapi.generated.ts");
 const tempApiFile = path.resolve(outputDir, "Api.ts");
 

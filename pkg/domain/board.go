@@ -8,8 +8,8 @@ import (
 )
 
 type BoardModel struct {
-	ID        pgtype.UUID `json:"id"`
-	SprintID  pgtype.UUID `json:"sprintId"`
+	ID        pgtype.UUID `json:"id" validate:"required,uuid4"`
+	SprintID  pgtype.UUID `json:"sprintId" validate:"required,uuid4"`
 	Name      string      `json:"name" validate:"required,min=1"`
 	Position  int32       `json:"position"`
 	CreatedAt time.Time   `json:"createdAt"`
@@ -68,8 +68,8 @@ func (m BoardsPagedModel) Empty(pageNumber, pageSize int) BoardsPagedModel {
 }
 
 type BoardColumnModel struct {
-	ID        pgtype.UUID `json:"id"`
-	BoardID   pgtype.UUID `json:"boardId"`
+	ID        pgtype.UUID `json:"id" validate:"required,uuid4"`
+	BoardID   pgtype.UUID `json:"boardId" validate:"required,uuid4"`
 	Name      string      `json:"name" validate:"required,min=1"`
 	Position  int32       `json:"position"`
 	CreatedAt time.Time   `json:"createdAt"`

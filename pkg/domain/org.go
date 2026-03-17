@@ -38,11 +38,11 @@ type OrganisationUpdateModel struct {
 }
 
 type OrganisationMemberModel struct {
-	UserID   pgtype.UUID `json:"userId"`
-	Name     string      `json:"name"`
-	Email    string      `json:"email"`
-	Role     string      `json:"role"`
-	JoinedAt time.Time   `json:"joinedAt"`
+	UserID   pgtype.UUID `json:"userId" validate:"required,uuid4"`
+	Name     string      `json:"name" validate:"required,min=1"`
+	Email    string      `json:"email" validate:"required,email"`
+	Role     string      `json:"role" validate:"required,oneof=admin member viewer"`
+	JoinedAt time.Time   `json:"joinedAt" validate:"required"`
 }
 
 type OrganisationMemberCreateModel struct {

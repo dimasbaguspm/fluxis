@@ -49,9 +49,9 @@ export interface DomainBoardColumnCreateModel {
 }
 
 export interface DomainBoardColumnModel {
-  boardId?: string;
+  boardId: string;
   createdAt?: string;
-  id?: string;
+  id: string;
   /** @minLength 1 */
   name: string;
   position?: number;
@@ -79,11 +79,11 @@ export interface DomainBoardCreateModel {
 
 export interface DomainBoardModel {
   createdAt?: string;
-  id?: string;
+  id: string;
   /** @minLength 1 */
   name: string;
   position?: number;
-  sprintId?: string;
+  sprintId: string;
   updatedAt?: string;
 }
 
@@ -112,11 +112,12 @@ export interface DomainOrganisationMemberCreateModel {
 }
 
 export interface DomainOrganisationMemberModel {
-  email?: string;
-  joinedAt?: string;
-  name?: string;
-  role?: string;
-  userId?: string;
+  email: string;
+  joinedAt: string;
+  /** @minLength 1 */
+  name: string;
+  role: "admin" | "member" | "viewer";
+  userId: string;
 }
 
 export interface DomainOrganisationMemberUpdateModel {
@@ -217,12 +218,12 @@ export interface DomainSprintModel {
   completedAt?: string;
   createdAt?: string;
   goal?: string;
-  id?: string;
+  id: string;
   /** @minLength 1 */
   name: string;
   plannedCompletedAt?: string;
   plannedStartedAt?: string;
-  projectId?: string;
+  projectId: string;
   startedAt?: string;
   status: "planned" | "active" | "completed";
   updatedAt?: string;
@@ -921,6 +922,24 @@ export class Api<
         secure: true,
         type: ContentType.Json,
         format: "json",
+        ...params,
+      }),
+  };
+  notifications = {
+    /**
+     * @description Opens a Server-Sent Events stream that broadcasts all domain events (ticket, sprint, board, org, project, user) in real-time
+     *
+     * @tags notification
+     * @name NotificationsList
+     * @summary Stream domain events
+     * @request GET:/notifications
+     * @secure
+     */
+    notificationsList: (params: RequestParams = {}) =>
+      this.request<string, HttpxErrBlock>({
+        path: `/notifications`,
+        method: "GET",
+        secure: true,
         ...params,
       }),
   };

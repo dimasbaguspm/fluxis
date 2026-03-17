@@ -8,8 +8,8 @@ import (
 )
 
 type SprintModel struct {
-	ID                 pgtype.UUID `json:"id"`
-	ProjectID          pgtype.UUID `json:"projectId"`
+	ID                 pgtype.UUID `json:"id" validate:"required,uuid4"`
+	ProjectID          pgtype.UUID `json:"projectId" validate:"required,uuid4"`
 	Name               string      `json:"name" validate:"required,min=1"`
 	Goal               string      `json:"goal"`
 	Status             string      `json:"status" validate:"required,oneof=planned active completed"`
