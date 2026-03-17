@@ -12,9 +12,9 @@ func (bc *BoardCache) InvalidateSingleBoard(ctx context.Context, boardID pgtype.
 }
 
 func (bc *BoardCache) InvalidatePagedBoardColumns(ctx context.Context) {
-	_ = bc.c.Delete(ctx, cache.KeyPagedBoardColumns(bc.hmacKey, nil))
+	_ = bc.c.DeletePrefix(ctx, cache.KeyPagedBoardColumnsPrefix(bc.hmacKey))
 }
 
 func (bc *BoardCache) InvalidatePagedBoards(ctx context.Context) {
-	_ = bc.c.Delete(ctx, cache.KeyPagedBoards(bc.hmacKey, nil))
+	_ = bc.c.DeletePrefix(ctx, cache.KeyPagedBoardsPrefix(bc.hmacKey))
 }

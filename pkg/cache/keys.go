@@ -101,3 +101,35 @@ func KeySingleOrg(hmacKey string, orgID pgtype.UUID) string {
 func KeyPagedOrganizations(hmacKey string, params interface{}) string {
 	return derive([]byte(hmacKey), "org", "paged", paramsToString(params))
 }
+
+func KeyPagedOrganizationsPrefix(hmacKey string) string {
+	return "org:paged:"
+}
+
+func KeyPagedBoardsPrefix(hmacKey string) string {
+	return "board:paged:"
+}
+
+func KeyPagedBoardColumnsPrefix(hmacKey string) string {
+	return "board:columns:"
+}
+
+func KeyPagedProjectsPrefix(hmacKey string) string {
+	return "project:paged:"
+}
+
+func KeyPagedSprintsPrefix(hmacKey string) string {
+	return "sprint:paged:"
+}
+
+func KeyPagedBoardTicketsPrefix(hmacKey string) string {
+	return "ticket:board:"
+}
+
+func KeyPagedSprintTicketsPrefix(hmacKey string) string {
+	return "ticket:sprint:"
+}
+
+func KeyPagedProjectBacklogPrefix(hmacKey string) string {
+	return "ticket:backlog:"
+}

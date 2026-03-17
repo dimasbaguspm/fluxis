@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 )
@@ -58,6 +59,17 @@ func (m *MemoryCache) Delete(ctx context.Context, key string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.cache, key)
+	return nil
+}
+
+func (m *MemoryCache) DeletePrefix(ctx context.Context, prefix string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for key := range m.cache {
+		if strings.HasPrefix(key, prefix) {
+			delete(m.cache, key)
+		}
+	}
 	return nil
 }
 

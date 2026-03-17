@@ -16,5 +16,5 @@ func (pc *ProjectCache) InvalidateSingleProjectByKey(ctx context.Context, orgID 
 }
 
 func (pc *ProjectCache) InvalidatePagedProjects(ctx context.Context) {
-	_ = pc.c.Delete(ctx, cache.KeyPagedProjects(pc.hmacKey, nil))
+	_ = pc.c.DeletePrefix(ctx, cache.KeyPagedProjectsPrefix(pc.hmacKey))
 }

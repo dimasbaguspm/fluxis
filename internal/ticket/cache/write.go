@@ -12,13 +12,13 @@ func (tc *TicketCache) InvalidateSingleTicket(ctx context.Context, ticketID pgty
 }
 
 func (tc *TicketCache) InvalidatePagedBoardTickets(ctx context.Context) {
-	_ = tc.c.Delete(ctx, cache.KeyPagedBoardTickets(tc.hmacKey, nil))
+	_ = tc.c.DeletePrefix(ctx, cache.KeyPagedBoardTicketsPrefix(tc.hmacKey))
 }
 
 func (tc *TicketCache) InvalidatePagedSprintTickets(ctx context.Context) {
-	_ = tc.c.Delete(ctx, cache.KeyPagedSprintTickets(tc.hmacKey, nil))
+	_ = tc.c.DeletePrefix(ctx, cache.KeyPagedSprintTicketsPrefix(tc.hmacKey))
 }
 
 func (tc *TicketCache) InvalidatePagedProjectBacklog(ctx context.Context) {
-	_ = tc.c.Delete(ctx, cache.KeyPagedProjectBacklog(tc.hmacKey, nil))
+	_ = tc.c.DeletePrefix(ctx, cache.KeyPagedProjectBacklogPrefix(tc.hmacKey))
 }

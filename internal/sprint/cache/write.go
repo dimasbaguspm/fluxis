@@ -16,5 +16,5 @@ func (sc *SprintCache) InvalidateSingleSprint(ctx context.Context, sprintID pgty
 }
 
 func (sc *SprintCache) InvalidatePagedSprints(ctx context.Context) {
-	_ = sc.c.Delete(ctx, cache.KeyPagedSprints(sc.hmacKey, nil))
+	_ = sc.c.DeletePrefix(ctx, cache.KeyPagedSprintsPrefix(sc.hmacKey))
 }

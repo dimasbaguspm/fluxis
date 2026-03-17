@@ -44,6 +44,8 @@ func (m *Module) StartSubscriber(ctx context.Context) {
 				m.orgCache.InvalidateSingleOrg(ctx, org.ID)
 			}
 			m.orgCache.InvalidatePagedOrganizations(ctx)
+		case pubsub.OrgMemberAdded, pubsub.OrgMemberRemoved, pubsub.OrgMemberUpdated:
+			m.orgCache.InvalidatePagedOrganizations(ctx)
 		}
 		return nil
 	}

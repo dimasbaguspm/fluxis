@@ -12,5 +12,5 @@ func (oc *OrgCache) InvalidateSingleOrg(ctx context.Context, orgID pgtype.UUID) 
 }
 
 func (oc *OrgCache) InvalidatePagedOrganizations(ctx context.Context) {
-	_ = oc.c.Delete(ctx, cache.KeyPagedOrganizations(oc.hmacKey, nil))
+	_ = oc.c.DeletePrefix(ctx, cache.KeyPagedOrganizationsPrefix(oc.hmacKey))
 }
