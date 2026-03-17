@@ -2,7 +2,6 @@ import { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { useGetProject, useUpdateProject } from "@/hooks/use-api";
 import { cx } from "@/lib/cx";
 import { useDrawer } from "@/providers/drawer";
-import { SelectOrganisationsInput } from "@/components/ui/select-organisations-input";
 import { vGap4 } from "@versaur/core/utilities";
 import { ButtonGroup, Drawer, FormGroup } from "@versaur/react/blocks";
 import { TextInput } from "@versaur/react/forms";
@@ -29,7 +28,6 @@ export const UpdateProjectDrawer = () => {
     formState: { errors },
     reset,
     setValue,
-    control,
   } = useForm<UpdateProjectFormInputs>({
     mode: "onBlur",
     defaultValues: { orgId: "", name: "", description: "" },
@@ -71,18 +69,11 @@ export const UpdateProjectDrawer = () => {
       </Drawer.Header>
       <Drawer.Body>
         <FormGroup onSubmit={handleSubmit(onSubmit)} className={cx(vGap4)}>
-          {errorMessage ? (
+          {errorMessage && (
             <FormGroup.Field>
               <Banner variant="warning">{errorMessage}</Banner>
             </FormGroup.Field>
-          ) : null}
-          <FormGroup.Field>
-            <SelectOrganisationsInput
-              control={control}
-              name="orgId"
-              disabled={true}
-            />
-          </FormGroup.Field>
+          )}
           <FormGroup.Field>
             <TextInput
               placeholder="Project Name"

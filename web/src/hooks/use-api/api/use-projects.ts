@@ -57,15 +57,13 @@ export function useGetProject(
  * Create a new project
  */
 export function useCreateProject() {
-  return useApiMutation<
-    DomainProjectModel,
-    HttpxErrBlock,
-    { orgId: string; data: DomainProjectCreateModel }
-  >((variables) => ({
-    method: "POST",
-    path: "/projects",
-    body: { ...variables.data, orgId: variables.orgId },
-  }));
+  return useApiMutation<DomainProjectModel, HttpxErrBlock, { data: DomainProjectCreateModel }>(
+    (variables) => ({
+      method: "POST",
+      path: "/projects",
+      body: variables.data,
+    }),
+  );
 }
 
 /**

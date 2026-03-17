@@ -39,8 +39,8 @@ export const CreateProjectDrawer = () => {
 
   const onSubmit = async (data: CreateProjectFormInputs) => {
     await createProject({
-      orgId: data.orgId,
       data: {
+        orgId: data.orgId,
         name: data.name,
         key: data.key,
         visibility: data.visibility,
