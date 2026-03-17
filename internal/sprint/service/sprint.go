@@ -79,14 +79,20 @@ func (s *Service) CreateSprint(ctx context.Context, req domain.SprintCreateModel
 
 	plannedStart := pgtype.Timestamptz{Valid: false}
 	if req.PlannedStartedAt != "" {
-		plannedStart = pgtype.Timestamptz{}
-		plannedStart.Scan(req.PlannedStartedAt)
+		t, err := time.Parse(time.RFC3339Nano, req.PlannedStartedAt)
+		if err != nil {
+			return domain.SprintModel{}, fmt.Errorf("parse plannedStartedAt: %w", err)
+		}
+		plannedStart = pgtype.Timestamptz{Time: t, Valid: true}
 	}
 
 	plannedEnd := pgtype.Timestamptz{Valid: false}
 	if req.PlannedCompletedAt != "" {
-		plannedEnd = pgtype.Timestamptz{}
-		plannedEnd.Scan(req.PlannedCompletedAt)
+		t, err := time.Parse(time.RFC3339Nano, req.PlannedCompletedAt)
+		if err != nil {
+			return domain.SprintModel{}, fmt.Errorf("parse plannedCompletedAt: %w", err)
+		}
+		plannedEnd = pgtype.Timestamptz{Time: t, Valid: true}
 	}
 
 	sprint, err := s.Repo.CreateSprint(ctx, repository.CreateSprintParams{
@@ -206,16 +212,20 @@ func (s *Service) UpdateSprint(ctx context.Context, id pgtype.UUID, req domain.S
 
 	updatedPlannedStart := current.PlannedStartedAt
 	if req.PlannedStartedAt != "" {
-		ts := pgtype.Timestamptz{}
-		ts.Scan(req.PlannedStartedAt)
-		updatedPlannedStart = ts
+		t, err := time.Parse(time.RFC3339Nano, req.PlannedStartedAt)
+		if err != nil {
+			return domain.SprintModel{}, fmt.Errorf("parse plannedStartedAt: %w", err)
+		}
+		updatedPlannedStart = pgtype.Timestamptz{Time: t, Valid: true}
 	}
 
 	updatedPlannedComplete := current.PlannedCompletedAt
 	if req.PlannedCompletedAt != "" {
-		ts := pgtype.Timestamptz{}
-		ts.Scan(req.PlannedCompletedAt)
-		updatedPlannedComplete = ts
+		t, err := time.Parse(time.RFC3339Nano, req.PlannedCompletedAt)
+		if err != nil {
+			return domain.SprintModel{}, fmt.Errorf("parse plannedCompletedAt: %w", err)
+		}
+		updatedPlannedComplete = pgtype.Timestamptz{Time: t, Valid: true}
 	}
 
 	sprint, err := s.Repo.UpdateSprint(ctx, repository.UpdateSprintParams{
