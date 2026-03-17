@@ -2,6 +2,7 @@ import { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { useGetProject, useUpdateProject } from "@/hooks/use-api";
 import { cx } from "@/lib/cx";
 import { useDrawer } from "@/providers/drawer";
+import { SelectOrganisationsInput } from "@/components/ui/select-organisations-input";
 import { vGap4 } from "@versaur/core/utilities";
 import { ButtonGroup, Drawer, FormGroup } from "@versaur/react/blocks";
 import { TextInput } from "@versaur/react/forms";
@@ -10,6 +11,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 interface UpdateProjectFormInputs {
+  orgId: string;
   name: string;
   description?: string;
 }
@@ -27,16 +29,19 @@ export const UpdateProjectDrawer = () => {
     formState: { errors },
     reset,
     setValue,
+    control,
   } = useForm<UpdateProjectFormInputs>({
-    defaultValues: { name: "", description: "" },
+    mode: "onBlur",
+    defaultValues: { orgId: "", name: "", description: "" },
   });
 
   useEffect(() => {
     if (project?.name) {
+      setValue("orgId", project.orgId);
       setValue("name", project.name);
       setValue("description", project.description ?? "");
     }
-  }, [project?.name, project?.description, setValue]);
+  }, [project?.name, project?.description, project?.orgId, setValue]);
 
   const onSubmit = async (data: UpdateProjectFormInputs) => {
     if (!projectId) return;
@@ -71,6 +76,13 @@ export const UpdateProjectDrawer = () => {
               <Banner variant="warning">{errorMessage}</Banner>
             </FormGroup.Field>
           ) : null}
+          <FormGroup.Field>
+            <SelectOrganisationsInput
+              control={control}
+              name="orgId"
+              disabled={true}
+            />
+          </FormGroup.Field>
           <FormGroup.Field>
             <TextInput
               placeholder="Project Name"

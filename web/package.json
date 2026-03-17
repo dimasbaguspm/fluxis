@@ -16,6 +16,7 @@
     "@versaur/icons": "1.0.0",
     "@versaur/react": "1.0.17",
     "dayjs": "1.11.20",
+    "radash": "12.1.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "7.71.2",

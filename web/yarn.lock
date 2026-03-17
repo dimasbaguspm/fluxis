@@ -270,13 +270,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@microsoft/fetch-event-source@npm:^2.0.1":
-  version: 2.0.1
-  resolution: "@microsoft/fetch-event-source@npm:2.0.1"
-  checksum: 10c0/38c69e9b9990e6cee715c7bbfa2752f943b42575acadb36facf19bb831f1520c469f854277439154258e0e1dc8650cc85038230d1f451e3f6b62e8faeaa1126c
-  languageName: node
-  linkType: hard
-
 "@napi-rs/wasm-runtime@npm:^1.1.1":
   version: 1.1.1
   resolution: "@napi-rs/wasm-runtime@npm:1.1.1"
@@ -1762,6 +1755,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"radash@npm:12.1.1":
+  version: 12.1.1
+  resolution: "radash@npm:12.1.1"
+  checksum: 10c0/f8cbe85c0a8a444f1d2892c82875e00333e58a7b8afdbf3d8d04574d0532d895484bae20650c197c87dd91abfbd1e0af1c819cd12e6dc306633acec30222af7e
+  languageName: node
+  linkType: hard
+
 "react-dom@npm:19.2.4":
   version: 19.2.4
   resolution: "react-dom@npm:19.2.4"
@@ -1770,17 +1770,6 @@ __metadata:
   peerDependencies:
     react: ^19.2.4
   checksum: 10c0/f0c63f1794dedb154136d4d0f59af00b41907f4859571c155940296808f4b94bf9c0c20633db75b5b2112ec13d8d7dd4f9bf57362ed48782f317b11d05a44f35
-  languageName: node
-  linkType: hard
-
-"react-eventsource@npm:2.1.0":
-  version: 2.1.0
-  resolution: "react-eventsource@npm:2.1.0"
-  dependencies:
-    "@microsoft/fetch-event-source": "npm:^2.0.1"
-  peerDependencies:
-    react: ^18.0.0 || ^19.0.0
-  checksum: 10c0/b52c54fb303c5a3c023208e5598991c886b94579a04e998a8cd00109dc2e31c7429eed5c3997545acb8c08c0df6e5d3c7bbc26b63df8a5205d757f9ba8063a4a
   languageName: node
   linkType: hard
 
@@ -2139,9 +2128,9 @@ __metadata:
     oxfmt: "npm:0.40.0"
     oxlint: "npm:1.55.0"
     oxlint-tsgolint: "npm:0.16.0"
+    radash: "npm:12.1.1"
     react: "npm:19.2.4"
     react-dom: "npm:19.2.4"
-    react-eventsource: "npm:2.1.0"
     react-hook-form: "npm:7.71.2"
     react-router: "npm:7.13.1"
     typescript: "npm:5.9.3"

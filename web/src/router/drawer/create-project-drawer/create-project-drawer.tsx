@@ -2,9 +2,10 @@ import type { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { useCreateProject } from "@/hooks/use-api";
 import { cx } from "@/lib/cx";
 import { useDrawer } from "@/providers/drawer";
+import { SelectOrganisationsInput } from "@/components/ui/select-organisations-input";
 import { vGap4 } from "@versaur/core/utilities";
 import { ButtonGroup, Drawer, FormGroup } from "@versaur/react/blocks";
-import { TextInput } from "@versaur/react/forms";
+import { Select, TextInput } from "@versaur/react/forms";
 import { Banner, Button } from "@versaur/react/primitive";
 import { useForm } from "react-hook-form";
 
@@ -24,7 +25,9 @@ export const CreateProjectDrawer = () => {
     register,
     handleSubmit,
     formState: { errors },
+    control,
   } = useForm<CreateProjectFormInputs>({
+    mode: "onBlur",
     defaultValues: {
       orgId: params?.orgId ?? "",
       name: "",
@@ -62,15 +65,7 @@ export const CreateProjectDrawer = () => {
             </FormGroup.Field>
           )}
           <FormGroup.Field>
-            <TextInput
-              placeholder="Organisation ID"
-              label="Organisation ID"
-              required
-              error={errors.orgId?.message}
-              {...register("orgId", {
-                required: "Organisation ID is required",
-              })}
-            />
+            <SelectOrganisationsInput control={control} name="orgId" required />
           </FormGroup.Field>
           <FormGroup.Field>
             <TextInput
@@ -99,20 +94,10 @@ export const CreateProjectDrawer = () => {
             />
           </FormGroup.Field>
           <FormGroup.Field>
-            <label htmlFor="visibility">Visibility</label>
-            <select
-              id="visibility"
-              {...register("visibility")}
-              style={{
-                padding: "8px",
-                borderRadius: "4px",
-                border: "1px solid #e5e5e5",
-                fontSize: "14px",
-              }}
-            >
-              <option value="public">Public</option>
-              <option value="private">Private</option>
-            </select>
+            <Select {...register("visibility")} label="Visibility" required>
+              <Select.Option value="public">Public</Select.Option>
+              <Select.Option value="private">Private</Select.Option>
+            </Select>
           </FormGroup.Field>
           <FormGroup.Field>
             <TextInput
