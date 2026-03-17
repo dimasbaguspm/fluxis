@@ -142,8 +142,8 @@ func (s *Service) ListProjectsByOrgPaged(ctx context.Context, q domain.ProjectsS
 	}, nil
 }
 
-func (s *Service) CreateProject(ctx context.Context, orgId pgtype.UUID, p domain.ProjectCreateModel) (domain.ProjectModel, error) {
-	org, err := s.Org.GetOrgById(ctx, orgId)
+func (s *Service) CreateProject(ctx context.Context, p domain.ProjectCreateModel) (domain.ProjectModel, error) {
+	org, err := s.Org.GetOrgById(ctx, p.OrgID)
 	if err != nil {
 		return domain.ProjectModel{}, err
 	}

@@ -19,10 +19,11 @@ type ProjectModel struct {
 }
 
 type ProjectCreateModel struct {
-	Key         string `json:"key" validate:"required,min=1,max=10"`
-	Name        string `json:"name" validate:"required,min=1,max=100"`
-	Description string `json:"description"`
-	Visibility  string `json:"visibility" validate:"required,oneof=public private"`
+	OrgID       pgtype.UUID `json:"orgId" validate:"required"`
+	Key         string      `json:"key" validate:"required,min=1,max=10"`
+	Name        string      `json:"name" validate:"required,min=1,max=100"`
+	Description string      `json:"description"`
+	Visibility  string      `json:"visibility" validate:"required,oneof=public private"`
 }
 
 type ProjectUpdateModel struct {
@@ -82,7 +83,7 @@ type ProjectReader interface {
 }
 
 type ProjectWriter interface {
-	CreateProject(ctx context.Context, orgId pgtype.UUID, p ProjectCreateModel) (ProjectModel, error)
+	CreateProject(ctx context.Context, p ProjectCreateModel) (ProjectModel, error)
 	UpdateProject(ctx context.Context, id pgtype.UUID, p ProjectUpdateModel) (ProjectModel, error)
 	UpdateProjectVisibility(ctx context.Context, id pgtype.UUID, p ProjectVisibilityModel) (ProjectModel, error)
 	DeleteProject(ctx context.Context, id pgtype.UUID) error

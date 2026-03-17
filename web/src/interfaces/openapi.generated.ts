@@ -167,6 +167,7 @@ export interface DomainProjectCreateModel {
    * @maxLength 100
    */
   name: string;
+  orgId: string;
   visibility: "public" | "private";
 }
 

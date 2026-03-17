@@ -3092,6 +3092,7 @@
             "required": [
                 "key",
                 "name",
+                "orgId",
                 "visibility"
             ],
             "properties": {
@@ -3107,6 +3108,9 @@
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 1
+                },
+                "orgId": {
+                    "type": "string"
                 },
                 "visibility": {
                     "type": "string",

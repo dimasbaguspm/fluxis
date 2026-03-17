@@ -53,19 +53,13 @@ func (h *Handler) ListProjects(w http.ResponseWriter, r *http.Request) {
 //	@Security		BearerAuth
 //	@Router			/projects [post]
 func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
-	orgID, err := httpx.QueryUUID(r, "orgId")
-	if err != nil {
-		httpx.Handle(w, err)
-		return
-	}
-
 	var req domain.ProjectCreateModel
 	if err := httpx.DecodeAndValidate(r, &req); err != nil {
 		httpx.Handle(w, httpx.BadRequest(err.Error()))
 		return
 	}
 
-	project, err := h.svc.CreateProject(r.Context(), orgID, req)
+	project, err := h.svc.CreateProject(r.Context(), req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return

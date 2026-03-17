@@ -26,7 +26,7 @@ func TestProject_List_ByOrg(t *testing.T) {
 	createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Project 2", "public")
 
 	// List projects
-	statusCode, resp := do[domain.ProjectsPagedModel](t, "GET", "/projects?orgId="+orgID, nil, tokens.AccessToken)
+	statusCode, resp := do[domain.ProjectsPagedModel](t, "GET", "/projects", nil, tokens.AccessToken)
 
 	if statusCode != http.StatusOK {
 		t.Fatalf("expected status 200, got %d: %v", statusCode, resp.Error)
@@ -180,13 +180,15 @@ func TestProject_List_FilterByID(t *testing.T) {
 	orgID := uuidToString(orgResp.Data.ID)
 
 	// Create projects
-	_, p1 := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	_, p1 := do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:      orgResp.Data.ID,
 		Key:        randomProjectKey(),
 		Name:       "Project 1",
 		Visibility: "private",
 	}, tokens.AccessToken)
 
-	_, p2 := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	_, p2 := do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:      orgResp.Data.ID,
 		Key:        randomProjectKey(),
 		Name:       "Project 2",
 		Visibility: "public",
@@ -232,19 +234,22 @@ func TestProject_List_FilterByMultipleIDs(t *testing.T) {
 	orgID := uuidToString(orgResp.Data.ID)
 
 	// Create projects
-	_, p1 := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	_, p1 := do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:      orgResp.Data.ID,
 		Key:        randomProjectKey(),
 		Name:       "Project 1",
 		Visibility: "private",
 	}, tokens.AccessToken)
 
-	_, p2 := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	_, p2 := do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:      orgResp.Data.ID,
 		Key:        randomProjectKey(),
 		Name:       "Project 2",
 		Visibility: "public",
 	}, tokens.AccessToken)
 
-	_, p3 := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	_, p3 := do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:      orgResp.Data.ID,
 		Key:        randomProjectKey(),
 		Name:       "Project 3",
 		Visibility: "private",

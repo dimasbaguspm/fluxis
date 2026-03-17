@@ -19,12 +19,11 @@ func TestProject_Create_Success(t *testing.T) {
 		t.Fatalf("failed to create org: status=%d", statusCode)
 	}
 
-	orgID := uuidToString(orgResp.Data.ID)
-
 	// Create project
 	projectKey := randomProjectKey()
 	projectName := "Test Project " + randomString(8)
-	statusCode, resp := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	statusCode, resp := do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:      orgResp.Data.ID,
 		Key:        projectKey,
 		Name:       projectName,
 		Visibility: "private",
@@ -58,7 +57,8 @@ func TestProject_Create_Success(t *testing.T) {
 func TestProject_Create_Unauthenticated(t *testing.T) {
 	orgID := "550e8400-e29b-41d4-a716-446655440000"
 
-	statusCode, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	statusCode, _ := do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:      stringToUUID(orgID),
 		Key:        randomProjectKey(),
 		Name:       "Test Project",
 		Visibility: "private",
@@ -78,7 +78,7 @@ func TestProject_Create_MissingOrgId(t *testing.T) {
 		Visibility: "private",
 	}, tokens.AccessToken)
 
-	if statusCode != http.StatusBadRequest {
+	if statusCode != http.StatusNotFound {
 		t.Fatalf("expected status 400, got %d", statusCode)
 	}
 }
@@ -102,7 +102,8 @@ func TestProject_Create_DuplicateKey(t *testing.T) {
 	createProject(t, orgID, tokens.AccessToken, projectKey, "Project 1", "private")
 
 	// Try to create another project with the same key
-	statusCode, _ = do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	statusCode, _ = do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:      orgResp.Data.ID,
 		Key:        projectKey,
 		Name:       "Project 2",
 		Visibility: "private",
@@ -125,11 +126,10 @@ func TestProject_Create_WithDescription(t *testing.T) {
 		t.Fatalf("failed to create org")
 	}
 
-	orgID := uuidToString(orgResp.Data.ID)
-
 	// Create project with description
 	description := "This is a test project description"
-	statusCode, resp := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	statusCode, resp := do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:       orgResp.Data.ID,
 		Key:         randomProjectKey(),
 		Name:        "Project with Desc",
 		Description: description,
@@ -156,9 +156,8 @@ func TestProject_Create_MissingKey(t *testing.T) {
 		t.Fatalf("failed to create org")
 	}
 
-	orgID := uuidToString(orgResp.Data.ID)
-
-	status, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	status, _ := do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:      orgResp.Data.ID,
 		Key:        "",
 		Name:       "Test Project",
 		Visibility: "private",
@@ -180,9 +179,8 @@ func TestProject_Create_MissingName(t *testing.T) {
 		t.Fatalf("failed to create org")
 	}
 
-	orgID := uuidToString(orgResp.Data.ID)
-
-	status, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	status, _ := do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:      orgResp.Data.ID,
 		Key:        randomProjectKey(),
 		Name:       "",
 		Visibility: "private",
@@ -204,9 +202,8 @@ func TestProject_Create_MissingVisibility(t *testing.T) {
 		t.Fatalf("failed to create org")
 	}
 
-	orgID := uuidToString(orgResp.Data.ID)
-
-	status, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	status, _ := do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:      orgResp.Data.ID,
 		Key:        randomProjectKey(),
 		Name:       "Test Project",
 		Visibility: "",
@@ -228,9 +225,8 @@ func TestProject_Create_InvalidVisibility(t *testing.T) {
 		t.Fatalf("failed to create org")
 	}
 
-	orgID := uuidToString(orgResp.Data.ID)
-
-	status, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	status, _ := do[domain.ProjectModel](t, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:      orgResp.Data.ID,
 		Key:        randomProjectKey(),
 		Name:       "Test Project",
 		Visibility: "protected",
@@ -238,20 +234,6 @@ func TestProject_Create_InvalidVisibility(t *testing.T) {
 
 	if status != http.StatusBadRequest {
 		t.Fatalf("expected status 400, got %d", status)
-	}
-}
-
-func TestProject_Create_InvalidOrgIdFormat(t *testing.T) {
-	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
-
-	statusCode, _ := do[domain.ProjectModel](t, "POST", "/projects?orgId=not-a-uuid", domain.ProjectCreateModel{
-		Key:        randomProjectKey(),
-		Name:       "Test Project",
-		Visibility: "private",
-	}, tokens.AccessToken)
-
-	if statusCode != http.StatusBadRequest {
-		t.Fatalf("expected status 400, got %d", statusCode)
 	}
 }
 

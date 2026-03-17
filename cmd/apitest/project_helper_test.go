@@ -8,7 +8,8 @@ import (
 )
 
 func createProject(tb testing.TB, orgID string, token string, key, name, visibility string) domain.ProjectModel {
-	statusCode, resp := do[domain.ProjectModel](tb, "POST", "/projects?orgId="+orgID, domain.ProjectCreateModel{
+	statusCode, resp := do[domain.ProjectModel](tb, "POST", "/projects", domain.ProjectCreateModel{
+		OrgID:      stringToUUID(orgID),
 		Key:        key,
 		Name:       name,
 		Visibility: visibility,
