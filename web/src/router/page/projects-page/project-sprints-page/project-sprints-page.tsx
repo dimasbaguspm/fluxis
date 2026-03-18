@@ -1,30 +1,31 @@
-import { useState } from "react";
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { dateFormat, FormatDate } from "@/lib";
-import { useListSprints, useListBoards } from "@/hooks/use-api";
+import { useListSprints, useStartSprint, useCompleteSprint } from "@/hooks/use-api";
 import { useDrawer } from "@/providers/drawer";
-import { MenuIcon, PlusIcon, ChevronDownIcon, ChevronRightIcon } from "@versaur/icons";
-import { PageContent, Table } from "@versaur/react/blocks";
-import { ButtonIcon, Text } from "@versaur/react/primitive";
+import { MenuIcon, SearchXIcon } from "@versaur/icons";
+import { NoResults, PageContent, Table } from "@versaur/react/blocks";
 import { useOutletContext } from "react-router";
 import type { ProjectDetailContextType } from "../project-detail-layout";
+import { When } from "@/lib/when";
+import { Badge, Banner, Loader } from "@versaur/react/primitive";
 
 export const ProjectSprintsPage = () => {
   const { projectId } = useOutletContext<ProjectDetailContextType>();
   const { openDrawer } = useDrawer();
-  const [expandedSprintId, setExpandedSprintId] = useState<string | null>(null);
   const [sprints, error, { isLoading }] = useListSprints({ projectId: [projectId] });
+  const [startSprint] = useStartSprint();
+  const [completeSprint] = useCompleteSprint();
 
   const handleOnEditSprint = (sprintId: string) => {
     openDrawer(DRAWER_ROUTES.UPDATE_SPRINT, { sprintId });
   };
 
-  const handleOnAddBoardClick = (sprintId: string) => {
-    openDrawer(DRAWER_ROUTES.CREATE_BOARD, { sprintId });
+  const handleStartSprint = async (sprintId: string) => {
+    await startSprint(sprintId);
   };
 
-  const handleOnEditBoard = (boardId: string) => {
-    openDrawer(DRAWER_ROUTES.UPDATE_BOARD, { boardId });
+  const handleCompleteSprint = async (sprintId: string) => {
+    await completeSprint(sprintId);
   };
 
   if (isLoading) {
@@ -39,177 +40,80 @@ export const ProjectSprintsPage = () => {
 
   return (
     <PageContent>
-      <Table columns="2fr 1fr 1fr 1fr 100px">
-        <Table.Header>
-          <Table.Col as="th">Name</Table.Col>
-          <Table.Col as="th">Status</Table.Col>
-          <Table.Col as="th">Planned Start</Table.Col>
-          <Table.Col as="th">Planned End</Table.Col>
-          <Table.Col as="th">Actions</Table.Col>
-        </Table.Header>
-        <Table.Body>
-          {sprintsList.map((sprint) => (
-            <SprintRow
-              key={sprint.id}
-              sprint={sprint}
-              isExpanded={expandedSprintId === sprint.id}
-              onToggleExpand={() =>
-                setExpandedSprintId(expandedSprintId === sprint.id ? null : sprint.id)
-              }
-              onEditSprint={handleOnEditSprint}
-              onAddBoard={handleOnAddBoardClick}
-              onEditBoard={handleOnEditBoard}
-            />
-          ))}
-        </Table.Body>
-      </Table>
+      <When condition={isLoading}>
+        <Loader type="bar" />
+      </When>
+      <When condition={!isLoading}>
+        <When condition={!!error}>
+          <Banner variant="warning">Failed to load sprints</Banner>
+        </When>
+        <When condition={sprintsList.length === 0}>
+          <NoResults
+            icon={SearchXIcon}
+            title="No sprints found"
+            subtitle="There are no sprints for this project yet."
+          />
+        </When>
+        <When condition={sprintsList.length > 0}>
+          <Table columns="2fr 1fr 1fr 1fr 100px">
+            <Table.Header>
+              <Table.Col as="th">Name</Table.Col>
+              <Table.Col as="th">Status</Table.Col>
+              <Table.Col as="th">Planned Start</Table.Col>
+              <Table.Col as="th">Planned End</Table.Col>
+              <Table.Col as="th">Actions</Table.Col>
+            </Table.Header>
+            <Table.Body>
+              {sprintsList.map((sprint) => (
+                <Table.Row key={sprint.id}>
+                  <Table.Col as="td">{sprint.name}</Table.Col>
+                  <Table.Col as="td">
+                    <Badge
+                      size="small"
+                      variant={
+                        sprint.status === "active"
+                          ? "primary"
+                          : sprint.status === "planned"
+                            ? "info"
+                            : "success"
+                      }
+                    >
+                      {sprint.status.toUpperCase()}
+                    </Badge>
+                  </Table.Col>
+                  <Table.Col as="td">
+                    {sprint.plannedStartedAt
+                      ? dateFormat(sprint.plannedStartedAt, FormatDate.ShortDate)
+                      : "-"}
+                  </Table.Col>
+                  <Table.Col as="td">
+                    {sprint.plannedCompletedAt
+                      ? dateFormat(sprint.plannedCompletedAt, FormatDate.ShortDate)
+                      : "-"}
+                  </Table.Col>
+                  <Table.Col as="td" variant="action">
+                    <Table.Action icon={MenuIcon}>
+                      <Table.ActionItem onClick={() => handleOnEditSprint(sprint.id)}>
+                        Edit
+                      </Table.ActionItem>
+                      {sprint.status === "planned" && (
+                        <Table.ActionItem onClick={() => handleStartSprint(sprint.id)}>
+                          Start
+                        </Table.ActionItem>
+                      )}
+                      {sprint.status === "active" && (
+                        <Table.ActionItem onClick={() => handleCompleteSprint(sprint.id)}>
+                          Complete
+                        </Table.ActionItem>
+                      )}
+                    </Table.Action>
+                  </Table.Col>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table>
+        </When>
+      </When>
     </PageContent>
   );
 };
-
-interface SprintRowProps {
-  sprint: any;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
-  onEditSprint: (sprintId: string) => void;
-  onAddBoard: (sprintId: string) => void;
-  onEditBoard: (boardId: string) => void;
-}
-
-function SprintRow({
-  sprint,
-  isExpanded,
-  onToggleExpand,
-  onEditSprint,
-  onAddBoard,
-  onEditBoard,
-}: SprintRowProps) {
-  const [boards] = useListBoards({ sprintId: [sprint.id] });
-
-  const boardsList = boards?.items || [];
-
-  return (
-    <>
-      <Table.Row key={sprint.id}>
-        <Table.Col as="td">
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <ButtonIcon
-              as={isExpanded ? ChevronDownIcon : ChevronRightIcon}
-              variant="ghost"
-              size="small"
-              onClick={onToggleExpand}
-              aria-label={isExpanded ? "Collapse" : "Expand"}
-            />
-            {sprint.name}
-          </div>
-        </Table.Col>
-        <Table.Col as="td">{sprint.status}</Table.Col>
-        <Table.Col as="td">
-          {sprint.plannedStartedAt
-            ? dateFormat(sprint.plannedStartedAt, FormatDate.ShortDate)
-            : "-"}
-        </Table.Col>
-        <Table.Col as="td">
-          {sprint.plannedCompletedAt
-            ? dateFormat(sprint.plannedCompletedAt, FormatDate.ShortDate)
-            : "-"}
-        </Table.Col>
-        <Table.Col as="td" variant="action">
-          <Table.Action icon={MenuIcon}>
-            <Table.ActionItem onClick={() => onEditSprint(sprint.id)}>Edit Sprint</Table.ActionItem>
-          </Table.Action>
-        </Table.Col>
-      </Table.Row>
-
-      {isExpanded && (
-        <>
-          <Table.Row>
-            <Table.Col
-              as="td"
-              style={{ paddingLeft: "3rem", "--_bg-row": "var(--color-neutral-light)" } as any}
-            >
-              <Text size="xs" weight="medium">
-                Name
-              </Text>
-            </Table.Col>
-            <Table.Col as="td" style={{ "--_bg-row": "var(--color-neutral-light)" } as any} />
-            <Table.Col
-              as="td"
-              style={{ "--_bg-row": "var(--color-neutral-light)" } as any}
-            ></Table.Col>
-            <Table.Col
-              as="td"
-              style={{ "--_bg-row": "var(--color-neutral-light)" } as any}
-            ></Table.Col>
-            <Table.Col
-              as="td"
-              variant="action"
-              style={{ "--_bg-row": "var(--color-neutral-light)" } as any}
-            >
-              <ButtonIcon
-                aria-label="Add board"
-                as={PlusIcon}
-                variant="ghost"
-                size="small"
-                onClick={() => onAddBoard(sprint.id)}
-              />
-            </Table.Col>
-          </Table.Row>
-
-          {boardsList.length === 0 ? (
-            <Table.Row>
-              <Table.Col
-                as="td"
-                style={{ paddingLeft: "3rem", "--_bg-row": "var(--color-neutral-light)" } as any}
-              >
-                <Text size="xs">No boards yet</Text>
-              </Table.Col>
-              <Table.Col as="td" style={{ "--_bg-row": "var(--color-neutral-light)" } as any} />
-              <Table.Col
-                as="td"
-                style={{ "--_bg-row": "var(--color-neutral-light)" } as any}
-              ></Table.Col>
-              <Table.Col
-                as="td"
-                style={{ "--_bg-row": "var(--color-neutral-light)" } as any}
-              ></Table.Col>
-              <Table.Col
-                as="td"
-                style={{ "--_bg-row": "var(--color-neutral-light)" } as any}
-              ></Table.Col>
-            </Table.Row>
-          ) : (
-            boardsList.map((board) => (
-              <Table.Row key={board.id}>
-                <Table.Col
-                  as="td"
-                  style={{ paddingLeft: "3rem", "--_bg-row": "var(--color-neutral-light)" } as any}
-                >
-                  <Text size="xs">{board.name}</Text>
-                </Table.Col>
-                <Table.Col as="td" style={{ "--_bg-row": "var(--color-neutral-light)" } as any} />
-                <Table.Col
-                  as="td"
-                  style={{ "--_bg-row": "var(--color-neutral-light)" } as any}
-                ></Table.Col>
-                <Table.Col
-                  as="td"
-                  style={{ "--_bg-row": "var(--color-neutral-light)" } as any}
-                ></Table.Col>
-                <Table.Col
-                  as="td"
-                  variant="action"
-                  style={{ "--_bg-row": "var(--color-neutral-light)" } as any}
-                >
-                  <Table.Action icon={MenuIcon}>
-                    <Table.ActionItem onClick={() => onEditBoard(board.id)}>Edit</Table.ActionItem>
-                  </Table.Action>
-                </Table.Col>
-              </Table.Row>
-            ))
-          )}
-        </>
-      )}
-    </>
-  );
-}

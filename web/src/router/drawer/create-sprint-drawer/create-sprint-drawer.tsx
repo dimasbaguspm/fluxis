@@ -1,5 +1,5 @@
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
-import { useCreateSprint } from "@/hooks/use-api";
+import { useCreateSprint, useCreateBoard } from "@/hooks/use-api";
 import { useDrawer } from "@/providers/drawer";
 import dayjs from "dayjs";
 import { ButtonGroup, Drawer } from "@versaur/react/blocks";
@@ -12,10 +12,11 @@ import { vMb4 } from "@versaur/core/utilities";
 
 export const CreateSprintDrawer = () => {
   const { closeDrawer, params } = useDrawer<typeof DRAWER_ROUTES.CREATE_SPRINT>();
-  const [createSprint, err, { isPending }] = useCreateSprint();
+  const [createSprint, sprintErr, { isPending: isSprintPending }] = useCreateSprint();
+  const [createBoard, boardErr, { isPending: isBoardPending }] = useCreateBoard();
 
   const onSubmit = async (data: CreateSprintFormInputs) => {
-    await createSprint({
+    const sprintResult = await createSprint({
       projectId: data.projectId,
       name: data.name,
       goal: data.goal,
@@ -26,8 +27,20 @@ export const CreateSprintDrawer = () => {
         ? dayjs(data.plannedCompletedAt).toISOString()
         : undefined,
     });
+
+    // Create associated board if sprint was created successfully
+    if (sprintResult?.data?.id) {
+      await createBoard({
+        sprintId: sprintResult.data.id,
+        name: `${data.name} - Board`,
+      });
+    }
+
     closeDrawer();
   };
+
+  const isPending = isSprintPending || isBoardPending;
+  const err = sprintErr || boardErr;
 
   return (
     <>

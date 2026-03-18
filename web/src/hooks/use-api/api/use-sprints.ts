@@ -23,9 +23,9 @@ interface ListSprintsParams {
  */
 export function useListSprints(
   params?: ListSprintsParams,
-  options?: Omit<UseQueryOptions<DomainSprintsPagedModel>, "queryKey" | "queryFn">,
+  options?: Omit<UseQueryOptions<DomainSprintsPagedModel, HttpxErrBlock>, "queryKey" | "queryFn">,
 ) {
-  return useApiQuery(
+  return useApiQuery<DomainSprintsPagedModel, HttpxErrBlock>(
     queryKeys.sprints.list(params),
     {
       method: "GET",
@@ -95,6 +95,6 @@ export function useStartSprint() {
 export function useCompleteSprint() {
   return useApiMutation<DomainSprintModel, HttpxErrBlock, string>((sprintId) => ({
     method: "POST",
-    path: `/sprints/${sprintId}/complete`,
+    path: `/sprints/${sprintId}/completed`,
   }));
 }

@@ -211,7 +211,6 @@ export interface DomainSprintCreateModel {
   plannedCompletedAt?: string;
   plannedStartedAt?: string;
   projectId: string;
-  status?: "planned" | "active" | "completed";
 }
 
 export interface DomainSprintModel {
@@ -235,7 +234,6 @@ export interface DomainSprintUpdateModel {
   name?: string;
   plannedCompletedAt?: string;
   plannedStartedAt?: string;
-  status?: "planned" | "active" | "completed";
 }
 
 export interface DomainSprintsPagedModel {
