@@ -4,7 +4,7 @@ import { dateFormat, FormatDate } from "@/lib";
 import { useListSprints, useListBoards } from "@/hooks/use-api";
 import { useDrawer } from "@/providers/drawer";
 import { MenuIcon, PlusIcon, ChevronDownIcon, ChevronRightIcon } from "@versaur/icons";
-import { PageContent, PageHeader, Table } from "@versaur/react/blocks";
+import { PageContent, Table } from "@versaur/react/blocks";
 import { ButtonIcon, Text } from "@versaur/react/primitive";
 import { useOutletContext } from "react-router";
 import type { ProjectDetailContextType } from "../project-detail-layout";
@@ -14,10 +14,6 @@ export const ProjectSprintsPage = () => {
   const { openDrawer } = useDrawer();
   const [expandedSprintId, setExpandedSprintId] = useState<string | null>(null);
   const [sprints, error, { isLoading }] = useListSprints({ projectId: [projectId] });
-
-  const handleOnAddSprintClick = () => {
-    openDrawer(DRAWER_ROUTES.CREATE_SPRINT, { projectId });
-  };
 
   const handleOnEditSprint = (sprintId: string) => {
     openDrawer(DRAWER_ROUTES.UPDATE_SPRINT, { sprintId });
@@ -42,50 +38,32 @@ export const ProjectSprintsPage = () => {
   const sprintsList = sprints?.items || [];
 
   return (
-    <>
-      <PageHeader
-        title={
-          <PageHeader.Title
-            action={
-              <ButtonIcon
-                aria-label="Add sprint"
-                as={PlusIcon}
-                variant="ghost"
-                onClick={handleOnAddSprintClick}
-              />
-            }
-          >
-            Sprints
-          </PageHeader.Title>
-        }
-      />
-      <PageContent>
-        <Table columns="2fr 1fr 1fr 1fr 100px">
-          <Table.Header>
-            <Table.Col as="th">Name</Table.Col>
-            <Table.Col as="th">Status</Table.Col>
-            <Table.Col as="th">Planned Start</Table.Col>
-            <Table.Col as="th">Planned End</Table.Col>
-            <Table.Col as="th">Actions</Table.Col>
-          </Table.Header>
-          <Table.Body>
-            {sprintsList.map((sprint) => (
-              <SprintRow
-                key={sprint.id}
-                sprint={sprint}
-                isExpanded={expandedSprintId === sprint.id}
-                onToggleExpand={() =>
-                  setExpandedSprintId(expandedSprintId === sprint.id ? null : sprint.id)
-                }
-                onEditSprint={handleOnEditSprint}
-                onAddBoard={handleOnAddBoardClick}
-                onEditBoard={handleOnEditBoard}
-              />
-            ))}
-          </Table.Body>
-        </Table>
-      </PageContent>
-    </>
+    <PageContent>
+      <Table columns="2fr 1fr 1fr 1fr 100px">
+        <Table.Header>
+          <Table.Col as="th">Name</Table.Col>
+          <Table.Col as="th">Status</Table.Col>
+          <Table.Col as="th">Planned Start</Table.Col>
+          <Table.Col as="th">Planned End</Table.Col>
+          <Table.Col as="th">Actions</Table.Col>
+        </Table.Header>
+        <Table.Body>
+          {sprintsList.map((sprint) => (
+            <SprintRow
+              key={sprint.id}
+              sprint={sprint}
+              isExpanded={expandedSprintId === sprint.id}
+              onToggleExpand={() =>
+                setExpandedSprintId(expandedSprintId === sprint.id ? null : sprint.id)
+              }
+              onEditSprint={handleOnEditSprint}
+              onAddBoard={handleOnAddBoardClick}
+              onEditBoard={handleOnEditBoard}
+            />
+          ))}
+        </Table.Body>
+      </Table>
+    </PageContent>
   );
 };
 

@@ -1,8 +1,8 @@
 import { DEEP_LINKS } from "@/constants/page-routes";
 import { useGetProject } from "@/hooks/use-api";
 import type { DomainProjectModel } from "@interfaces/openapi.generated";
-import { SettingsIcon } from "@versaur/icons";
-import { PageHeader, Tabs } from "@versaur/react/blocks";
+import { SettingsIcon, VerticalMenuIcon } from "@versaur/icons";
+import { ButtonGroup, Menu, PageHeader, Tabs } from "@versaur/react/blocks";
 import { ButtonIcon } from "@versaur/react/primitive";
 import { useDrawer } from "@/providers/drawer";
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
@@ -59,18 +59,44 @@ export const ProjectDetailLayout = () => {
     openDrawer(DRAWER_ROUTES.UPDATE_PROJECT, { projectId });
   };
 
+  const handleOnAddSprintClick = () => {
+    openDrawer(DRAWER_ROUTES.CREATE_SPRINT, { projectId });
+  };
+
+  const handleOnAddBoardClick = () => {
+    openDrawer(DRAWER_ROUTES.CREATE_BOARD, { projectId });
+  };
+
+  const handleOnAddTicketClick = () => {
+    openDrawer(DRAWER_ROUTES.CREATE_TICKET, { projectId });
+  };
+
   return (
     <>
       <PageHeader
         title={
           <PageHeader.Title
             action={
-              <ButtonIcon
-                aria-label="Edit project"
-                as={SettingsIcon}
-                variant="ghost"
-                onClick={handleEditProject}
-              />
+              <ButtonGroup>
+                <ButtonIcon
+                  aria-label="Edit project"
+                  as={SettingsIcon}
+                  variant="ghost"
+                  onClick={handleEditProject}
+                />
+                <ButtonIcon
+                  aria-label="More"
+                  as={VerticalMenuIcon}
+                  variant="ghost"
+                  {...Menu.getTriggerProps({ id: "project-actions-menu" })}
+                />
+
+                <Menu id="project-actions-menu" placement="bottom">
+                  <Menu.Item onClick={handleOnAddTicketClick}>Add Ticket</Menu.Item>
+                  <Menu.Item onClick={handleOnAddBoardClick}>Add Board</Menu.Item>
+                  <Menu.Item onClick={handleOnAddSprintClick}>Add Sprint</Menu.Item>
+                </Menu>
+              </ButtonGroup>
             }
           >
             {project?.name ?? "..."}
@@ -86,6 +112,7 @@ export const ProjectDetailLayout = () => {
           </Tabs>
         }
       />
+
       <Outlet context={contextValue} />
     </>
   );
