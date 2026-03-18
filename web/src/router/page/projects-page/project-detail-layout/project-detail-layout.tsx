@@ -1,17 +1,24 @@
 import { DEEP_LINKS } from "@/constants/page-routes";
-import { useGetProject } from "@/hooks/use-api";
-import type { DomainProjectModel } from "@interfaces/openapi.generated";
+import { useGetProject, useListSprints, useListBoards } from "@/hooks/use-api";
+import type {
+  DomainProjectModel,
+  DomainSprintModel,
+  DomainBoardModel,
+} from "@interfaces/openapi.generated";
 import { SettingsIcon, VerticalMenuIcon } from "@versaur/icons";
-import { ButtonGroup, Menu, PageHeader, Tabs } from "@versaur/react/blocks";
-import { ButtonIcon } from "@versaur/react/primitive";
+import { BadgeGroup, ButtonGroup, Menu, PageHeader, Tabs } from "@versaur/react/blocks";
+import { Badge, ButtonIcon, Text } from "@versaur/react/primitive";
 import { useDrawer } from "@/providers/drawer";
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { useLocation, useNavigate, useParams, Outlet } from "react-router";
 import { vWFull } from "@versaur/core/utilities";
+import { dateFormat, FormatDate } from "@/lib";
 
 export interface ProjectDetailContextType {
   projectId: string;
   project: DomainProjectModel | null;
+  activeSprint: DomainSprintModel | null;
+  activeBoard: DomainBoardModel | null;
 }
 
 export const ProjectDetailLayout = () => {
@@ -21,6 +28,19 @@ export const ProjectDetailLayout = () => {
   const { openDrawer } = useDrawer();
   const [project] = useGetProject(projectId || "");
 
+  const [sprints] = useListSprints({
+    projectId: projectId ? [projectId] : undefined,
+    status: "active",
+  });
+
+  const activeSprint = sprints?.items?.[0] || null;
+
+  const [boards] = useListBoards({
+    sprintId: activeSprint?.id ? [activeSprint.id] : undefined,
+  });
+
+  const activeBoard = boards?.items?.[0] || null;
+
   if (!projectId) {
     return <div>Project not found</div>;
   }
@@ -28,6 +48,8 @@ export const ProjectDetailLayout = () => {
   const contextValue: ProjectDetailContextType = {
     projectId,
     project: project || null,
+    activeSprint,
+    activeBoard,
   };
 
   const activeTab = location.pathname.endsWith("/sprints")
@@ -102,7 +124,26 @@ export const ProjectDetailLayout = () => {
             {project?.name ?? "..."}
           </PageHeader.Title>
         }
-        subtitle={<PageHeader.Subtitle>{project?.key}</PageHeader.Subtitle>}
+        subtitle={
+          <PageHeader.Subtitle>
+            <BadgeGroup>
+              {activeSprint && (
+                <Badge variant="info" size="small">
+                  Sprint: {activeSprint.name}
+                </Badge>
+              )}
+              <Text size="sm">
+                {activeSprint?.startedAt
+                  ? dateFormat(activeSprint?.startedAt, FormatDate.LongDate)
+                  : "TBC"}{" "}
+                -{" "}
+                {activeSprint?.completedAt
+                  ? dateFormat(activeSprint?.completedAt, FormatDate.LongDate)
+                  : "TBC"}
+              </Text>
+            </BadgeGroup>
+          </PageHeader.Subtitle>
+        }
         supplementary={
           <Tabs value={activeTab} onChange={handleTabChange} className={vWFull}>
             <Tabs.Item value="overview">Overview</Tabs.Item>

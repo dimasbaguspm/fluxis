@@ -13,6 +13,7 @@ import { queryKeys } from "../query-keys";
 interface ListSprintsParams {
   id?: string[];
   name?: string;
+  status?: "planned" | "active" | "completed";
   pageNumber?: number;
   pageSize?: number;
   projectId?: string[];

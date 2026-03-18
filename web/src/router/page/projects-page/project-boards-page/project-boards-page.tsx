@@ -1,32 +1,51 @@
 import { Text } from "@versaur/react/primitive";
+import { PageContent } from "@versaur/react/blocks";
 import { useOutletContext } from "react-router";
 import type { ProjectDetailContextType } from "../project-detail-layout";
 import { KanbanBoard } from "./kanban-board";
 
 export const ProjectBoardPage = () => {
-  const { projectId: _projectId } = useOutletContext<ProjectDetailContextType>();
+  const { activeSprint, activeBoard } = useOutletContext<ProjectDetailContextType>();
 
-  // TODO: Get active board from context or route params
-  // For now, using a hardcoded board ID
-  const boardId = "board-1";
-
-  if (!boardId) {
+  if (!activeSprint) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100%",
-          padding: "2rem",
-        }}
-      >
-        <Text size="sm" style={{ color: "#6b7280" }}>
-          No board selected.
-        </Text>
-      </div>
+      <PageContent>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%",
+            padding: "2rem",
+          }}
+        >
+          <Text size="sm" style={{ color: "#6b7280" }}>
+            No active sprint found. Create and start a sprint to view its board.
+          </Text>
+        </div>
+      </PageContent>
     );
   }
 
-  return <KanbanBoard boardId={boardId} />;
-}
+  if (!activeBoard) {
+    return (
+      <PageContent>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%",
+            padding: "2rem",
+          }}
+        >
+          <Text size="sm" style={{ color: "#6b7280" }}>
+            No board found for the active sprint.
+          </Text>
+        </div>
+      </PageContent>
+    );
+  }
+
+  return <KanbanBoard boardId={activeBoard.id} />;
+};

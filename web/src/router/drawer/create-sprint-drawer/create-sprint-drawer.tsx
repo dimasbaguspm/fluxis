@@ -28,10 +28,9 @@ export const CreateSprintDrawer = () => {
         : undefined,
     });
 
-    // Create associated board if sprint was created successfully
-    if (sprintResult?.data?.id) {
+    if (sprintResult?.id) {
       await createBoard({
-        sprintId: sprintResult.data.id,
+        sprintId: sprintResult.id,
         name: `${data.name} - Board`,
       });
     }

@@ -1298,6 +1298,7 @@ export class Api<
          */
         pageSize?: number;
         projectId?: string[];
+        status?: "planned" | "active" | "completed";
       },
       params: RequestParams = {},
     ) =>
