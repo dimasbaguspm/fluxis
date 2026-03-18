@@ -25,7 +25,6 @@ type SprintCreateModel struct {
 	Name               string      `json:"name" validate:"required,min=1"`
 	ProjectID          pgtype.UUID `json:"projectId" validate:"required"`
 	Goal               string      `json:"goal,omitempty"`
-	Status             string      `json:"status,omitempty" validate:"omitempty,oneof=planned active completed"`
 	PlannedStartedAt   string      `json:"plannedStartedAt,omitempty" validate:"omitempty,datetime=2006-01-02T15:04:05.000Z07:00"`
 	PlannedCompletedAt string      `json:"plannedCompletedAt,omitempty" validate:"omitempty,datetime=2006-01-02T15:04:05.000Z07:00"`
 }
@@ -33,7 +32,6 @@ type SprintCreateModel struct {
 type SprintUpdateModel struct {
 	Name               string `json:"name,omitempty" validate:"omitempty,min=1"`
 	Goal               string `json:"goal,omitempty"`
-	Status             string `json:"status,omitempty" validate:"omitempty,oneof=planned active completed"`
 	PlannedStartedAt   string `json:"plannedStartedAt,omitempty" validate:"omitempty,datetime=2006-01-02T15:04:05.000Z07:00"`
 	PlannedCompletedAt string `json:"plannedCompletedAt,omitempty" validate:"omitempty,datetime=2006-01-02T15:04:05.000Z07:00"`
 }

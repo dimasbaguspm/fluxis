@@ -3165,14 +3165,6 @@
                 },
                 "projectId": {
                     "type": "string"
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "planned",
-                        "active",
-                        "completed"
-                    ]
                 }
             }
         },
@@ -3241,14 +3233,6 @@
                 },
                 "plannedStartedAt": {
                     "type": "string"
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "planned",
-                        "active",
-                        "completed"
-                    ]
                 }
             }
         },

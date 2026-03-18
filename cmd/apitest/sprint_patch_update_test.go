@@ -157,3 +157,88 @@ func TestSprint_Update_Unauthenticated(t *testing.T) {
 		t.Fatalf("expected status 401, got %d", statusCode)
 	}
 }
+
+// TestSprint_Update_StatusNotAllowed verifies that status field in PATCH request is not accepted
+// (status can only be changed via /start and /complete endpoints)
+func TestSprint_Update_StatusNotAllowed(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	projectID := uuidToString(project.ID)
+
+	// Create sprint (status should be "planned")
+	sprint := createSprint(t, projectID, tokens.AccessToken, "Test Sprint")
+	sprintID := uuidToString(sprint.ID)
+
+	if sprint.Status != "planned" {
+		t.Fatalf("expected initial status 'planned', got '%s'", sprint.Status)
+	}
+
+	// Try to update status via PATCH (should be rejected as unknown field)
+	updatedName := "Updated Name"
+	statusCode, resp := do[domain.SprintModel](t, "PATCH", "/sprints/"+sprintID, map[string]interface{}{
+		"name":   updatedName,
+		"status": "active", // This should be rejected
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusBadRequest {
+		t.Fatalf("expected status 400 for unknown field 'status', got %d: %v", statusCode, resp.Error)
+	}
+
+	// Verify error message mentions unknown field
+	if resp.Error == nil || resp.Error.Message == "" {
+		t.Fatalf("expected error response")
+	}
+}
+
+// TestSprint_Update_StatusCannotBeChanged verifies that even valid fields update correctly
+// while status field remains absent from the model
+func TestSprint_Update_StatusCannotBeChanged(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	projectID := uuidToString(project.ID)
+
+	// Create sprint and start it
+	sprint := createSprint(t, projectID, tokens.AccessToken, "Test Sprint")
+	sprintID := uuidToString(sprint.ID)
+
+	_, _ = do[domain.SprintModel](t, "POST", "/sprints/"+sprintID+"/start", nil, tokens.AccessToken)
+
+	// Update only name (not status)
+	updatedName := "Updated Name After Start"
+	statusCode, resp := do[domain.SprintModel](t, "PATCH", "/sprints/"+sprintID, domain.SprintUpdateModel{
+		Name: updatedName,
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %v", statusCode, resp.Error)
+	}
+
+	// Verify name was updated but status is still "active" (not changed by PATCH)
+	if resp.Data.Name != updatedName {
+		t.Fatalf("expected name '%s', got '%s'", updatedName, resp.Data.Name)
+	}
+
+	if resp.Data.Status != "active" {
+		t.Fatalf("expected status to remain 'active', got '%s'", resp.Data.Status)
+	}
+}

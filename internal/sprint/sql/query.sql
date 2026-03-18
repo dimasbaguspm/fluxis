@@ -38,7 +38,7 @@ OFFSET $5;
 
 -- name: UpdateSprint :one
 UPDATE sprints
-SET name = $2, goal = $3, status = $4, planned_started_at = $5, planned_completed_at = $6, updated_at = NOW()
+SET name = $2, goal = $3, planned_started_at = $4, planned_completed_at = $5, updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, project_id, name, goal, status, planned_started_at, planned_completed_at, started_at, completed_at, created_at, updated_at, deleted_at;
 
@@ -75,3 +75,4 @@ SELECT EXISTS (
     AND s2.deleted_at IS NULL
     AND s2.id != $1
 ) AS has_active;
+

@@ -319,7 +319,7 @@ func (q *Queries) StartSprint(ctx context.Context, id pgtype.UUID) (Sprint, erro
 
 const updateSprint = `-- name: UpdateSprint :one
 UPDATE sprints
-SET name = $2, goal = $3, status = $4, planned_started_at = $5, planned_completed_at = $6, updated_at = NOW()
+SET name = $2, goal = $3, planned_started_at = $4, planned_completed_at = $5, updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, project_id, name, goal, status, planned_started_at, planned_completed_at, started_at, completed_at, created_at, updated_at, deleted_at
 `
@@ -328,7 +328,6 @@ type UpdateSprintParams struct {
 	ID                 pgtype.UUID        `db:"id" json:"id"`
 	Name               string             `db:"name" json:"name"`
 	Goal               pgtype.Text        `db:"goal" json:"goal"`
-	Status             SprintStatus       `db:"status" json:"status"`
 	PlannedStartedAt   pgtype.Timestamptz `db:"planned_started_at" json:"planned_started_at"`
 	PlannedCompletedAt pgtype.Timestamptz `db:"planned_completed_at" json:"planned_completed_at"`
 }
@@ -338,7 +337,6 @@ func (q *Queries) UpdateSprint(ctx context.Context, arg UpdateSprintParams) (Spr
 		arg.ID,
 		arg.Name,
 		arg.Goal,
-		arg.Status,
 		arg.PlannedStartedAt,
 		arg.PlannedCompletedAt,
 	)

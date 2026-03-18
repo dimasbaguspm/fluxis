@@ -68,11 +68,6 @@ func (s *Service) CreateSprint(ctx context.Context, req domain.SprintCreateModel
 		return domain.SprintModel{}, fmt.Errorf("get project: %w", err)
 	}
 
-	sprintStatus := repository.SprintStatusPlanned
-	if req.Status != "" {
-		sprintStatus = repository.SprintStatus(req.Status)
-	}
-
 	goalText := pgtype.Text{Valid: false}
 	if req.Goal != "" {
 		goalText = pgtype.Text{String: req.Goal, Valid: true}
@@ -100,7 +95,7 @@ func (s *Service) CreateSprint(ctx context.Context, req domain.SprintCreateModel
 		ProjectID:          project.ID,
 		Name:               req.Name,
 		Goal:               goalText,
-		Status:             sprintStatus,
+		Status:             repository.SprintStatusPlanned,
 		PlannedStartedAt:   plannedStart,
 		PlannedCompletedAt: plannedEnd,
 	})
@@ -113,7 +108,7 @@ func (s *Service) CreateSprint(ctx context.Context, req domain.SprintCreateModel
 		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.SprintCreated), "error", err)
 	}
 
-	return toSprintModel(sprint), nil
+	return result, nil
 }
 
 // GetSprint retrieves a single sprint by ID
@@ -184,7 +179,7 @@ func (s *Service) ListSprintsPaged(ctx context.Context, q domain.SprintsSearchMo
 	}, nil
 }
 
-// UpdateSprint updates sprint details
+// UpdateSprint updates sprint details (status changes only via /start and /complete)
 func (s *Service) UpdateSprint(ctx context.Context, id pgtype.UUID, req domain.SprintUpdateModel) (domain.SprintModel, error) {
 	// Get current sprint to preserve existing values
 	current, err := s.Repo.GetSprint(ctx, id)
@@ -204,11 +199,6 @@ func (s *Service) UpdateSprint(ctx context.Context, id pgtype.UUID, req domain.S
 	updatedGoal := current.Goal
 	if req.Goal != "" {
 		updatedGoal = pgtype.Text{String: req.Goal, Valid: true}
-	}
-
-	updatedStatus := current.Status
-	if req.Status != "" {
-		updatedStatus = repository.SprintStatus(req.Status)
 	}
 
 	updatedPlannedStart := current.PlannedStartedAt
@@ -233,7 +223,6 @@ func (s *Service) UpdateSprint(ctx context.Context, id pgtype.UUID, req domain.S
 		ID:                 id,
 		Name:               updatedName,
 		Goal:               updatedGoal,
-		Status:             updatedStatus,
 		PlannedStartedAt:   updatedPlannedStart,
 		PlannedCompletedAt: updatedPlannedComplete,
 	})
@@ -252,7 +241,6 @@ func (s *Service) UpdateSprint(ctx context.Context, id pgtype.UUID, req domain.S
 	return result, nil
 }
 
-// StartSprint transitions a sprint to active status
 func (s *Service) StartSprint(ctx context.Context, id pgtype.UUID) (domain.SprintModel, error) {
 	var hasActiveSibling bool
 

@@ -149,3 +149,54 @@ func TestSprint_Start_DifferentProjectAllowsBothActive(t *testing.T) {
 		t.Fatalf("expected sprint in project 2 to be active")
 	}
 }
+
+// TestSprint_Start_StatusTransition verifies status transitions through lifecycle
+func TestSprint_Start_StatusTransition(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	projectID := uuidToString(project.ID)
+
+	// Create sprint and verify initial status
+	sprint := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	sprintID := uuidToString(sprint.ID)
+
+	if sprint.Status != "planned" {
+		t.Fatalf("expected initial status 'planned', got '%s'", sprint.Status)
+	}
+
+	// Get sprint and verify status is still planned
+	_, getResp := do[domain.SprintModel](t, "GET", "/sprints/"+sprintID, nil, tokens.AccessToken)
+	if getResp.Data.Status != "planned" {
+		t.Fatalf("expected GET response status 'planned', got '%s'", getResp.Data.Status)
+	}
+
+	// Start sprint
+	_, startResp := do[domain.SprintModel](t, "POST", "/sprints/"+sprintID+"/start", nil, tokens.AccessToken)
+	if startResp.Data.Status != "active" {
+		t.Fatalf("expected status 'active' after start, got '%s'", startResp.Data.Status)
+	}
+
+	if startResp.Data.StartedAt == nil {
+		t.Fatal("expected StartedAt to be set after start")
+	}
+
+	// Complete sprint
+	_, completeResp := do[domain.SprintModel](t, "POST", "/sprints/"+sprintID+"/completed", nil, tokens.AccessToken)
+	if completeResp.Data.Status != "completed" {
+		t.Fatalf("expected status 'completed' after complete, got '%s'", completeResp.Data.Status)
+	}
+
+	if completeResp.Data.CompletedAt == nil {
+		t.Fatal("expected CompletedAt to be set after complete")
+	}
+}
