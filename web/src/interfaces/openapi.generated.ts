@@ -257,6 +257,7 @@ export interface DomainTicketCreateModel {
   description?: string;
   dueDate?: string;
   priority: "low" | "medium" | "high" | "critical";
+  projectId: string;
   sprintId?: string;
   /** @min 0 */
   storyPoints?: number;
@@ -659,7 +660,7 @@ export class Api<
   };
   boards = {
     /**
-     * @description Returns all boards in a sprint with pagination
+     * @description Returns all boards in a sprint or project with pagination
      *
      * @tags board
      * @name BoardsList
@@ -678,6 +679,7 @@ export class Api<
          * @max 100
          */
         pageSize?: number;
+        projectId?: string[];
         sprintId?: string[];
       },
       params: RequestParams = {},
@@ -1485,17 +1487,12 @@ export class Api<
      * @secure
      */
     ticketsCreate: (
-      query: {
-        /** Project ID */
-        projectId: string;
-      },
       body: DomainTicketCreateModel,
       params: RequestParams = {},
     ) =>
       this.request<DomainTicketModel, HttpxErrBlock>({
         path: `/tickets`,
         method: "POST",
-        query: query,
         body: body,
         secure: true,
         type: ContentType.Json,

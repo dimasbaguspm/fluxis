@@ -20,6 +20,7 @@ interface ListBoardsParams {
   pageNumber?: number;
   pageSize?: number;
   sprintId?: string[];
+  projectId?: string[];
 }
 
 /**

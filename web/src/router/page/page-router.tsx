@@ -16,7 +16,7 @@ import {
   ProjectDetailLayout,
   ProjectOverviewPage,
   ProjectSprintsPage,
-  ProjectBoardsPage,
+  ProjectBoardPage,
   ProjectTicketsPage,
 } from "./projects-page";
 import { SettingsPage } from "./settings-page";
@@ -103,7 +103,7 @@ export const router = createBrowserRouter([
                 children: [
                   { index: true, element: <ProjectOverviewPage /> },
                   { path: "sprints", element: <ProjectSprintsPage /> },
-                  { path: "boards", element: <ProjectBoardsPage /> },
+                  { path: "boards", element: <ProjectBoardPage /> },
                   { path: "tickets", element: <ProjectTicketsPage /> },
                 ],
               },
