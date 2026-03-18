@@ -1,59 +1,48 @@
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
-import { dateFormat, FormatDate } from "@/lib";
-import { useListTickets } from "@/hooks/use-api";
+import { useListSprints } from "@/hooks/use-api";
 import { useDrawer } from "@/providers/drawer";
-import { MenuIcon } from "@versaur/icons";
-import { PageContent, Table } from "@versaur/react/blocks";
+import { PageContent } from "@versaur/react/blocks";
 import { useOutletContext } from "react-router";
+import { SprintGroup } from "./components/sprint-group";
+import { BacklogGroup } from "./components/backlog-group";
 import type { ProjectDetailContextType } from "../project-detail-layout";
 
 export const ProjectTicketsPage = () => {
   const { projectId } = useOutletContext<ProjectDetailContextType>();
   const { openDrawer } = useDrawer();
-  const [tickets, error, { isLoading }] = useListTickets({ projectId: [projectId], pageSize: 20 });
+  const [sprints, sprintsError, { isLoading: isLoadingSprints }] = useListSprints({
+    projectId: [projectId],
+    pageSize: 50,
+  });
 
   const handleOnEditTicket = (ticketId: string) => {
     openDrawer(DRAWER_ROUTES.UPDATE_TICKET, { ticketId });
   };
 
-  if (isLoading) {
-    return <PageContent>Loading tickets...</PageContent>;
+  if (isLoadingSprints) {
+    return <PageContent>Loading sprints...</PageContent>;
   }
 
-  if (error) {
-    return <PageContent>Error loading tickets</PageContent>;
+  if (sprintsError) {
+    return <PageContent>Error loading sprints</PageContent>;
   }
 
-  const ticketsList = tickets?.items || [];
+  const sprintsList = sprints?.items || [];
 
   return (
     <PageContent>
-      <Table columns="1fr 100px 100px 1fr 100px">
-        <Table.Header>
-          <Table.Col as="th">Title</Table.Col>
-          <Table.Col as="th">Type</Table.Col>
-          <Table.Col as="th">Priority</Table.Col>
-          <Table.Col as="th">Updated</Table.Col>
-          <Table.Col as="th">Actions</Table.Col>
-        </Table.Header>
-        <Table.Body>
-          {ticketsList.map((ticket) => (
-            <Table.Row key={ticket.id}>
-              <Table.Col as="td">{ticket.title}</Table.Col>
-              <Table.Col as="td">{ticket.type}</Table.Col>
-              <Table.Col as="td">{ticket.priority}</Table.Col>
-              <Table.Col as="td">{dateFormat(ticket.updatedAt, FormatDate.ShortDate)}</Table.Col>
-              <Table.Col as="td" variant="action">
-                <Table.Action icon={MenuIcon}>
-                  <Table.ActionItem onClick={() => handleOnEditTicket(ticket.id)}>
-                    Edit
-                  </Table.ActionItem>
-                </Table.Action>
-              </Table.Col>
-            </Table.Row>
+      {sprintsList.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "2rem", color: "#999" }}>
+          No sprints found for this project
+        </div>
+      ) : (
+        <>
+          {sprintsList.map((sprint) => (
+            <SprintGroup key={sprint.id} sprint={sprint} onEditTicket={handleOnEditTicket} />
           ))}
-        </Table.Body>
-      </Table>
+          <BacklogGroup projectId={projectId} onEditTicket={handleOnEditTicket} />
+        </>
+      )}
     </PageContent>
   );
 };

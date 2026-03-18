@@ -1,3 +1,4 @@
+import { DEEP_LINKS } from "@/constants";
 import { cx } from "@/lib";
 import { getInitials } from "@lib/get-initials";
 import { useSessionState } from "@providers/session";
@@ -7,7 +8,6 @@ import { Sidebar } from "@versaur/react/blocks";
 import { Avatar, ButtonIcon, Heading, Icon } from "@versaur/react/primitive";
 import { Link, useLocation } from "react-router";
 import { SIDEBAR_NAV_ITEMS } from "./sidebar-nav-config";
-import { DEEP_LINKS } from "@/constants";
 
 export const SidebarNavigation = () => {
   const location = useLocation();
