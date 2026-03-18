@@ -11,7 +11,14 @@ import { BoardsPage } from "./boards-page";
 import { DashboardPage } from "./dashboard-page";
 import { OrganizationsPage } from "./organizations-page";
 import { ProfilePage } from "./profile-page";
-import { ProjectsPage } from "./projects-page";
+import {
+  ProjectsPage,
+  ProjectDetailLayout,
+  ProjectOverviewPage,
+  ProjectSprintsPage,
+  ProjectBoardsPage,
+  ProjectTicketsPage,
+} from "./projects-page";
 import { SettingsPage } from "./settings-page";
 import { SignInPage } from "./sign-in-page";
 import { SignUpPage } from "./sign-up-page";
@@ -88,7 +95,19 @@ export const router = createBrowserRouter([
           },
           {
             path: PAGES.PROJECTS,
-            element: <ProjectsPage />,
+            children: [
+              { index: true, element: <ProjectsPage /> },
+              {
+                path: ":projectId",
+                element: <ProjectDetailLayout />,
+                children: [
+                  { index: true, element: <ProjectOverviewPage /> },
+                  { path: "sprints", element: <ProjectSprintsPage /> },
+                  { path: "boards", element: <ProjectBoardsPage /> },
+                  { path: "tickets", element: <ProjectTicketsPage /> },
+                ],
+              },
+            ],
           },
           {
             path: PAGES.SPRINTS,

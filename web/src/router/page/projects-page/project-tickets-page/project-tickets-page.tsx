@@ -1,39 +1,37 @@
-import { DEEP_LINKS } from "@/constants/page-routes";
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { dateFormat, FormatDate } from "@/lib";
-import { useListProjects } from "@/hooks/use-api";
+import { useListTickets } from "@/hooks/use-api";
 import { useDrawer } from "@/providers/drawer";
 import { MenuIcon, PlusIcon } from "@versaur/icons";
 import { PageContent, PageHeader, Table } from "@versaur/react/blocks";
 import { ButtonIcon, Text } from "@versaur/react/primitive";
-import { useNavigate } from "react-router";
+import { useOutletContext } from "react-router";
+import type { ProjectDetailContextType } from "../project-detail-layout";
 
-export const ProjectsPage = () => {
+export const ProjectTicketsPage = () => {
+  const { projectId } = useOutletContext<ProjectDetailContextType>();
   const { openDrawer } = useDrawer();
-  const navigate = useNavigate();
-  const [projects, error, { isLoading }] = useListProjects();
+  const [tickets, error, { isLoading }] = useListTickets(
+    { projectId: [projectId], pageSize: 20 },
+  );
 
   const handleOnAddButtonClick = () => {
-    openDrawer(DRAWER_ROUTES.CREATE_PROJECT);
+    openDrawer(DRAWER_ROUTES.CREATE_TICKET, { projectId });
   };
 
-  const handleOnEditProject = (projectId: string) => {
-    openDrawer(DRAWER_ROUTES.UPDATE_PROJECT, { projectId: projectId });
-  };
-
-  const handleProjectNameClick = (projectId: string) => {
-    navigate(DEEP_LINKS.PROJECT_DETAILS(projectId));
+  const handleOnEditTicket = (ticketId: string) => {
+    openDrawer(DRAWER_ROUTES.UPDATE_TICKET, { ticketId });
   };
 
   if (isLoading) {
-    return <div>Loading projects...</div>;
+    return <PageContent>Loading tickets...</PageContent>;
   }
 
   if (error) {
-    return <div>Error loading projects</div>;
+    return <PageContent>Error loading tickets</PageContent>;
   }
 
-  const projectsList = projects?.items || [];
+  const ticketsList = tickets?.items || [];
 
   return (
     <>
@@ -42,20 +40,20 @@ export const ProjectsPage = () => {
           <PageHeader.Title
             action={
               <ButtonIcon
-                aria-label="Add project"
+                aria-label="Add ticket"
                 as={PlusIcon}
                 variant="ghost"
                 onClick={handleOnAddButtonClick}
               />
             }
           >
-            Projects
+            Tickets
           </PageHeader.Title>
         }
-        subtitle={<PageHeader.Subtitle>Manage your projects</PageHeader.Subtitle>}
       />
+
       <PageContent>
-        <Table columns="40px 2fr 1fr 1fr 1fr 100px">
+        <Table columns="40px 1fr 100px 100px 1fr 100px">
           <Table.Toolbar
             leftContent={(selectedIds) => (
               <Text size="xs">
@@ -72,31 +70,25 @@ export const ProjectsPage = () => {
             <Table.Col as="th" variant="checkbox">
               <Table.Checkbox isMain />
             </Table.Col>
-            <Table.Col as="th">Name</Table.Col>
-            <Table.Col as="th">Key</Table.Col>
-            <Table.Col as="th">Visibility</Table.Col>
+            <Table.Col as="th">Title</Table.Col>
+            <Table.Col as="th">Type</Table.Col>
+            <Table.Col as="th">Priority</Table.Col>
             <Table.Col as="th">Updated</Table.Col>
             <Table.Col as="th">Actions</Table.Col>
           </Table.Header>
           <Table.Body>
-            {projectsList.map((project) => (
-              <Table.Row key={project.id}>
+            {ticketsList.map((ticket) => (
+              <Table.Row key={ticket.id}>
                 <Table.Col as="td" variant="checkbox">
-                  <Table.Checkbox rowId={project.id} />
+                  <Table.Checkbox rowId={ticket.id} />
                 </Table.Col>
-                <Table.Col
-                  as="td"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleProjectNameClick(project.id)}
-                >
-                  {project.name}
-                </Table.Col>
-                <Table.Col as="td">{project.key}</Table.Col>
-                <Table.Col as="td">{project.visibility}</Table.Col>
-                <Table.Col as="td">{dateFormat(project.updatedAt, FormatDate.ShortDate)}</Table.Col>
+                <Table.Col as="td">{ticket.title}</Table.Col>
+                <Table.Col as="td">{ticket.type}</Table.Col>
+                <Table.Col as="td">{ticket.priority}</Table.Col>
+                <Table.Col as="td">{dateFormat(ticket.updatedAt, FormatDate.ShortDate)}</Table.Col>
                 <Table.Col as="td" variant="action">
                   <Table.Action icon={MenuIcon}>
-                    <Table.ActionItem onClick={() => handleOnEditProject(project.id)}>
+                    <Table.ActionItem onClick={() => handleOnEditTicket(ticket.id)}>
                       Edit
                     </Table.ActionItem>
                   </Table.Action>

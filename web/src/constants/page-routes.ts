@@ -31,9 +31,10 @@ export const DEEP_LINKS = {
   // Projects
   PROJECTS: PAGES.PROJECTS,
   PROJECT_DETAILS: (projectId: string) => `/projects/${projectId}`,
-  PROJECT_BOARD: (projectId: string) => `/projects/${projectId}/boards`,
-  PROJECT_BOARD_DETAIL: (projectId: string, boardId: string) =>
-    `/projects/${projectId}/boards/${boardId}`,
+  PROJECT_OVERVIEW: (projectId: string) => `/projects/${projectId}`,
+  PROJECT_SPRINTS: (projectId: string) => `/projects/${projectId}/sprints`,
+  PROJECT_BOARDS: (projectId: string) => `/projects/${projectId}/boards`,
+  PROJECT_TICKETS: (projectId: string) => `/projects/${projectId}/tickets`,
 
   // Sprints
   SPRINTS: PAGES.SPRINTS,

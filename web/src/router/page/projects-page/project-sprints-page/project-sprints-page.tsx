@@ -1,39 +1,37 @@
-import { DEEP_LINKS } from "@/constants/page-routes";
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { dateFormat, FormatDate } from "@/lib";
-import { useListProjects } from "@/hooks/use-api";
+import { useListSprints } from "@/hooks/use-api";
 import { useDrawer } from "@/providers/drawer";
 import { MenuIcon, PlusIcon } from "@versaur/icons";
 import { PageContent, PageHeader, Table } from "@versaur/react/blocks";
 import { ButtonIcon, Text } from "@versaur/react/primitive";
-import { useNavigate } from "react-router";
+import { useOutletContext } from "react-router";
+import type { ProjectDetailContextType } from "../project-detail-layout";
 
-export const ProjectsPage = () => {
+export const ProjectSprintsPage = () => {
+  const { projectId } = useOutletContext<ProjectDetailContextType>();
   const { openDrawer } = useDrawer();
-  const navigate = useNavigate();
-  const [projects, error, { isLoading }] = useListProjects();
+  const [sprints, error, { isLoading }] = useListSprints(
+    { projectId: [projectId] },
+  );
 
   const handleOnAddButtonClick = () => {
-    openDrawer(DRAWER_ROUTES.CREATE_PROJECT);
+    openDrawer(DRAWER_ROUTES.CREATE_SPRINT, { projectId });
   };
 
-  const handleOnEditProject = (projectId: string) => {
-    openDrawer(DRAWER_ROUTES.UPDATE_PROJECT, { projectId: projectId });
-  };
-
-  const handleProjectNameClick = (projectId: string) => {
-    navigate(DEEP_LINKS.PROJECT_DETAILS(projectId));
+  const handleOnEditSprint = (sprintId: string) => {
+    openDrawer(DRAWER_ROUTES.UPDATE_SPRINT, { sprintId });
   };
 
   if (isLoading) {
-    return <div>Loading projects...</div>;
+    return <PageContent>Loading sprints...</PageContent>;
   }
 
   if (error) {
-    return <div>Error loading projects</div>;
+    return <PageContent>Error loading sprints</PageContent>;
   }
 
-  const projectsList = projects?.items || [];
+  const sprintsList = sprints?.items || [];
 
   return (
     <>
@@ -42,17 +40,16 @@ export const ProjectsPage = () => {
           <PageHeader.Title
             action={
               <ButtonIcon
-                aria-label="Add project"
+                aria-label="Add sprint"
                 as={PlusIcon}
                 variant="ghost"
                 onClick={handleOnAddButtonClick}
               />
             }
           >
-            Projects
+            Sprints
           </PageHeader.Title>
         }
-        subtitle={<PageHeader.Subtitle>Manage your projects</PageHeader.Subtitle>}
       />
       <PageContent>
         <Table columns="40px 2fr 1fr 1fr 1fr 100px">
@@ -73,30 +70,32 @@ export const ProjectsPage = () => {
               <Table.Checkbox isMain />
             </Table.Col>
             <Table.Col as="th">Name</Table.Col>
-            <Table.Col as="th">Key</Table.Col>
-            <Table.Col as="th">Visibility</Table.Col>
-            <Table.Col as="th">Updated</Table.Col>
+            <Table.Col as="th">Status</Table.Col>
+            <Table.Col as="th">Planned Start</Table.Col>
+            <Table.Col as="th">Planned End</Table.Col>
             <Table.Col as="th">Actions</Table.Col>
           </Table.Header>
           <Table.Body>
-            {projectsList.map((project) => (
-              <Table.Row key={project.id}>
+            {sprintsList.map((sprint) => (
+              <Table.Row key={sprint.id}>
                 <Table.Col as="td" variant="checkbox">
-                  <Table.Checkbox rowId={project.id} />
+                  <Table.Checkbox rowId={sprint.id} />
                 </Table.Col>
-                <Table.Col
-                  as="td"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleProjectNameClick(project.id)}
-                >
-                  {project.name}
+                <Table.Col as="td">{sprint.name}</Table.Col>
+                <Table.Col as="td">{sprint.status}</Table.Col>
+                <Table.Col as="td">
+                  {sprint.plannedStartedAt
+                    ? dateFormat(sprint.plannedStartedAt, FormatDate.ShortDate)
+                    : "-"}
                 </Table.Col>
-                <Table.Col as="td">{project.key}</Table.Col>
-                <Table.Col as="td">{project.visibility}</Table.Col>
-                <Table.Col as="td">{dateFormat(project.updatedAt, FormatDate.ShortDate)}</Table.Col>
+                <Table.Col as="td">
+                  {sprint.plannedCompletedAt
+                    ? dateFormat(sprint.plannedCompletedAt, FormatDate.ShortDate)
+                    : "-"}
+                </Table.Col>
                 <Table.Col as="td" variant="action">
                   <Table.Action icon={MenuIcon}>
-                    <Table.ActionItem onClick={() => handleOnEditProject(project.id)}>
+                    <Table.ActionItem onClick={() => handleOnEditSprint(sprint.id)}>
                       Edit
                     </Table.ActionItem>
                   </Table.Action>
