@@ -75,8 +75,8 @@ type TicketCreateModel struct {
 	Priority    string      `json:"priority" validate:"required,oneof=low medium high critical"`
 	Title       string      `json:"title" validate:"required,min=1,max=255"`
 	Description string      `json:"description"`
-	AssigneeID  pgtype.UUID `json:"assigneeId" validate:"omitempty,uuid4"`
-	SprintID    pgtype.UUID `json:"sprintId" validate:"omitempty,uuid4"`
+	AssigneeID  pgtype.UUID `json:"assigneeId" validate:"omitempty"`
+	SprintID    pgtype.UUID `json:"sprintId" validate:"omitempty"`
 	StoryPoints int32       `json:"storyPoints" validate:"omitempty,min=0"`
 	DueDate     time.Time   `json:"dueDate" validate:"omitempty,datetime=2006-01-02T15:04:05.000Z07:00"`
 }
@@ -86,8 +86,8 @@ type TicketUpdateModel struct {
 	Description string      `json:"description,omitempty"`
 	Type        string      `json:"type,omitempty" validate:"omitempty,oneof=bug story task epic"`
 	Priority    string      `json:"priority,omitempty" validate:"omitempty,oneof=low medium high critical"`
-	AssigneeID  pgtype.UUID `json:"assigneeId,omitempty" validate:"omitempty,uuid4"`
-	SprintID    pgtype.UUID `json:"sprintId,omitempty" validate:"omitempty,uuid4"`
+	AssigneeID  pgtype.UUID `json:"assigneeId,omitempty" validate:"omitempty"`
+	SprintID    pgtype.UUID `json:"sprintId,omitempty" validate:"omitempty"`
 	StoryPoints int32       `json:"storyPoints,omitempty" validate:"omitempty,min=0"`
 	DueDate     time.Time   `json:"dueDate,omitempty"`
 }

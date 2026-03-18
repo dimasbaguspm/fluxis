@@ -1,4 +1,4 @@
-import { SelectProjectsInput } from "@/components/ui";
+import { SelectProjectsInput, SelectSprintsInput } from "@/components/ui";
 import { When } from "@/lib/when";
 import { FormGroup } from "@versaur/react/blocks";
 import { Select, TextArea, TextInput } from "@versaur/react/forms";
@@ -9,9 +9,10 @@ import type { CreateTicketFormInputs } from "./types";
 interface CreateTicketFormProps {
   onSubmit: (data: CreateTicketFormInputs) => void;
   projectId?: string;
+  sprintId?: string;
 }
 
-export const CreateTicketForm = ({ onSubmit, projectId }: CreateTicketFormProps) => {
+export const CreateTicketForm = ({ onSubmit, projectId, sprintId }: CreateTicketFormProps) => {
   const {
     register,
     formState: { errors },
@@ -25,7 +26,7 @@ export const CreateTicketForm = ({ onSubmit, projectId }: CreateTicketFormProps)
       type: "",
       priority: "",
       description: "",
-      sprintId: "",
+      sprintId: sprintId ?? "",
       storyPoints: undefined,
       dueDate: "",
     },
@@ -36,6 +37,11 @@ export const CreateTicketForm = ({ onSubmit, projectId }: CreateTicketFormProps)
       <When condition={!projectId}>
         <FormGroup.Field>
           <SelectProjectsInput control={control} name="projectId" required />
+        </FormGroup.Field>
+      </When>
+      <When condition={!sprintId}>
+        <FormGroup.Field>
+          <SelectSprintsInput control={control} name="sprintId" projectId={projectId} />
         </FormGroup.Field>
       </When>
       <FormGroup.Field>

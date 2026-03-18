@@ -34,6 +34,9 @@ export const UpdateTicketForm = ({ onSubmit, ticket }: UpdateTicketFormProps) =>
   return (
     <FormGroup id={UPDATE_TICKET_FORM_ID} onSubmit={handleSubmit(onSubmit)}>
       <FormGroup.Field>
+        <SelectSprintsInput control={control} name="sprintId" projectId={ticket.projectId} />
+      </FormGroup.Field>
+      <FormGroup.Field>
         <TextInput
           placeholder="Ticket Title"
           label="Title"
@@ -61,9 +64,7 @@ export const UpdateTicketForm = ({ onSubmit, ticket }: UpdateTicketFormProps) =>
           ))}
         </Select>
       </FormGroup.Field>
-      <FormGroup.Field>
-        <SelectSprintsInput control={control} name="sprintId" />
-      </FormGroup.Field>
+
       <FormGroup.Field>
         <TextInput
           placeholder="Story Points"

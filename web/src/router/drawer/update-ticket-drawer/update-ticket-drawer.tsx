@@ -1,5 +1,5 @@
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
-import { useGetTicket, useUpdateTicket } from "@/hooks/use-api";
+import { useGetTicket, useMoveToSprint, useUpdateTicket } from "@/hooks/use-api";
 import { dateFormat, FormatDate } from "@/lib";
 import { When } from "@/lib/when";
 import { useDrawer } from "@/providers/drawer";
@@ -15,7 +15,8 @@ export const UpdateTicketDrawer = () => {
   const ticketId = params?.ticketId ?? "";
 
   const [ticket, , { isLoading: isLoadingTicket }] = useGetTicket(ticketId);
-  const [updateTicket, err, { isPending }] = useUpdateTicket();
+  const [updateTicket, err, { isPending: isUpdateTicketPending }] = useUpdateTicket();
+  const [moveToSprint, errMoveToSprint, { isPending: isMoveToSprintPending }] = useMoveToSprint();
 
   const onSubmit = async (data: UpdateTicketFormInputs) => {
     if (!ticketId) return;
@@ -31,8 +32,17 @@ export const UpdateTicketDrawer = () => {
         dueDate: data?.dueDate ? dateFormat(data.dueDate, FormatDate.ISO) : undefined,
       },
     });
+
+    if (data.sprintId && data.sprintId !== ticket?.sprintId) {
+      await moveToSprint({ ticketId, move: { sprintId: data.sprintId } });
+    } else if (!data.sprintId && ticket?.sprintId) {
+      await moveToSprint({ ticketId, move: { sprintId: undefined } });
+    }
     closeDrawer();
   };
+
+  const errMessage = err?.message || errMoveToSprint?.message;
+  const isPending = isUpdateTicketPending || isMoveToSprintPending;
 
   return (
     <>
@@ -52,8 +62,8 @@ export const UpdateTicketDrawer = () => {
             />
           </When>
           <When condition={!!ticket}>
-            <When condition={err?.message}>
-              <Banner variant="warning">{err?.message}</Banner>
+            <When condition={errMessage}>
+              <Banner variant="warning">{errMessage}</Banner>
             </When>
             <UpdateTicketForm ticket={ticket!} onSubmit={onSubmit} />
           </When>

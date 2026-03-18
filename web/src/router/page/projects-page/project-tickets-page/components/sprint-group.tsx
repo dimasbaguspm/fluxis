@@ -9,9 +9,17 @@ interface SprintGroupProps {
   sprint: DomainSprintModel;
   onEditTicket: (ticketId: string) => void;
   onMoveTicket?: (ticketId: string, targetSprintId: string | null) => void;
+  onCreateTicket?: (sprintId?: string) => void;
+  onStartSprint?: (sprintId: string) => void;
 }
 
-export const SprintGroup = ({ sprint, onEditTicket, onMoveTicket }: SprintGroupProps) => {
+export const SprintGroup = ({
+  sprint,
+  onEditTicket,
+  onMoveTicket,
+  onCreateTicket,
+  onStartSprint,
+}: SprintGroupProps) => {
   const [tickets, error, { isLoading }] = useListTickets({
     projectId: [sprint.projectId],
     sprintId: [sprint.id],
@@ -59,6 +67,18 @@ export const SprintGroup = ({ sprint, onEditTicket, onMoveTicket }: SprintGroupP
         ticketCount={ticketsList.length}
         totalStoryPoints={totalStoryPoints}
         sprint={sprint}
+        actions={
+          onCreateTicket || (onStartSprint && sprint.status !== "active")
+            ? [
+                ...(onCreateTicket
+                  ? [{ label: "Create Ticket", onClick: () => onCreateTicket(sprint.id) }]
+                  : []),
+                ...(onStartSprint && sprint.status !== "active"
+                  ? [{ label: "Start Sprint", onClick: () => onStartSprint(sprint.id) }]
+                  : []),
+              ]
+            : undefined
+        }
       />
       {error ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "#d32f2f" }}>

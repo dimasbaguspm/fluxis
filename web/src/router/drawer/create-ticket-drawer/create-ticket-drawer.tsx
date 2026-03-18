@@ -1,5 +1,5 @@
 import type { DRAWER_ROUTES } from "@/constants/drawer-routes";
-import { useCreateTicket } from "@/hooks/use-api";
+import { useCreateTicket, useMoveToSprint } from "@/hooks/use-api";
 import { useDrawer } from "@/providers/drawer";
 import { ButtonGroup, Drawer } from "@versaur/react/blocks";
 import { Banner, Button } from "@versaur/react/primitive";
@@ -9,10 +9,12 @@ import type { CreateTicketFormInputs } from "./types";
 
 export const CreateTicketDrawer = () => {
   const { closeDrawer, params } = useDrawer<typeof DRAWER_ROUTES.CREATE_TICKET>();
-  const [createTicket, err, { isPending }] = useCreateTicket();
+
+  const [createTicket, errCreateTicket, { isPending: isCreateTicketPending }] = useCreateTicket();
+  const [moveToSprint, errMoveToSprint, { isPending: isMoveToSprintPending }] = useMoveToSprint();
 
   const onSubmit = async (data: CreateTicketFormInputs) => {
-    await createTicket({
+    const ticket = await createTicket({
       projectId: data.projectId,
       data: {
         projectId: data.projectId,
@@ -25,8 +27,15 @@ export const CreateTicketDrawer = () => {
         dueDate: data.dueDate ? data.dueDate : undefined,
       },
     });
+
+    if (data.sprintId) {
+      await moveToSprint({ ticketId: ticket.id, move: { sprintId: data.sprintId } });
+    }
     closeDrawer();
   };
+
+  const errMessage = errCreateTicket?.message || errMoveToSprint?.message;
+  const isPending = isCreateTicketPending || isMoveToSprintPending;
 
   return (
     <>
@@ -34,12 +43,12 @@ export const CreateTicketDrawer = () => {
         <Drawer.Title>Create Ticket</Drawer.Title>
       </Drawer.Header>
       <Drawer.Body>
-        {err && (
-          <Banner variant="warning" style={{ marginBottom: "1rem" }}>
-            {err?.message}
-          </Banner>
-        )}
-        <CreateTicketForm projectId={params?.projectId} onSubmit={onSubmit} />
+        {errMessage && <Banner variant="warning">{errMessage}</Banner>}
+        <CreateTicketForm
+          projectId={params?.projectId}
+          sprintId={params?.sprintId}
+          onSubmit={onSubmit}
+        />
       </Drawer.Body>
       <Drawer.Footer>
         <ButtonGroup fluid>

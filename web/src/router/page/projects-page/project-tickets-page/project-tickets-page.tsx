@@ -28,6 +28,15 @@ export const ProjectTicketsPage = () => {
     }
   };
 
+  const handleCreateTicket = (sprintId: string | undefined) => {
+    openDrawer(DRAWER_ROUTES.CREATE_TICKET, { projectId, sprintId });
+  };
+
+  const handleStartSprint = (sprintId: string) => {
+    // TODO: Implement start sprint functionality
+    console.log("Start sprint:", sprintId);
+  };
+
   if (isLoadingSprints) {
     return <PageContent>Loading sprints...</PageContent>;
   }
@@ -46,12 +55,15 @@ export const ProjectTicketsPage = () => {
           sprint={sprint}
           onEditTicket={handleOnEditTicket}
           onMoveTicket={handleMoveTicket}
+          onCreateTicket={handleCreateTicket}
+          onStartSprint={handleStartSprint}
         />
       ))}
       <BacklogGroup
         projectId={projectId}
         onEditTicket={handleOnEditTicket}
         onMoveTicket={handleMoveTicket}
+        onCreateTicket={handleCreateTicket}
       />
     </PageContent>
   );

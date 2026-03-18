@@ -1,6 +1,6 @@
-import { useRef, useEffect, useState } from "react";
 import { useListTickets } from "@/hooks/use-api";
 import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { useEffect, useRef, useState } from "react";
 import { TicketGroupHeader } from "./ticket-group-header";
 import { TicketsTable } from "./tickets-table";
 
@@ -8,9 +8,15 @@ interface BacklogGroupProps {
   projectId: string;
   onEditTicket: (ticketId: string) => void;
   onMoveTicket?: (ticketId: string, targetSprintId: string | null) => void;
+  onCreateTicket?: (sprintId?: string) => void;
 }
 
-export const BacklogGroup = ({ projectId, onEditTicket, onMoveTicket }: BacklogGroupProps) => {
+export const BacklogGroup = ({
+  projectId,
+  onEditTicket,
+  onMoveTicket,
+  onCreateTicket,
+}: BacklogGroupProps) => {
   const [tickets, error, { isLoading }] = useListTickets({
     projectId: [projectId],
     // @ts-ignore
@@ -60,6 +66,7 @@ export const BacklogGroup = ({ projectId, onEditTicket, onMoveTicket }: BacklogG
         description="Tickets not assigned to any sprint"
         ticketCount={ticketsList.length}
         totalStoryPoints={totalStoryPoints}
+        actions={onCreateTicket ? [{ label: "Create Ticket", onClick: onCreateTicket }] : undefined}
       />
       {error ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "#d32f2f" }}>

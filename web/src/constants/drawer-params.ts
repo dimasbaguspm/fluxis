@@ -34,6 +34,7 @@ export interface UpdateBoardDrawerParams {
 
 export interface CreateTicketDrawerParams {
   projectId?: string;
+  sprintId?: string;
 }
 
 export interface UpdateTicketDrawerParams {
