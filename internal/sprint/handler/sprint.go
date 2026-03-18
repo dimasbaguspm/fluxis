@@ -56,8 +56,14 @@ func (h *Handler) ListSprints(w http.ResponseWriter, r *http.Request) {
 		ID:         httpx.QueryUUIDs(r, "id"),
 		ProjectID:  httpx.QueryUUIDs(r, "projectId"),
 		Name:       httpx.QueryString(r, "name"),
+		Status:     httpx.QueryString(r, "status"),
 		PageNumber: httpx.QueryNumber(r, "pageNumber"),
 		PageSize:   httpx.QueryNumber(r, "pageSize"),
+	}
+
+	if err := httpx.ValidateStruct(req); err != nil {
+		httpx.Handle(w, httpx.BadRequest(err.Error()))
+		return
 	}
 
 	result, err := h.sprintCache.GetPagedSprints(r.Context(), req, func(ctx context.Context) (domain.SprintsPagedModel, error) {

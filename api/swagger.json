@@ -1807,6 +1807,16 @@
                         "collectionFormat": "csv",
                         "name": "projectId",
                         "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "planned",
+                            "active",
+                            "completed"
+                        ],
+                        "type": "string",
+                        "name": "status",
+                        "in": "query"
                     }
                 ],
                 "responses": {

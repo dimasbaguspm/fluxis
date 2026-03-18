@@ -132,6 +132,7 @@ func (s *Service) ListSprintsPaged(ctx context.Context, q domain.SprintsSearchMo
 		Column1: q.ID,
 		Column2: q.ProjectID,
 		Column3: q.Name,
+		Column4: q.Status,
 		Limit:   int32(q.PageSize),
 		Offset:  int32((q.PageNumber - 1) * q.PageSize),
 	})

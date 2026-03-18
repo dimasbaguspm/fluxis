@@ -37,9 +37,10 @@ type SprintUpdateModel struct {
 }
 
 type SprintsSearchModel struct {
-	ID         []pgtype.UUID `json:"id" validate:"omitempty,dive,uuid4"`
-	ProjectID  []pgtype.UUID `json:"projectId" validate:"omitempty,dive,uuid4"`
+	ID         []pgtype.UUID `json:"id"`
+	ProjectID  []pgtype.UUID `json:"projectId"`
 	Name       string        `json:"name"`
+	Status     string        `json:"status" validate:"omitempty,oneof=planned active completed"`
 	PageNumber int           `json:"pageNumber" validate:"omitempty,min=1"`
 	PageSize   int           `json:"pageSize" validate:"omitempty,min=1,max=100"`
 }

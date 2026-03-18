@@ -36,6 +36,12 @@ func DecodeAndValidate(r *http.Request, dst any) error {
 		return err
 	}
 
+	return ValidateStruct(dst)
+}
+
+// ValidateStruct validates a struct and returns formatted validation errors.
+// Returns nil if validation passes.
+func ValidateStruct(dst any) error {
 	if err := validate.Struct(dst); err != nil {
 		var validationErrs validator.ValidationErrors
 		if errors.As(err, &validationErrs) {
@@ -43,7 +49,6 @@ func DecodeAndValidate(r *http.Request, dst any) error {
 		}
 		return err
 	}
-
 	return nil
 }
 

@@ -26,6 +26,7 @@ WITH filtered_sprints AS (
     AND (array_length($1::uuid[], 1) IS NULL OR id = ANY($1::uuid[]))
     AND (array_length($2::uuid[], 1) IS NULL OR project_id = ANY($2::uuid[]))
     AND ($3::text = '' OR name ILIKE '%' || $3 || '%')
+    AND ($4::text = '' OR status::text = $4::text)
 )
 SELECT
   id, project_id, name, goal, status, planned_started_at, planned_completed_at, started_at, completed_at, created_at, updated_at, deleted_at, total_count
@@ -33,8 +34,8 @@ FROM
   filtered_sprints
 ORDER BY
   created_at DESC
-LIMIT $4
-OFFSET $5;
+LIMIT $5
+OFFSET $6;
 
 -- name: UpdateSprint :one
 UPDATE sprints
