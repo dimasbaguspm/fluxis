@@ -69,14 +69,13 @@ func TestTicket_MoveToBoardColumn_MismatchedColumn(t *testing.T) {
 	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
 	projectID := uuidToString(project.ID)
 
-	// Create sprint, boards, board columns, and ticket
-	sprint := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
-	sprintID := uuidToString(sprint.ID)
-
-	board1 := createBoard(t, sprintID, tokens.AccessToken, randomBoardName())
+	// Create sprints, boards, board columns, and ticket
+	sprint1 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	board1 := createBoard(t, uuidToString(sprint1.ID), tokens.AccessToken, randomBoardName())
 	boardID1 := uuidToString(board1.ID)
 
-	board2 := createBoard(t, sprintID, tokens.AccessToken, randomBoardName())
+	sprint2 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	board2 := createBoard(t, uuidToString(sprint2.ID), tokens.AccessToken, randomBoardName())
 	boardID2 := uuidToString(board2.ID)
 
 	// Create column in board2

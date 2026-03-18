@@ -25,20 +25,34 @@ func toBoardModel(board repository.Board) domain.BoardModel {
 		ID:        board.ID,
 		SprintID:  board.SprintID,
 		Name:      board.Name,
-		Position:  board.Position,
 		CreatedAt: board.CreatedAt.Time,
 		UpdatedAt: board.UpdatedAt.Time,
 	}
 }
 
 func (s *Service) CreateBoard(ctx context.Context, b domain.BoardCreateModel) (domain.BoardModel, error) {
-	sprint, err := s.Sprint.GetSprint(ctx, b.SprintID)
+	err := syncx.Run(ctx,
+		func(ctx context.Context) error {
+			_, err := s.Sprint.GetSprint(ctx, b.SprintID)
+			return err // propagates ErrSprintNotFound from sprint service
+		},
+		func(ctx context.Context) error {
+			boards, err := s.Repo.ListBoardsBySprint(ctx, b.SprintID)
+			if err != nil {
+				return fmt.Errorf("list boards: %w", err)
+			}
+			if len(boards) > 0 {
+				return httpx.Conflict("sprint already has a board")
+			}
+			return nil
+		},
+	)
 	if err != nil {
-		return domain.BoardModel{}, fmt.Errorf("get sprint: %w", err)
+		return domain.BoardModel{}, err
 	}
 
 	board, err := s.Repo.CreateBoard(ctx, repository.CreateBoardParams{
-		SprintID: sprint.ID,
+		SprintID: b.SprintID,
 		Name:     b.Name,
 	})
 	if err != nil {
@@ -98,7 +112,6 @@ func (s *Service) ListBoards(ctx context.Context, q domain.BoardsSearchModel) (d
 			ID:        row.ID,
 			SprintID:  row.SprintID,
 			Name:      row.Name,
-			Position:  row.Position,
 			CreatedAt: row.CreatedAt.Time,
 			UpdatedAt: row.UpdatedAt.Time,
 		}
@@ -166,46 +179,6 @@ func (s *Service) UpdateBoard(ctx context.Context, id pgtype.UUID, b domain.Boar
 	result := toBoardModel(board)
 	if err := s.Bus.Publish(ctx, pubsub.BoardUpdated, httpx.EncodePayload(result)); err != nil {
 		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.BoardUpdated), "error", err)
-	}
-
-	return result, nil
-}
-
-func (s *Service) ReorderBoards(ctx context.Context, sprintID pgtype.UUID, reorder domain.BoardReorderModel) ([]domain.BoardModel, error) {
-	sprint, err := s.Sprint.GetSprint(ctx, sprintID)
-	if err != nil {
-		return nil, fmt.Errorf("validate sprint: %w", err)
-	}
-
-	boards, err := s.Repo.ReorderBoardsInBatch(ctx, repository.ReorderBoardsInBatchParams{
-		SprintID: sprint.ID,
-		Column2:  reorder,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("reorder boards: %w", err)
-	}
-
-	if len(boards) == 0 {
-		if len(reorder) == 0 {
-			return nil, httpx.BadRequest("boards array is required and cannot be empty")
-		}
-		return nil, httpx.BadRequest("some boards not found or don't belong to this sprint, or reorder array must include all boards in the sprint")
-	}
-
-	result := make([]domain.BoardModel, 0, len(boards))
-	for _, board := range boards {
-		result = append(result, domain.BoardModel{
-			ID:        board.ID,
-			SprintID:  board.SprintID,
-			Name:      board.Name,
-			Position:  board.Position,
-			CreatedAt: board.CreatedAt.Time,
-			UpdatedAt: board.UpdatedAt.Time,
-		})
-	}
-
-	if err := s.Bus.Publish(ctx, pubsub.BoardReordered, map[string]string{"sprintId": uuid.UUID(sprintID.Bytes).String()}); err != nil {
-		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.BoardReordered), "error", err)
 	}
 
 	return result, nil

@@ -11,7 +11,6 @@ type BoardModel struct {
 	ID        pgtype.UUID `json:"id" validate:"required,uuid4"`
 	SprintID  pgtype.UUID `json:"sprintId" validate:"required,uuid4"`
 	Name      string      `json:"name" validate:"required,min=1"`
-	Position  int32       `json:"position"`
 	CreatedAt time.Time   `json:"createdAt"`
 	UpdatedAt time.Time   `json:"updatedAt"`
 }
@@ -25,8 +24,6 @@ type BoardUpdateModel struct {
 	Name     string      `json:"name,omitempty" validate:"omitempty,min=1"`
 	SprintID pgtype.UUID `json:"sprintId,omitempty"`
 }
-
-type BoardReorderModel []pgtype.UUID
 
 type BoardsSearchModel struct {
 	ID         []pgtype.UUID `json:"id" validate:"omitempty,dive,uuid4"`
@@ -136,7 +133,6 @@ type BoardReader interface {
 type BoardWriter interface {
 	CreateBoard(ctx context.Context, b BoardCreateModel) (BoardModel, error)
 	UpdateBoard(ctx context.Context, id pgtype.UUID, b BoardUpdateModel) (BoardModel, error)
-	ReorderBoards(ctx context.Context, sprintID pgtype.UUID, reorder BoardReorderModel) ([]BoardModel, error)
 	DeleteBoard(ctx context.Context, id pgtype.UUID) error
 	CreateBoardColumn(ctx context.Context, boardID pgtype.UUID, b BoardColumnCreateModel) (BoardColumnModel, error)
 	UpdateBoardColumn(ctx context.Context, boardID, columnID pgtype.UUID, b BoardColumnUpdateModel) (BoardColumnModel, error)

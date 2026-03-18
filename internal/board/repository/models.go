@@ -12,7 +12,6 @@ type Board struct {
 	ID        pgtype.UUID        `db:"id" json:"id"`
 	SprintID  pgtype.UUID        `db:"sprint_id" json:"sprint_id"`
 	Name      string             `db:"name" json:"name"`
-	Position  int32              `db:"position" json:"position"`
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 	DeletedAt pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`

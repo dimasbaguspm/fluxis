@@ -143,6 +143,26 @@ func (q *Queries) HardDeleteSprint(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const hasActiveSiblingSprintForSprint = `-- name: HasActiveSiblingSprintForSprint :one
+SELECT EXISTS (
+  SELECT 1 FROM sprints s2
+  JOIN sprints s1 ON s1.project_id = s2.project_id
+  WHERE s1.id = $1
+    AND s1.deleted_at IS NULL
+    AND s2.status = 'active'
+    AND s2.deleted_at IS NULL
+    AND s2.id != $1
+) AS has_active
+`
+
+// Returns true if another sprint in the same project is already active
+func (q *Queries) HasActiveSiblingSprintForSprint(ctx context.Context, id pgtype.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, hasActiveSiblingSprintForSprint, id)
+	var has_active bool
+	err := row.Scan(&has_active)
+	return has_active, err
+}
+
 const listSprintsByProject = `-- name: ListSprintsByProject :many
 SELECT id, project_id, name, goal, status, planned_started_at, planned_completed_at, started_at, completed_at, created_at, updated_at, deleted_at
 FROM sprints

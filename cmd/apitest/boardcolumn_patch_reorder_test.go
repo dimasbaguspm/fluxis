@@ -137,11 +137,14 @@ func TestBoardColumn_Reorder_ColumnFromDifferentBoard(t *testing.T) {
 	}
 
 	project := createProject(t, uuidToString(orgResp.Data.ID), tokens.AccessToken, randomProjectKey(), "Test Project", "private")
-	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
+	projectID := uuidToString(project.ID)
 
-	// Create 2 boards
-	board1 := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
-	board2 := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
+	// Create 2 sprints and boards
+	sprint1 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	board1 := createBoard(t, uuidToString(sprint1.ID), tokens.AccessToken, randomBoardName())
+
+	sprint2 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	board2 := createBoard(t, uuidToString(sprint2.ID), tokens.AccessToken, randomBoardName())
 
 	// Create columns in both boards
 	col1 := createBoardColumn(t, uuidToString(board1.ID), tokens.AccessToken, "Column 1")

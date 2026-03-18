@@ -12,9 +12,9 @@ import (
 )
 
 const createBoard = `-- name: CreateBoard :one
-INSERT INTO boards (sprint_id, name, position)
-VALUES ($1, $2, (SELECT COALESCE(MAX(position), -1) + 1 FROM boards WHERE sprint_id = $1 AND deleted_at IS NULL))
-RETURNING id, sprint_id, name, position, created_at, updated_at, deleted_at
+INSERT INTO boards (sprint_id, name)
+VALUES ($1, $2)
+RETURNING id, sprint_id, name, created_at, updated_at, deleted_at
 `
 
 type CreateBoardParams struct {
@@ -29,7 +29,6 @@ func (q *Queries) CreateBoard(ctx context.Context, arg CreateBoardParams) (Board
 		&i.ID,
 		&i.SprintID,
 		&i.Name,
-		&i.Position,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -64,7 +63,7 @@ func (q *Queries) CreateBoardColumn(ctx context.Context, arg CreateBoardColumnPa
 }
 
 const deleteBoard = `-- name: DeleteBoard :one
-UPDATE boards SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, sprint_id, name, position, created_at, updated_at, deleted_at
+UPDATE boards SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, sprint_id, name, created_at, updated_at, deleted_at
 `
 
 func (q *Queries) DeleteBoard(ctx context.Context, id pgtype.UUID) (Board, error) {
@@ -74,7 +73,6 @@ func (q *Queries) DeleteBoard(ctx context.Context, id pgtype.UUID) (Board, error
 		&i.ID,
 		&i.SprintID,
 		&i.Name,
-		&i.Position,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -102,7 +100,7 @@ func (q *Queries) DeleteBoardColumn(ctx context.Context, id pgtype.UUID) (BoardC
 }
 
 const getBoard = `-- name: GetBoard :one
-SELECT id, sprint_id, name, position, created_at, updated_at, deleted_at FROM boards WHERE id = $1 AND deleted_at IS NULL
+SELECT id, sprint_id, name, created_at, updated_at, deleted_at FROM boards WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetBoard(ctx context.Context, id pgtype.UUID) (Board, error) {
@@ -112,7 +110,6 @@ func (q *Queries) GetBoard(ctx context.Context, id pgtype.UUID) (Board, error) {
 		&i.ID,
 		&i.SprintID,
 		&i.Name,
-		&i.Position,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -249,7 +246,7 @@ func (q *Queries) ListBoardColumnsPaged(ctx context.Context, arg ListBoardColumn
 }
 
 const listBoardsBySprint = `-- name: ListBoardsBySprint :many
-SELECT id, sprint_id, name, position, created_at, updated_at, deleted_at FROM boards WHERE sprint_id = $1 AND deleted_at IS NULL ORDER BY position ASC
+SELECT id, sprint_id, name, created_at, updated_at, deleted_at FROM boards WHERE sprint_id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) ListBoardsBySprint(ctx context.Context, sprintID pgtype.UUID) ([]Board, error) {
@@ -265,7 +262,6 @@ func (q *Queries) ListBoardsBySprint(ctx context.Context, sprintID pgtype.UUID) 
 			&i.ID,
 			&i.SprintID,
 			&i.Name,
-			&i.Position,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
@@ -292,7 +288,7 @@ WITH applicable_sprints AS (
 ),
 filtered_boards AS (
   SELECT
-    b.id, b.sprint_id, b.name, b.position, b.created_at, b.updated_at, b.deleted_at,
+    b.id, b.sprint_id, b.name, b.created_at, b.updated_at, b.deleted_at,
     COUNT(*) OVER () as total_count
   FROM
     boards b
@@ -311,11 +307,9 @@ filtered_boards AS (
     AND ($4::text = '' OR b.name ILIKE '%' || $4 || '%')
 )
 SELECT
-  id, sprint_id, name, position, created_at, updated_at, deleted_at, total_count
+  id, sprint_id, name, created_at, updated_at, deleted_at, total_count
 FROM
   filtered_boards
-ORDER BY
-  position ASC
 LIMIT $5
 OFFSET $6
 `
@@ -333,7 +327,6 @@ type ListBoardsPagedRow struct {
 	ID         pgtype.UUID        `db:"id" json:"id"`
 	SprintID   pgtype.UUID        `db:"sprint_id" json:"sprint_id"`
 	Name       string             `db:"name" json:"name"`
-	Position   int32              `db:"position" json:"position"`
 	CreatedAt  pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt  pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 	DeletedAt  pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
@@ -360,7 +353,6 @@ func (q *Queries) ListBoardsPaged(ctx context.Context, arg ListBoardsPagedParams
 			&i.ID,
 			&i.SprintID,
 			&i.Name,
-			&i.Position,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
@@ -475,86 +467,11 @@ func (q *Queries) ReorderBoardColumnsInBatch(ctx context.Context, arg ReorderBoa
 	return items, nil
 }
 
-const reorderBoardsInBatch = `-- name: ReorderBoardsInBatch :many
-WITH validation AS (
-  -- Validate: all provided IDs exist and belong to this sprint
-  SELECT id, ROW_NUMBER() OVER () - 1 as pos
-  FROM UNNEST($2::uuid[]) AS t(id)
-  WHERE EXISTS (
-    SELECT 1 FROM boards b
-    WHERE b.id = t.id AND b.sprint_id = $1 AND b.deleted_at IS NULL
-  )
-),updated AS (
-  UPDATE boards
-  SET position = validation.pos, updated_at = NOW()
-  FROM validation
-  WHERE boards.id = validation.id
-    AND boards.sprint_id = $1
-    AND boards.deleted_at IS NULL
-    -- Validate: provided count matches total boards in sprint
-    AND (
-      SELECT COUNT(*) FROM boards
-      WHERE sprint_id = $1 AND deleted_at IS NULL
-    ) = array_length($2::uuid[], 1)
-    -- Validate: all array elements are valid boards for this sprint
-    AND (
-      SELECT COUNT(*) FROM validation
-    ) = array_length($2::uuid[], 1)
-  RETURNING boards.id, boards.sprint_id, boards.name, boards.position, boards.created_at, boards.updated_at, boards.deleted_at
-)
-SELECT id, sprint_id, name, position, created_at, updated_at, deleted_at FROM updated ORDER BY position
-`
-
-type ReorderBoardsInBatchParams struct {
-	SprintID pgtype.UUID   `db:"sprint_id" json:"sprint_id"`
-	Column2  []pgtype.UUID `db:"column_2" json:"column_2"`
-}
-
-type ReorderBoardsInBatchRow struct {
-	ID        pgtype.UUID        `db:"id" json:"id"`
-	SprintID  pgtype.UUID        `db:"sprint_id" json:"sprint_id"`
-	Name      string             `db:"name" json:"name"`
-	Position  int32              `db:"position" json:"position"`
-	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
-	DeletedAt pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
-}
-
-// Atomically validates and reorders boards within a sprint with row-level locking
-// All boards must belong to the same sprint; results ordered by position to maintain input array order
-func (q *Queries) ReorderBoardsInBatch(ctx context.Context, arg ReorderBoardsInBatchParams) ([]ReorderBoardsInBatchRow, error) {
-	rows, err := q.db.Query(ctx, reorderBoardsInBatch, arg.SprintID, arg.Column2)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ReorderBoardsInBatchRow{}
-	for rows.Next() {
-		var i ReorderBoardsInBatchRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.SprintID,
-			&i.Name,
-			&i.Position,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.DeletedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const updateBoard = `-- name: UpdateBoard :one
 UPDATE boards
 SET name = $2, sprint_id = $3, updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, sprint_id, name, position, created_at, updated_at, deleted_at
+RETURNING id, sprint_id, name, created_at, updated_at, deleted_at
 `
 
 type UpdateBoardParams struct {
@@ -570,7 +487,6 @@ func (q *Queries) UpdateBoard(ctx context.Context, arg UpdateBoardParams) (Board
 		&i.ID,
 		&i.SprintID,
 		&i.Name,
-		&i.Position,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,

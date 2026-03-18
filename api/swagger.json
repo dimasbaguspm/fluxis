@@ -290,76 +290,6 @@
                 }
             }
         },
-        "/boards/reorder": {
-            "patch": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Reorder boards within a sprint (positions determined by array order)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "board"
-                ],
-                "summary": "Reorder boards",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Sprint ID",
-                        "name": "sprintId",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "description": "Board IDs in desired order",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.BoardModel"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/httpx.ErrBlock"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/httpx.ErrBlock"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/httpx.ErrBlock"
-                        }
-                    }
-                }
-            }
-        },
         "/boards/{boardId}": {
             "get": {
                 "security": [
@@ -2879,9 +2809,6 @@
                 "name": {
                     "type": "string",
                     "minLength": 1
-                },
-                "position": {
-                    "type": "integer"
                 },
                 "sprintId": {
                     "type": "string"

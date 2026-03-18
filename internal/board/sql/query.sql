@@ -1,13 +1,13 @@
 -- name: CreateBoard :one
-INSERT INTO boards (sprint_id, name, position)
-VALUES ($1, $2, (SELECT COALESCE(MAX(position), -1) + 1 FROM boards WHERE sprint_id = $1 AND deleted_at IS NULL))
+INSERT INTO boards (sprint_id, name)
+VALUES ($1, $2)
 RETURNING *;
 
 -- name: GetBoard :one
 SELECT * FROM boards WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: ListBoardsBySprint :many
-SELECT * FROM boards WHERE sprint_id = $1 AND deleted_at IS NULL ORDER BY position ASC;
+SELECT * FROM boards WHERE sprint_id = $1 AND deleted_at IS NULL;
 
 -- name: ListBoardsPaged :many
 WITH applicable_sprints AS (
@@ -21,7 +21,7 @@ WITH applicable_sprints AS (
 ),
 filtered_boards AS (
   SELECT
-    b.id, b.sprint_id, b.name, b.position, b.created_at, b.updated_at, b.deleted_at,
+    b.id, b.sprint_id, b.name, b.created_at, b.updated_at, b.deleted_at,
     COUNT(*) OVER () as total_count
   FROM
     boards b
@@ -40,11 +40,9 @@ filtered_boards AS (
     AND ($4::text = '' OR b.name ILIKE '%' || $4 || '%')
 )
 SELECT
-  id, sprint_id, name, position, created_at, updated_at, deleted_at, total_count
+  id, sprint_id, name, created_at, updated_at, deleted_at, total_count
 FROM
   filtered_boards
-ORDER BY
-  position ASC
 LIMIT $5
 OFFSET $6;
 
@@ -56,37 +54,6 @@ RETURNING *;
 
 -- name: DeleteBoard :one
 UPDATE boards SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *;
-
--- name: ReorderBoardsInBatch :many
--- Atomically validates and reorders boards within a sprint with row-level locking
--- All boards must belong to the same sprint; results ordered by position to maintain input array order
-WITH validation AS (
-  -- Validate: all provided IDs exist and belong to this sprint
-  SELECT id, ROW_NUMBER() OVER () - 1 as pos
-  FROM UNNEST($2::uuid[]) AS t(id)
-  WHERE EXISTS (
-    SELECT 1 FROM boards b
-    WHERE b.id = t.id AND b.sprint_id = $1 AND b.deleted_at IS NULL
-  )
-),updated AS (
-  UPDATE boards
-  SET position = validation.pos, updated_at = NOW()
-  FROM validation
-  WHERE boards.id = validation.id
-    AND boards.sprint_id = $1
-    AND boards.deleted_at IS NULL
-    -- Validate: provided count matches total boards in sprint
-    AND (
-      SELECT COUNT(*) FROM boards
-      WHERE sprint_id = $1 AND deleted_at IS NULL
-    ) = array_length($2::uuid[], 1)
-    -- Validate: all array elements are valid boards for this sprint
-    AND (
-      SELECT COUNT(*) FROM validation
-    ) = array_length($2::uuid[], 1)
-  RETURNING boards.id, boards.sprint_id, boards.name, boards.position, boards.created_at, boards.updated_at, boards.deleted_at
-)
-SELECT * FROM updated ORDER BY position;
 
 -- name: CreateBoardColumn :one
 INSERT INTO board_columns (board_id, name, position)

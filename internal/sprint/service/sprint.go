@@ -11,6 +11,7 @@ import (
 	"github.com/dimasbaguspm/fluxis/pkg/domain"
 	"github.com/dimasbaguspm/fluxis/pkg/httpx"
 	"github.com/dimasbaguspm/fluxis/pkg/pubsub"
+	"github.com/dimasbaguspm/fluxis/pkg/syncx"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -253,6 +254,36 @@ func (s *Service) UpdateSprint(ctx context.Context, id pgtype.UUID, req domain.S
 
 // StartSprint transitions a sprint to active status
 func (s *Service) StartSprint(ctx context.Context, id pgtype.UUID) (domain.SprintModel, error) {
+	var hasActiveSibling bool
+
+	err := syncx.Run(ctx,
+		func(ctx context.Context) error {
+			_, err := s.Repo.GetSprint(ctx, id)
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					return ErrSprintNotFound
+				}
+				return fmt.Errorf("get sprint: %w", err)
+			}
+			return nil
+		},
+		func(ctx context.Context) error {
+			has, err := s.Repo.HasActiveSiblingSprintForSprint(ctx, id)
+			if err != nil {
+				return fmt.Errorf("check active sprint: %w", err)
+			}
+			hasActiveSibling = has
+			return nil
+		},
+	)
+	if err != nil {
+		return domain.SprintModel{}, err
+	}
+
+	if hasActiveSibling {
+		return domain.SprintModel{}, httpx.Conflict("project already has an active sprint")
+	}
+
 	sprint, err := s.Repo.StartSprint(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
