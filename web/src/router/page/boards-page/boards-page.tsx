@@ -66,7 +66,6 @@ export const BoardsPage = () => {
               <Table.Checkbox isMain />
             </Table.Col>
             <Table.Col as="th">Name</Table.Col>
-            <Table.Col as="th">Position</Table.Col>
             <Table.Col as="th">Updated</Table.Col>
             <Table.Col as="th">Actions</Table.Col>
           </Table.Header>
@@ -77,9 +76,6 @@ export const BoardsPage = () => {
                   <Table.Checkbox rowId={board.id} />
                 </Table.Col>
                 <Table.Col as="td">{board.name}</Table.Col>
-                <Table.Col as="td" variant="numeric">
-                  {board.position}
-                </Table.Col>
                 <Table.Col as="td">{dateFormat(board.updatedAt, FormatDate.ShortDate)}</Table.Col>
                 <Table.Col as="td" variant="action">
                   <Table.Action icon={MenuIcon}>

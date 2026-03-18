@@ -132,11 +132,7 @@ function SprintRow({
                 Name
               </Text>
             </Table.Col>
-            <Table.Col as="td" style={{ "--_bg-row": "var(--color-neutral-light)" } as any}>
-              <Text size="xs" weight="medium">
-                Position
-              </Text>
-            </Table.Col>
+            <Table.Col as="td" style={{ "--_bg-row": "var(--color-neutral-light)" } as any} />
             <Table.Col
               as="td"
               style={{ "--_bg-row": "var(--color-neutral-light)" } as any}
@@ -168,10 +164,7 @@ function SprintRow({
               >
                 <Text size="xs">No boards yet</Text>
               </Table.Col>
-              <Table.Col
-                as="td"
-                style={{ "--_bg-row": "var(--color-neutral-light)" } as any}
-              ></Table.Col>
+              <Table.Col as="td" style={{ "--_bg-row": "var(--color-neutral-light)" } as any} />
               <Table.Col
                 as="td"
                 style={{ "--_bg-row": "var(--color-neutral-light)" } as any}
@@ -194,9 +187,7 @@ function SprintRow({
                 >
                   <Text size="xs">{board.name}</Text>
                 </Table.Col>
-                <Table.Col as="td" style={{ "--_bg-row": "var(--color-neutral-light)" } as any}>
-                  <Text size="xs">{board.position}</Text>
-                </Table.Col>
+                <Table.Col as="td" style={{ "--_bg-row": "var(--color-neutral-light)" } as any} />
                 <Table.Col
                   as="td"
                   style={{ "--_bg-row": "var(--color-neutral-light)" } as any}

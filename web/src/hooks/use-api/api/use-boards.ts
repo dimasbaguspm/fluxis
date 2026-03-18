@@ -94,21 +94,6 @@ export function useDeleteBoard() {
   }));
 }
 
-/**
- * Reorder boards
- */
-export function useReorderBoards() {
-  return useApiMutation<
-    DomainBoardModel[],
-    HttpxErrBlock,
-    { sprintId: string; boardIds: string[] }
-  >((variables) => ({
-    method: "PATCH",
-    path: `/boards/reorder`,
-    body: { sprintId: variables.sprintId, boardIds: variables.boardIds },
-  }));
-}
-
 interface ListBoardColumnsParams {
   boardId?: string[];
   id?: string[];

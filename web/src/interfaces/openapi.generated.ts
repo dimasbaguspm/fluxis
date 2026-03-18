@@ -82,7 +82,6 @@ export interface DomainBoardModel {
   id: string;
   /** @minLength 1 */
   name: string;
-  position?: number;
   sprintId: string;
   updatedAt?: string;
 }
@@ -706,34 +705,6 @@ export class Api<
       this.request<DomainBoardModel, HttpxErrBlock>({
         path: `/boards`,
         method: "POST",
-        body: body,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Reorder boards within a sprint (positions determined by array order)
-     *
-     * @tags board
-     * @name ReorderPartialUpdate
-     * @summary Reorder boards
-     * @request PATCH:/boards/reorder
-     * @secure
-     */
-    reorderPartialUpdate: (
-      query: {
-        /** Sprint ID */
-        sprintId: string;
-      },
-      body: string[],
-      params: RequestParams = {},
-    ) =>
-      this.request<DomainBoardModel[], HttpxErrBlock>({
-        path: `/boards/reorder`,
-        method: "PATCH",
-        query: query,
         body: body,
         secure: true,
         type: ContentType.Json,

@@ -39,7 +39,6 @@ export {
   useListBoardColumns,
   useListBoards,
   useReorderBoardColumns,
-  useReorderBoards,
   useUpdateBoard,
   useUpdateBoardColumn,
 } from "./api/use-boards";
