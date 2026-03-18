@@ -7,6 +7,7 @@ import { Sidebar } from "@versaur/react/blocks";
 import { Avatar, ButtonIcon, Heading, Icon } from "@versaur/react/primitive";
 import { Link, useLocation } from "react-router";
 import { SIDEBAR_NAV_ITEMS } from "./sidebar-nav-config";
+import { DEEP_LINKS } from "@/constants";
 
 export const SidebarNavigation = () => {
   const location = useLocation();
@@ -14,7 +15,7 @@ export const SidebarNavigation = () => {
 
   const mainItems = SIDEBAR_NAV_ITEMS.filter((item) => item.section === "main");
 
-  const isActive = (href: string) => location.pathname === href;
+  const isActive = (href: string) => location.pathname.startsWith(href);
   const userInitials = getInitials(user?.displayName);
 
   return (
@@ -31,7 +32,11 @@ export const SidebarNavigation = () => {
               key={item.href}
               as={Link}
               to={item.href}
-              active={isActive(item.href)}
+              active={
+                item.href !== DEEP_LINKS.DASHBOARD
+                  ? isActive(item.href)
+                  : location.pathname === item.href
+              }
               icon={<Icon as={item.icon} />}
             >
               {item.label}
