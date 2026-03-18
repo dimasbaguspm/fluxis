@@ -1,11 +1,12 @@
-import { useListSprints } from "@/hooks/use-api";
+import { useListSprints, useGetSprint } from "@/hooks/use-api";
 import { Icon, Loader, Text } from "@versaur/react/primitive";
 import { ComboboxInput } from "@versaur/react/forms";
 import { useCallback, useMemo, useState } from "react";
 import { debounce } from "radash";
 import { SearchIcon } from "@versaur/icons";
-import { Controller } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import type { Control, FieldValues, Path } from "react-hook-form";
+import { vM2 } from "@versaur/core/utilities";
 
 interface SelectSprintsInputProps<T extends FieldValues> {
   control: Control<T>;
@@ -33,6 +34,8 @@ export const SelectSprintsInput = <T extends FieldValues>({
   const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const val = useWatch({ control, name });
+
   const debouncedSearch = useMemo(
     () =>
       debounce({ delay: 300 }, (term: string) => {
@@ -55,11 +58,19 @@ export const SelectSprintsInput = <T extends FieldValues>({
     [searchTerm, projectId],
   );
 
-  const [sprints, err, { isPending }] = useListSprints(query, {
-    enabled: searchTerm.length > 0,
-  });
+  const [sprints, err, { isPending }] = useListSprints(query);
+  const [sprint] = useGetSprint(val);
 
-  const [selectedSprint, setSelectedSprint] = useState<any>(null);
+  const selectedSprint = useMemo(() => {
+    if (!val) return null;
+
+    if (sprints?.items) {
+      const found = sprints.items.find((s) => s.id === val);
+      if (found) return found;
+    }
+
+    return sprint;
+  }, [val, sprints?.items, sprint]);
 
   const handleSelectionChange = useCallback(
     (newValue: string | string[] | null, onChange: (value: any) => void) => {
@@ -69,24 +80,14 @@ export const SelectSprintsInput = <T extends FieldValues>({
       } else {
         const value = Array.isArray(newValue) ? newValue[0] : newValue;
         onChange(value || null);
-        if (value && sprints?.items) {
-          const selected = sprints.items.find((sprint) => sprint.id === value);
-          if (selected) {
-            setSelectedSprint(selected);
-          }
-        }
       }
     },
-    [multiple, sprints],
+    [multiple],
   );
 
   const getDisplayOptions = useCallback(() => {
-    const searchResults = sprints?.items || [];
-    if (selectedSprint && !searchResults.find((sprint) => sprint.id === selectedSprint.id)) {
-      return [selectedSprint, ...searchResults];
-    }
-    return searchResults;
-  }, [sprints, selectedSprint]);
+    return sprints?.items || [];
+  }, [sprints]);
 
   return (
     <Controller
@@ -97,11 +98,7 @@ export const SelectSprintsInput = <T extends FieldValues>({
         const listboxContent = (
           <>
             <ComboboxInput.Button>
-              {multiple
-                ? "Select sprints"
-                : selectedSprint
-                  ? selectedSprint.name
-                  : "Select sprint"}
+              {multiple ? "Select sprints" : selectedSprint ? selectedSprint.name : "Select sprint"}
             </ComboboxInput.Button>
             <ComboboxInput.Container
               variant="list"
@@ -114,14 +111,16 @@ export const SelectSprintsInput = <T extends FieldValues>({
                 />
               }
             >
-              {inputValue.length === 0 ? (
-                <Text as="span">Start typing to search sprints</Text>
-              ) : isPending ? (
-                <Loader />
+              {isPending ? (
+                <Loader type="bar" />
               ) : err ? (
-                <Text as="span">Error loading sprints</Text>
+                <Text as="span" className={vM2}>
+                  Error loading sprints
+                </Text>
               ) : getDisplayOptions().length === 0 ? (
-                <Text as="span">No sprints found</Text>
+                <Text as="span" className={vM2}>
+                  No sprints found
+                </Text>
               ) : (
                 getDisplayOptions().map((sprint) => (
                   <ComboboxInput.Option key={sprint.id} value={sprint.id}>

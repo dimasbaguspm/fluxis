@@ -1,11 +1,12 @@
-import { useListBoards } from "@/hooks/use-api";
+import { useListBoards, useGetBoard } from "@/hooks/use-api";
 import { Icon, Loader, Text } from "@versaur/react/primitive";
 import { ComboboxInput } from "@versaur/react/forms";
 import { useCallback, useMemo, useState } from "react";
 import { debounce } from "radash";
 import { SearchIcon } from "@versaur/icons";
-import { Controller } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import type { Control, FieldValues, Path } from "react-hook-form";
+import { vM2 } from "@versaur/core/utilities";
 
 interface SelectBoardsInputProps<T extends FieldValues> {
   control: Control<T>;
@@ -33,6 +34,8 @@ export const SelectBoardsInput = <T extends FieldValues>({
   const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const val = useWatch({ control, name });
+
   const debouncedSearch = useMemo(
     () =>
       debounce({ delay: 300 }, (term: string) => {
@@ -55,11 +58,19 @@ export const SelectBoardsInput = <T extends FieldValues>({
     [searchTerm, sprintId],
   );
 
-  const [boards, err, { isPending }] = useListBoards(query, {
-    enabled: searchTerm.length > 0,
-  });
+  const [boards, err, { isPending }] = useListBoards(query);
+  const [board] = useGetBoard(val);
 
-  const [selectedBoard, setSelectedBoard] = useState<any>(null);
+  const selectedBoard = useMemo(() => {
+    if (!val) return null;
+
+    if (boards?.items) {
+      const found = boards.items.find((b) => b.id === val);
+      if (found) return found;
+    }
+
+    return board;
+  }, [val, boards?.items, board]);
 
   const handleSelectionChange = useCallback(
     (newValue: string | string[] | null, onChange: (value: any) => void) => {
@@ -69,24 +80,14 @@ export const SelectBoardsInput = <T extends FieldValues>({
       } else {
         const value = Array.isArray(newValue) ? newValue[0] : newValue;
         onChange(value || null);
-        if (value && boards?.items) {
-          const selected = boards.items.find((board) => board.id === value);
-          if (selected) {
-            setSelectedBoard(selected);
-          }
-        }
       }
     },
-    [multiple, boards],
+    [multiple],
   );
 
   const getDisplayOptions = useCallback(() => {
-    const searchResults = boards?.items || [];
-    if (selectedBoard && !searchResults.find((board) => board.id === selectedBoard.id)) {
-      return [selectedBoard, ...searchResults];
-    }
-    return searchResults;
-  }, [boards, selectedBoard]);
+    return boards?.items || [];
+  }, [boards]);
 
   return (
     <Controller
@@ -110,14 +111,16 @@ export const SelectBoardsInput = <T extends FieldValues>({
                 />
               }
             >
-              {inputValue.length === 0 ? (
-                <Text as="span">Start typing to search boards</Text>
-              ) : isPending ? (
-                <Loader />
+              {isPending ? (
+                <Loader type="bar" />
               ) : err ? (
-                <Text as="span">Error loading boards</Text>
+                <Text as="span" className={vM2}>
+                  Error loading boards
+                </Text>
               ) : getDisplayOptions().length === 0 ? (
-                <Text as="span">No boards found</Text>
+                <Text as="span" className={vM2}>
+                  No boards found
+                </Text>
               ) : (
                 getDisplayOptions().map((board) => (
                   <ComboboxInput.Option key={board.id} value={board.id}>

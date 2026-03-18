@@ -1,11 +1,12 @@
-import { useListProjects } from "@/hooks/use-api";
+import { useListProjects, useGetProject } from "@/hooks/use-api";
 import { Icon, Loader, Text } from "@versaur/react/primitive";
 import { ComboboxInput } from "@versaur/react/forms";
 import { useCallback, useMemo, useState } from "react";
 import { debounce } from "radash";
 import { SearchIcon } from "@versaur/icons";
-import { Controller } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import type { Control, FieldValues, Path } from "react-hook-form";
+import { vM2 } from "@versaur/core/utilities";
 
 interface SelectProjectsInputProps<T extends FieldValues> {
   control: Control<T>;
@@ -33,6 +34,8 @@ export const SelectProjectsInput = <T extends FieldValues>({
   const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const val = useWatch({ control, name });
+
   const debouncedSearch = useMemo(
     () =>
       debounce({ delay: 300 }, (term: string) => {
@@ -55,11 +58,19 @@ export const SelectProjectsInput = <T extends FieldValues>({
     [searchTerm, orgId],
   );
 
-  const [projects, err, { isPending }] = useListProjects(query, {
-    enabled: searchTerm.length > 0,
-  });
+  const [projects, err, { isPending }] = useListProjects(query);
+  const [project] = useGetProject(val);
 
-  const [selectedProject, setSelectedProject] = useState<any>(null);
+  const selectedProject = useMemo(() => {
+    if (!val) return null;
+
+    if (projects?.items) {
+      const found = projects.items.find((p) => p.id === val);
+      if (found) return found;
+    }
+
+    return project;
+  }, [val, projects?.items, project]);
 
   const handleSelectionChange = useCallback(
     (newValue: string | string[] | null, onChange: (value: any) => void) => {
@@ -69,24 +80,14 @@ export const SelectProjectsInput = <T extends FieldValues>({
       } else {
         const value = Array.isArray(newValue) ? newValue[0] : newValue;
         onChange(value || null);
-        if (value && projects?.items) {
-          const selected = projects.items.find((project) => project.id === value);
-          if (selected) {
-            setSelectedProject(selected);
-          }
-        }
       }
     },
-    [multiple, projects],
+    [multiple],
   );
 
   const getDisplayOptions = useCallback(() => {
-    const searchResults = projects?.items || [];
-    if (selectedProject && !searchResults.find((project) => project.id === selectedProject.id)) {
-      return [selectedProject, ...searchResults];
-    }
-    return searchResults;
-  }, [projects, selectedProject]);
+    return projects?.items || [];
+  }, [projects]);
 
   return (
     <Controller
@@ -114,14 +115,16 @@ export const SelectProjectsInput = <T extends FieldValues>({
                 />
               }
             >
-              {inputValue.length === 0 ? (
-                <Text as="span">Start typing to search projects</Text>
-              ) : isPending ? (
-                <Loader />
+              {isPending ? (
+                <Loader type="bar" />
               ) : err ? (
-                <Text as="span">Error loading projects</Text>
+                <Text as="span" className={vM2}>
+                  Error loading projects
+                </Text>
               ) : getDisplayOptions().length === 0 ? (
-                <Text as="span">No projects found</Text>
+                <Text as="span" className={vM2}>
+                  No projects found
+                </Text>
               ) : (
                 getDisplayOptions().map((project) => (
                   <ComboboxInput.Option key={project.id} value={project.id}>

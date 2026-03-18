@@ -1,11 +1,12 @@
-import { useListTickets } from "@/hooks/use-api";
+import { useListTickets, useGetTicket } from "@/hooks/use-api";
 import { Icon, Loader, Text } from "@versaur/react/primitive";
 import { ComboboxInput } from "@versaur/react/forms";
 import { useCallback, useMemo, useState } from "react";
 import { debounce } from "radash";
 import { SearchIcon } from "@versaur/icons";
-import { Controller } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import type { Control, FieldValues, Path } from "react-hook-form";
+import { vM2 } from "@versaur/core/utilities";
 
 interface SelectTicketsInputProps<T extends FieldValues> {
   control: Control<T>;
@@ -35,8 +36,9 @@ export const SelectTicketsInput = <T extends FieldValues>({
   boardId,
 }: SelectTicketsInputProps<T>) => {
   const [inputValue, setInputValue] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [, setSearchTerm] = useState("");
+
+  const val = useWatch({ control, name });
 
   const debouncedSearch = useMemo(
     () =>
@@ -65,9 +67,18 @@ export const SelectTicketsInput = <T extends FieldValues>({
     [projectId, sprintId, boardId],
   );
 
-  const [tickets, err, { isPending }] = useListTickets(query, {
-    enabled: searchTerm.length > 0,
-  });
+  const [tickets, err, { isPending }] = useListTickets(query);
+  const [ticket] = useGetTicket(val);
+
+  const selectedTicket = useMemo(() => {
+    if (!val) return null;
+
+    if (tickets?.items) {
+      const found = tickets.items.find((t) => t.id === val);
+      if (found) return found;
+    }
+    return ticket;
+  }, [val, tickets?.items, ticket]);
 
   const handleSelectionChange = useCallback(
     (newValue: string | string[] | null, onChange: (value: any) => void) => {
@@ -77,24 +88,14 @@ export const SelectTicketsInput = <T extends FieldValues>({
       } else {
         const value = Array.isArray(newValue) ? newValue[0] : newValue;
         onChange(value || null);
-        if (value && tickets?.items) {
-          const selected = tickets.items.find((ticket) => ticket.id === value);
-          if (selected) {
-            setSelectedTicket(selected);
-          }
-        }
       }
     },
-    [multiple, tickets],
+    [multiple],
   );
 
   const getDisplayOptions = useCallback(() => {
-    const searchResults = tickets?.items || [];
-    if (selectedTicket && !searchResults.find((ticket) => ticket.id === selectedTicket.id)) {
-      return [selectedTicket, ...searchResults];
-    }
-    return searchResults;
-  }, [tickets?.items, selectedTicket]);
+    return tickets?.items || [];
+  }, [tickets]);
 
   const getTicketLabel = useCallback(
     (ticket: any) => `${ticket.key || ticket.id} - ${ticket.title}`,
@@ -127,14 +128,16 @@ export const SelectTicketsInput = <T extends FieldValues>({
                 />
               }
             >
-              {inputValue.length === 0 ? (
-                <Text as="span">Start typing to search tickets</Text>
-              ) : isPending ? (
-                <Loader />
+              {isPending ? (
+                <Loader type="bar" />
               ) : err ? (
-                <Text as="span">Error loading tickets</Text>
+                <Text as="span" className={vM2}>
+                  Error loading tickets
+                </Text>
               ) : getDisplayOptions().length === 0 ? (
-                <Text as="span">No tickets found</Text>
+                <Text as="span" className={vM2}>
+                  No tickets found
+                </Text>
               ) : (
                 getDisplayOptions().map((ticket) => (
                   <ComboboxInput.Option key={ticket.id} value={ticket.id}>

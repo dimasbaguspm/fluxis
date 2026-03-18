@@ -1,11 +1,12 @@
-import { useListOrgs } from "@/hooks/use-api";
+import { useListOrgs, useGetOrg } from "@/hooks/use-api";
 import { Icon, Loader, Text } from "@versaur/react/primitive";
 import { ComboboxInput } from "@versaur/react/forms";
 import { useCallback, useMemo, useState } from "react";
 import { debounce } from "radash";
 import { SearchIcon } from "@versaur/icons";
-import { Controller } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import type { Control, FieldValues, Path } from "react-hook-form";
+import { vM2 } from "@versaur/core/utilities";
 
 interface SelectOrganisationsInputProps<T extends FieldValues> {
   control: Control<T>;
@@ -31,7 +32,8 @@ export const SelectOrganisationsInput = <T extends FieldValues>({
   const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Debounced search handler
+  const val = useWatch({ control, name });
+
   const debouncedSearch = useMemo(
     () =>
       debounce({ delay: 300 }, (term: string) => {
@@ -43,19 +45,27 @@ export const SelectOrganisationsInput = <T extends FieldValues>({
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.currentTarget.value;
-      setInputValue(value); // Immediate UI update
-      debouncedSearch(value); // Debounced API call
+      setInputValue(value);
+      debouncedSearch(value);
     },
     [debouncedSearch],
   );
 
   const query = useMemo(() => ({ pageSize: 15, name: [searchTerm] }), [searchTerm]);
 
-  const [orgs, err, { isPending }] = useListOrgs(query, {
-    enabled: searchTerm.length > 0,
-  });
+  const [orgs, err, { isPending }] = useListOrgs(query);
+  const [org] = useGetOrg(val);
 
-  const [selectedOrg, setSelectedOrg] = useState<any>(null);
+  const selectedOrg = useMemo(() => {
+    if (!val) return null;
+
+    if (orgs?.items) {
+      const found = orgs.items.find((o) => o.id === val);
+      if (found) return found;
+    }
+
+    return org;
+  }, [val, orgs?.items, org]);
 
   const handleSelectionChange = useCallback(
     (newValue: string | string[] | null, onChange: (value: any) => void) => {
@@ -65,26 +75,14 @@ export const SelectOrganisationsInput = <T extends FieldValues>({
       } else {
         const value = Array.isArray(newValue) ? newValue[0] : newValue;
         onChange(value || null);
-        // Track selected org for displaying label
-        if (value && orgs?.items) {
-          const selected = orgs.items.find((org) => org.id === value);
-          if (selected) {
-            setSelectedOrg(selected);
-          }
-        }
       }
     },
-    [multiple, orgs],
+    [multiple],
   );
 
   const getDisplayOptions = useCallback(() => {
-    const searchResults = orgs?.items || [];
-    // Include selected org even if not in current search results
-    if (selectedOrg && !searchResults.find((org) => org.id === selectedOrg.id)) {
-      return [selectedOrg, ...searchResults];
-    }
-    return searchResults;
-  }, [orgs, selectedOrg]);
+    return orgs?.items || [];
+  }, [orgs]);
 
   return (
     <Controller
@@ -112,14 +110,16 @@ export const SelectOrganisationsInput = <T extends FieldValues>({
                 />
               }
             >
-              {inputValue.length === 0 ? (
-                <Text as="span">Start typing to search organisations</Text>
-              ) : isPending ? (
-                <Loader />
+              {isPending ? (
+                <Loader type="bar" />
               ) : err ? (
-                <Text as="span">Error loading organisations</Text>
+                <Text as="span" className={vM2}>
+                  Error loading organisations
+                </Text>
               ) : getDisplayOptions().length === 0 ? (
-                <Text as="span">No organisations found</Text>
+                <Text as="span" className={vM2}>
+                  No organisations found
+                </Text>
               ) : (
                 getDisplayOptions().map((org) => (
                   <ComboboxInput.Option key={org.id} value={org.id}>
