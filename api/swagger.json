@@ -158,7 +158,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns all boards in a sprint with pagination",
+                "description": "Returns all boards in a sprint or project with pagination",
                 "produces": [
                     "application/json"
                 ],
@@ -192,6 +192,15 @@
                         "minimum": 1,
                         "type": "integer",
                         "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "projectId",
                         "in": "query"
                     },
                     {

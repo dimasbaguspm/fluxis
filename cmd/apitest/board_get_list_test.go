@@ -306,3 +306,95 @@ func TestBoard_List_Unauthenticated(t *testing.T) {
 		t.Fatalf("expected status 401, got %d", statusCode)
 	}
 }
+
+func TestBoard_List_ByProjectId(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	projectID := uuidToString(project.ID)
+
+	// Create multiple sprints with boards
+	sprint1 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	sprint1ID := uuidToString(sprint1.ID)
+	sprint2 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	sprint2ID := uuidToString(sprint2.ID)
+
+	// Create boards in different sprints
+	createBoard(t, sprint1ID, tokens.AccessToken, "Sprint 1 Board A")
+	createBoard(t, sprint1ID, tokens.AccessToken, "Sprint 1 Board B")
+	createBoard(t, sprint2ID, tokens.AccessToken, "Sprint 2 Board C")
+
+	// List boards by projectId (should get all boards from both sprints)
+	statusCode, resp := do[domain.BoardsPagedModel](t, "GET", "/boards?projectId="+projectID, nil, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil {
+		t.Fatal("expected board list data")
+	}
+
+	if len(resp.Data.Items) != 3 {
+		t.Fatalf("expected 3 boards from project, got %d", len(resp.Data.Items))
+	}
+
+	if resp.Data.TotalCount != 3 {
+		t.Fatalf("expected total count 3, got %d", resp.Data.TotalCount)
+	}
+}
+
+func TestBoard_List_ByProjectAndSprintId(t *testing.T) {
+	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
+
+	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
+		Name: "Test Org " + randomString(8),
+	}, tokens.AccessToken)
+
+	if statusCode != http.StatusCreated || orgResp.Data == nil {
+		t.Fatalf("failed to create org")
+	}
+
+	orgID := uuidToString(orgResp.Data.ID)
+	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project", "private")
+	projectID := uuidToString(project.ID)
+
+	// Create multiple sprints
+	sprint1 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	sprint1ID := uuidToString(sprint1.ID)
+	sprint2 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
+	sprint2ID := uuidToString(sprint2.ID)
+
+	// Create boards in different sprints
+	createBoard(t, sprint1ID, tokens.AccessToken, "Sprint 1 Board A")
+	createBoard(t, sprint1ID, tokens.AccessToken, "Sprint 1 Board B")
+	createBoard(t, sprint2ID, tokens.AccessToken, "Sprint 2 Board C")
+
+	// List boards by both projectId and sprintId (should get only boards from sprint1)
+	statusCode, resp := do[domain.BoardsPagedModel](t, "GET", "/boards?projectId="+projectID+"&sprintId="+sprint1ID, nil, tokens.AccessToken)
+
+	if statusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %v", statusCode, resp.Error)
+	}
+
+	if resp.Data == nil {
+		t.Fatal("expected board list data")
+	}
+
+	if len(resp.Data.Items) != 2 {
+		t.Fatalf("expected 2 boards from sprint 1, got %d", len(resp.Data.Items))
+	}
+
+	if resp.Data.TotalCount != 2 {
+		t.Fatalf("expected total count 2, got %d", resp.Data.TotalCount)
+	}
+}

@@ -280,18 +280,35 @@ func (q *Queries) ListBoardsBySprint(ctx context.Context, sprintID pgtype.UUID) 
 	return items, nil
 }
 
-const listBoardsBySprintPaged = `-- name: ListBoardsBySprintPaged :many
-WITH filtered_boards AS (
-  SELECT
-    id, sprint_id, name, position, created_at, updated_at, deleted_at,
-    COUNT(*) OVER () as total_count
-  FROM
-    boards
+const listBoardsPaged = `-- name: ListBoardsPaged :many
+WITH applicable_sprints AS (
+  -- If projectId is provided, get all sprints for those projects
+  -- If projectId is not provided, this CTE returns all non-deleted sprints
+  SELECT id
+  FROM sprints
   WHERE
     deleted_at IS NULL
-    AND (array_length($1::uuid[], 1) IS NULL OR id = ANY($1::uuid[]))
-    AND (array_length($2::uuid[], 1) IS NULL OR sprint_id = ANY($2::uuid[]))
-    AND ($3::text = '' OR name ILIKE '%' || $3 || '%')
+    AND (array_length($2::uuid[], 1) IS NULL OR project_id = ANY($2::uuid[]))
+),
+filtered_boards AS (
+  SELECT
+    b.id, b.sprint_id, b.name, b.position, b.created_at, b.updated_at, b.deleted_at,
+    COUNT(*) OVER () as total_count
+  FROM
+    boards b
+  WHERE
+    b.deleted_at IS NULL
+    -- Filter by board IDs if provided
+    AND (array_length($1::uuid[], 1) IS NULL OR b.id = ANY($1::uuid[]))
+    -- Filter by sprint ID if provided, otherwise use applicable sprints from project filter
+    AND (
+      CASE
+        WHEN array_length($3::uuid[], 1) IS NOT NULL THEN b.sprint_id = ANY($3::uuid[])
+        ELSE b.sprint_id IN (SELECT id FROM applicable_sprints)
+      END
+    )
+    -- Filter by name if provided
+    AND ($4::text = '' OR b.name ILIKE '%' || $4 || '%')
 )
 SELECT
   id, sprint_id, name, position, created_at, updated_at, deleted_at, total_count
@@ -299,19 +316,20 @@ FROM
   filtered_boards
 ORDER BY
   position ASC
-LIMIT $4
-OFFSET $5
+LIMIT $5
+OFFSET $6
 `
 
-type ListBoardsBySprintPagedParams struct {
+type ListBoardsPagedParams struct {
 	Column1 []pgtype.UUID `db:"column_1" json:"column_1"`
 	Column2 []pgtype.UUID `db:"column_2" json:"column_2"`
-	Column3 string        `db:"column_3" json:"column_3"`
+	Column3 []pgtype.UUID `db:"column_3" json:"column_3"`
+	Column4 string        `db:"column_4" json:"column_4"`
 	Limit   int32         `db:"limit" json:"limit"`
 	Offset  int32         `db:"offset" json:"offset"`
 }
 
-type ListBoardsBySprintPagedRow struct {
+type ListBoardsPagedRow struct {
 	ID         pgtype.UUID        `db:"id" json:"id"`
 	SprintID   pgtype.UUID        `db:"sprint_id" json:"sprint_id"`
 	Name       string             `db:"name" json:"name"`
@@ -322,11 +340,12 @@ type ListBoardsBySprintPagedRow struct {
 	TotalCount int64              `db:"total_count" json:"total_count"`
 }
 
-func (q *Queries) ListBoardsBySprintPaged(ctx context.Context, arg ListBoardsBySprintPagedParams) ([]ListBoardsBySprintPagedRow, error) {
-	rows, err := q.db.Query(ctx, listBoardsBySprintPaged,
+func (q *Queries) ListBoardsPaged(ctx context.Context, arg ListBoardsPagedParams) ([]ListBoardsPagedRow, error) {
+	rows, err := q.db.Query(ctx, listBoardsPaged,
 		arg.Column1,
 		arg.Column2,
 		arg.Column3,
+		arg.Column4,
 		arg.Limit,
 		arg.Offset,
 	)
@@ -334,9 +353,9 @@ func (q *Queries) ListBoardsBySprintPaged(ctx context.Context, arg ListBoardsByS
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListBoardsBySprintPagedRow{}
+	items := []ListBoardsPagedRow{}
 	for rows.Next() {
-		var i ListBoardsBySprintPagedRow
+		var i ListBoardsPagedRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.SprintID,

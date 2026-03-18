@@ -31,6 +31,7 @@ type BoardReorderModel []pgtype.UUID
 type BoardsSearchModel struct {
 	ID         []pgtype.UUID `json:"id" validate:"omitempty,dive,uuid4"`
 	SprintID   []pgtype.UUID `json:"sprintId" validate:"omitempty,dive,uuid4"`
+	ProjectID  []pgtype.UUID `json:"projectId" validate:"omitempty,dive,uuid4"`
 	Name       string        `json:"name"`
 	PageNumber int           `json:"pageNumber" validate:"omitempty,min=1"`
 	PageSize   int           `json:"pageSize" validate:"omitempty,min=1,max=100"`

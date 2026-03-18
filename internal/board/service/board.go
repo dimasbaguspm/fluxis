@@ -69,10 +69,11 @@ func (s *Service) ListBoards(ctx context.Context, q domain.BoardsSearchModel) (d
 	q.ApplyDefaults()
 
 	offset := int32((q.PageNumber - 1) * q.PageSize)
-	rows, err := s.Repo.ListBoardsBySprintPaged(ctx, repository.ListBoardsBySprintPagedParams{
+	rows, err := s.Repo.ListBoardsPaged(ctx, repository.ListBoardsPagedParams{
 		Column1: q.ID,
-		Column2: q.SprintID,
-		Column3: q.Name,
+		Column2: q.ProjectID,
+		Column3: q.SprintID,
+		Column4: q.Name,
 		Limit:   int32(q.PageSize),
 		Offset:  offset,
 	})

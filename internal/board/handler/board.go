@@ -42,10 +42,10 @@ func (h *Handler) CreateBoard(w http.ResponseWriter, r *http.Request) {
 // ListBoards godoc
 //
 //	@Summary		List boards
-//	@Description	Returns all boards in a sprint with pagination
+//	@Description	Returns all boards in a sprint or project with pagination
 //	@Tags			board
 //	@Produce		json
-//	@Param			query		query		domain.BoardsSearchModel	false	"Search parameters: name, pageNumber, pageSize"
+//	@Param			query		query		domain.BoardsSearchModel	false	"Search parameters: id, sprintId, projectId, name, pageNumber, pageSize"
 //	@Success		200			{object}	domain.BoardsPagedModel
 //	@Failure		400			{object}	httpx.ErrBlock
 //	@Failure		401			{object}	httpx.ErrBlock
@@ -55,6 +55,7 @@ func (h *Handler) ListBoards(w http.ResponseWriter, r *http.Request) {
 	req := domain.BoardsSearchModel{
 		ID:         httpx.QueryUUIDs(r, "id"),
 		SprintID:   httpx.QueryUUIDs(r, "sprintId"),
+		ProjectID:  httpx.QueryUUIDs(r, "projectId"),
 		Name:       httpx.QueryString(r, "name"),
 		PageNumber: httpx.QueryNumber(r, "pageNumber"),
 		PageSize:   httpx.QueryNumber(r, "pageSize"),
