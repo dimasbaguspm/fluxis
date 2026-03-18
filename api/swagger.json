@@ -2447,71 +2447,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/domain.TicketBoardMoveModel"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/domain.TicketModel"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/httpx.ErrBlock"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/httpx.ErrBlock"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/httpx.ErrBlock"
-                        }
-                    }
-                }
-            }
-        },
-        "/tickets/{ticketId}/move-to-board": {
-            "patch": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Moves a ticket to a specific board and column",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "ticket"
-                ],
-                "summary": "Move ticket to board column",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Ticket ID",
-                        "name": "ticketId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Move payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.TicketBoardMoveModel"
+                            "$ref": "#/definitions/domain.TicketMoveBoardColumnModel"
                         }
                     }
                 ],
@@ -2550,7 +2486,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Moves a ticket to a specific sprint",
+                "description": "Moves a ticket to a specific sprint or backlog",
                 "consumes": [
                     "application/json"
                 ],
@@ -2570,11 +2506,13 @@
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Sprint ID",
-                        "name": "sprintId",
-                        "in": "query",
-                        "required": true
+                        "description": "Move payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.TicketMoveToSprintModel"
+                        }
                     }
                 ],
                 "responses": {
@@ -3275,21 +3213,6 @@
                 }
             }
         },
-        "domain.TicketBoardMoveModel": {
-            "type": "object",
-            "required": [
-                "boardColumnId",
-                "boardId"
-            ],
-            "properties": {
-                "boardColumnId": {
-                    "type": "string"
-                },
-                "boardId": {
-                    "type": "string"
-                }
-            }
-        },
         "domain.TicketCreateModel": {
             "type": "object",
             "required": [
@@ -3405,6 +3328,25 @@
                     "type": "string"
                 },
                 "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.TicketMoveBoardColumnModel": {
+            "type": "object",
+            "required": [
+                "boardColumnId"
+            ],
+            "properties": {
+                "boardColumnId": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.TicketMoveToSprintModel": {
+            "type": "object",
+            "properties": {
+                "sprintId": {
                     "type": "string"
                 }
             }

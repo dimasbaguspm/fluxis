@@ -245,11 +245,6 @@ export interface DomainSprintsPagedModel {
   totalPages?: number;
 }
 
-export interface DomainTicketBoardMoveModel {
-  boardColumnId: string;
-  boardId: string;
-}
-
 export interface DomainTicketCreateModel {
   assigneeId?: string;
   description?: string;
@@ -287,6 +282,14 @@ export interface DomainTicketModel {
   title?: string;
   type?: string;
   updatedAt?: string;
+}
+
+export interface DomainTicketMoveBoardColumnModel {
+  boardColumnId: string;
+}
+
+export interface DomainTicketMoveToSprintModel {
+  sprintId?: string;
 }
 
 export interface DomainTicketUpdateModel {
@@ -1541,7 +1544,7 @@ export class Api<
      */
     moveBoardColumnPartialUpdate: (
       ticketId: string,
-      body: DomainTicketBoardMoveModel,
+      body: DomainTicketMoveBoardColumnModel,
       params: RequestParams = {},
     ) =>
       this.request<DomainTicketModel, HttpxErrBlock>({
@@ -1555,31 +1558,7 @@ export class Api<
       }),
 
     /**
-     * @description Moves a ticket to a specific board and column
-     *
-     * @tags ticket
-     * @name MoveToBoardPartialUpdate
-     * @summary Move ticket to board column
-     * @request PATCH:/tickets/{ticketId}/move-to-board
-     * @secure
-     */
-    moveToBoardPartialUpdate: (
-      ticketId: string,
-      body: DomainTicketBoardMoveModel,
-      params: RequestParams = {},
-    ) =>
-      this.request<DomainTicketModel, HttpxErrBlock>({
-        path: `/tickets/${ticketId}/move-to-board`,
-        method: "PATCH",
-        body: body,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Moves a ticket to a specific sprint
+     * @description Moves a ticket to a specific sprint or backlog
      *
      * @tags ticket
      * @name MoveToSprintPartialUpdate
@@ -1589,16 +1568,13 @@ export class Api<
      */
     moveToSprintPartialUpdate: (
       ticketId: string,
-      query: {
-        /** Sprint ID */
-        sprintId: string;
-      },
+      body: DomainTicketMoveToSprintModel,
       params: RequestParams = {},
     ) =>
       this.request<DomainTicketModel, HttpxErrBlock>({
         path: `/tickets/${ticketId}/move-to-sprint`,
         method: "PATCH",
-        query: query,
+        body: body,
         secure: true,
         type: ContentType.Json,
         format: "json",

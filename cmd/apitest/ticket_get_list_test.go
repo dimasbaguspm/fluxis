@@ -102,6 +102,9 @@ func TestTicket_List_WithSprint(t *testing.T) {
 	sprint := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
 	sprintID := uuidToString(sprint.ID)
 
+	// Create board for sprint
+	_ = createBoard(t, sprintID, tokens.AccessToken, randomBoardName())
+
 	// Create tickets with and without sprint
 	createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "story", "medium")
 	t1 := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "task", "low")
@@ -110,8 +113,12 @@ func TestTicket_List_WithSprint(t *testing.T) {
 	// Move tickets to sprint
 	ticketID1 := uuidToString(t1.ID)
 	ticketID2 := uuidToString(t2.ID)
-	do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID1+"/move-to-sprint?sprintId="+sprintID, nil, tokens.AccessToken)
-	do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID2+"/move-to-sprint?sprintId="+sprintID, nil, tokens.AccessToken)
+	do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID1+"/move-to-sprint", domain.TicketMoveToSprintModel{
+		SprintID: stringToUUID(sprintID),
+	}, tokens.AccessToken)
+	do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID2+"/move-to-sprint", domain.TicketMoveToSprintModel{
+		SprintID: stringToUUID(sprintID),
+	}, tokens.AccessToken)
 
 	// List tickets for sprint
 	statusCode, resp := do[domain.TicketsPagedModel](t, "GET", "/tickets?projectId="+projectID+"&sprintId="+sprintID, nil, tokens.AccessToken)
@@ -284,23 +291,34 @@ func TestTicket_List_FilterByMultipleSprints(t *testing.T) {
 	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project", "private")
 	projectID := uuidToString(project.ID)
 
-	// Create 2 sprints
+	// Create 2 sprints and their boards
 	sprint1 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
 	sprint2 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
 	sprint1ID := uuidToString(sprint1.ID)
 	sprint2ID := uuidToString(sprint2.ID)
 
+	_ = createBoard(t, sprint1ID, tokens.AccessToken, randomBoardName())
+	_ = createBoard(t, sprint2ID, tokens.AccessToken, randomBoardName())
+
 	// Create tickets in sprint1
 	t1 := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "story", "medium")
 	t2 := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "task", "low")
-	do[domain.TicketModel](t, "PATCH", "/tickets/"+uuidToString(t1.ID)+"/move-to-sprint?sprintId="+sprint1ID, nil, tokens.AccessToken)
-	do[domain.TicketModel](t, "PATCH", "/tickets/"+uuidToString(t2.ID)+"/move-to-sprint?sprintId="+sprint1ID, nil, tokens.AccessToken)
+	do[domain.TicketModel](t, "PATCH", "/tickets/"+uuidToString(t1.ID)+"/move-to-sprint", domain.TicketMoveToSprintModel{
+		SprintID: stringToUUID(sprint1ID),
+	}, tokens.AccessToken)
+	do[domain.TicketModel](t, "PATCH", "/tickets/"+uuidToString(t2.ID)+"/move-to-sprint", domain.TicketMoveToSprintModel{
+		SprintID: stringToUUID(sprint1ID),
+	}, tokens.AccessToken)
 
 	// Create tickets in sprint2
 	t3 := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "bug", "high")
 	t4 := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "epic", "medium")
-	do[domain.TicketModel](t, "PATCH", "/tickets/"+uuidToString(t3.ID)+"/move-to-sprint?sprintId="+sprint2ID, nil, tokens.AccessToken)
-	do[domain.TicketModel](t, "PATCH", "/tickets/"+uuidToString(t4.ID)+"/move-to-sprint?sprintId="+sprint2ID, nil, tokens.AccessToken)
+	do[domain.TicketModel](t, "PATCH", "/tickets/"+uuidToString(t3.ID)+"/move-to-sprint", domain.TicketMoveToSprintModel{
+		SprintID: stringToUUID(sprint2ID),
+	}, tokens.AccessToken)
+	do[domain.TicketModel](t, "PATCH", "/tickets/"+uuidToString(t4.ID)+"/move-to-sprint", domain.TicketMoveToSprintModel{
+		SprintID: stringToUUID(sprint2ID),
+	}, tokens.AccessToken)
 
 	// Filter by both sprints
 	statusCode, resp := do[domain.TicketsPagedModel](t, "GET", "/tickets?projectId="+projectID+"&sprintId="+sprint1ID+"&sprintId="+sprint2ID, nil, tokens.AccessToken)
@@ -335,14 +353,21 @@ func TestTicket_List_CombinedFilters(t *testing.T) {
 	sprint := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
 	sprintID := uuidToString(sprint.ID)
 
+	// Create board for sprint
+	_ = createBoard(t, sprintID, tokens.AccessToken, randomBoardName())
+
 	// Create tickets
 	t1 := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "story", "medium")
 	t2 := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "task", "low")
 	createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "bug", "high") // not in sprint
 
 	// Move first 2 to sprint
-	do[domain.TicketModel](t, "PATCH", "/tickets/"+uuidToString(t1.ID)+"/move-to-sprint?sprintId="+sprintID, nil, tokens.AccessToken)
-	do[domain.TicketModel](t, "PATCH", "/tickets/"+uuidToString(t2.ID)+"/move-to-sprint?sprintId="+sprintID, nil, tokens.AccessToken)
+	do[domain.TicketModel](t, "PATCH", "/tickets/"+uuidToString(t1.ID)+"/move-to-sprint", domain.TicketMoveToSprintModel{
+		SprintID: stringToUUID(sprintID),
+	}, tokens.AccessToken)
+	do[domain.TicketModel](t, "PATCH", "/tickets/"+uuidToString(t2.ID)+"/move-to-sprint", domain.TicketMoveToSprintModel{
+		SprintID: stringToUUID(sprintID),
+	}, tokens.AccessToken)
 
 	// Filter: sprint AND specific ticket IDs
 	statusCode, resp := do[domain.TicketsPagedModel](t, "GET", "/tickets?projectId="+projectID+"&sprintId="+sprintID+"&id="+uuidToString(t1.ID), nil, tokens.AccessToken)

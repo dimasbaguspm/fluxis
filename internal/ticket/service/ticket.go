@@ -248,71 +248,72 @@ func (s *Service) UpdateTicket(ctx context.Context, id pgtype.UUID, p domain.Tic
 	return result, nil
 }
 
-func (s *Service) MoveTicketToBoard(ctx context.Context, id pgtype.UUID, p domain.TicketBoardMoveModel) (domain.TicketModel, error) {
-	var board domain.BoardModel
-	var boardColumn domain.BoardColumnModel
+func (s *Service) MoveTicketToSprint(ctx context.Context, id pgtype.UUID, p domain.TicketMoveToSprintModel) (domain.TicketModel, error) {
+	if p.SprintID.Valid {
+		sprint, err := s.Sprint.GetSprint(ctx, p.SprintID)
+		if err != nil {
+			return domain.TicketModel{}, fmt.Errorf("validate sprint: %w", err)
+		}
 
-	err := syncx.Run(ctx,
-		func(ctx context.Context) error {
-			b, err := s.Board.GetBoard(ctx, p.BoardID)
-			if err != nil {
-				return fmt.Errorf("validate board: %w", err)
+		boards, err := s.Board.ListBoards(ctx, domain.BoardsSearchModel{
+			SprintID: []pgtype.UUID{sprint.ID},
+			PageSize: 1,
+		})
+		if err != nil {
+			return domain.TicketModel{}, fmt.Errorf("list boards: %w", err)
+		}
+
+		if len(boards.Items) == 0 {
+			return domain.TicketModel{}, httpx.BadRequest("sprint has no associated board")
+		}
+
+		board := boards.Items[0]
+		if len(board.Columns) == 0 {
+			return domain.TicketModel{}, httpx.BadRequest("board has no columns")
+		}
+
+		firstColumn := board.Columns[0]
+
+		ticket, err := s.Repo.UpdateTicketSprintAndBoard(ctx, repository.UpdateTicketSprintAndBoardParams{
+			ID:            id,
+			SprintID:      sprint.ID,
+			BoardID:       board.ID,
+			BoardColumnID: firstColumn.ID,
+		})
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return domain.TicketModel{}, ErrTicketNotFound
 			}
-			board = b
-			return nil
-		},
-		func(ctx context.Context) error {
-			bc, err := s.Board.GetBoardColumn(ctx, p.BoardColumnID)
-			if err != nil {
-				return fmt.Errorf("validate board column: %w", err)
-			}
-			boardColumn = bc
-			return nil
-		},
-	)
+			return domain.TicketModel{}, fmt.Errorf("move ticket to sprint: %w", err)
+		}
+
+		result := s.ticketToModel(ticket)
+		if err := s.Bus.Publish(ctx, pubsub.TicketMovedToSprint, httpx.EncodePayload(result)); err != nil {
+			slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.TicketMovedToSprint), "error", err)
+		}
+
+		return result, nil
+	}
+
+	_, err := s.Repo.GetTicket(ctx, id)
 	if err != nil {
-		return domain.TicketModel{}, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.TicketModel{}, ErrTicketNotFound
+		}
+		return domain.TicketModel{}, fmt.Errorf("get ticket: %w", err)
 	}
 
-	if boardColumn.BoardID != board.ID {
-		return domain.TicketModel{}, httpx.BadRequest("board column does not belong to the board")
-	}
-
-	ticket, err := s.Repo.UpdateTicketBoard(ctx, repository.UpdateTicketBoardParams{
+	ticket, err := s.Repo.UpdateTicketSprintAndBoard(ctx, repository.UpdateTicketSprintAndBoardParams{
 		ID:            id,
-		BoardID:       board.ID,
-		BoardColumnID: boardColumn.ID,
+		SprintID:      pgtype.UUID{Valid: false},
+		BoardID:       pgtype.UUID{Valid: false},
+		BoardColumnID: pgtype.UUID{Valid: false},
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return domain.TicketModel{}, ErrTicketNotFound
 		}
-		return domain.TicketModel{}, fmt.Errorf("move ticket to board: %w", err)
-	}
-
-	result := s.ticketToModel(ticket)
-	if err := s.Bus.Publish(ctx, pubsub.TicketMovedToBoard, httpx.EncodePayload(result)); err != nil {
-		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.TicketMovedToBoard), "error", err)
-	}
-
-	return result, nil
-}
-
-func (s *Service) MoveTicketToSprint(ctx context.Context, id pgtype.UUID, sprintID pgtype.UUID) (domain.TicketModel, error) {
-	// Validate sprint exists
-	if _, err := s.Sprint.GetSprint(ctx, sprintID); err != nil {
-		return domain.TicketModel{}, fmt.Errorf("validate sprint: %w", err)
-	}
-
-	ticket, err := s.Repo.UpdateTicketSprint(ctx, repository.UpdateTicketSprintParams{
-		ID:       id,
-		SprintID: sprintID,
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return domain.TicketModel{}, ErrTicketNotFound
-		}
-		return domain.TicketModel{}, fmt.Errorf("move ticket to sprint: %w", err)
+		return domain.TicketModel{}, fmt.Errorf("move ticket to backlog: %w", err)
 	}
 
 	result := s.ticketToModel(ticket)
@@ -323,39 +324,15 @@ func (s *Service) MoveTicketToSprint(ctx context.Context, id pgtype.UUID, sprint
 	return result, nil
 }
 
-func (s *Service) MoveTicketToBoardColumn(ctx context.Context, id pgtype.UUID, p domain.TicketBoardMoveModel) (domain.TicketModel, error) {
-	var board domain.BoardModel
-	var boardColumn domain.BoardColumnModel
-
-	err := syncx.Run(ctx,
-		func(ctx context.Context) error {
-			b, err := s.Board.GetBoard(ctx, p.BoardID)
-			if err != nil {
-				return fmt.Errorf("validate board: %w", err)
-			}
-			board = b
-			return nil
-		},
-		func(ctx context.Context) error {
-			bc, err := s.Board.GetBoardColumn(ctx, p.BoardColumnID)
-			if err != nil {
-				return fmt.Errorf("validate board column: %w", err)
-			}
-			boardColumn = bc
-			return nil
-		},
-	)
+func (s *Service) MoveTicketToBoardColumn(ctx context.Context, id pgtype.UUID, p domain.TicketMoveBoardColumnModel) (domain.TicketModel, error) {
+	boardColumn, err := s.Board.GetBoardColumn(ctx, p.BoardColumnID)
 	if err != nil {
-		return domain.TicketModel{}, err
-	}
-
-	if boardColumn.BoardID != board.ID {
-		return domain.TicketModel{}, httpx.BadRequest("board column does not belong to the board")
+		return domain.TicketModel{}, fmt.Errorf("validate board column: %w", err)
 	}
 
 	ticket, err := s.Repo.UpdateTicketBoard(ctx, repository.UpdateTicketBoardParams{
 		ID:            id,
-		BoardID:       board.ID,
+		BoardID:       boardColumn.BoardID,
 		BoardColumnID: boardColumn.ID,
 	})
 	if err != nil {

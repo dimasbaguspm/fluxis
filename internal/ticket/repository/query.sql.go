@@ -659,3 +659,50 @@ func (q *Queries) UpdateTicketSprint(ctx context.Context, arg UpdateTicketSprint
 	)
 	return i, err
 }
+
+const updateTicketSprintAndBoard = `-- name: UpdateTicketSprintAndBoard :one
+UPDATE tickets
+SET sprint_id = $2, board_id = $3, board_column_id = $4, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, project_id, ticket_number, key, sprint_id, board_id, board_column_id, type, priority, title, description, assignee_id, reporter_id, epic_id, parent_id, story_points, due_date, created_at, updated_at, deleted_at
+`
+
+type UpdateTicketSprintAndBoardParams struct {
+	ID            pgtype.UUID `db:"id" json:"id"`
+	SprintID      pgtype.UUID `db:"sprint_id" json:"sprint_id"`
+	BoardID       pgtype.UUID `db:"board_id" json:"board_id"`
+	BoardColumnID pgtype.UUID `db:"board_column_id" json:"board_column_id"`
+}
+
+func (q *Queries) UpdateTicketSprintAndBoard(ctx context.Context, arg UpdateTicketSprintAndBoardParams) (Ticket, error) {
+	row := q.db.QueryRow(ctx, updateTicketSprintAndBoard,
+		arg.ID,
+		arg.SprintID,
+		arg.BoardID,
+		arg.BoardColumnID,
+	)
+	var i Ticket
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.TicketNumber,
+		&i.Key,
+		&i.SprintID,
+		&i.BoardID,
+		&i.BoardColumnID,
+		&i.Type,
+		&i.Priority,
+		&i.Title,
+		&i.Description,
+		&i.AssigneeID,
+		&i.ReporterID,
+		&i.EpicID,
+		&i.ParentID,
+		&i.StoryPoints,
+		&i.DueDate,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}

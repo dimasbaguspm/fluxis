@@ -1,15 +1,16 @@
 import type {
-  DomainTicketBoardMoveModel,
   DomainTicketCreateModel,
   DomainTicketModel,
+  DomainTicketMoveBoardColumnModel,
+  DomainTicketMoveToSprintModel,
   DomainTicketsPagedModel,
   DomainTicketUpdateModel,
   HttpxErrBlock,
 } from "@interfaces/openapi.generated";
 import type { UseQueryOptions } from "@tanstack/react-query";
+import { queryKeys } from "../query-keys";
 import { useApiMutation } from "../use-api-mutation";
 import { useApiQuery } from "../use-api-query";
-import { queryKeys } from "../query-keys";
 
 interface ListTicketsParams {
   boardId?: string[];
@@ -102,7 +103,7 @@ export function useMoveBoardColumn() {
   return useApiMutation<
     DomainTicketModel,
     HttpxErrBlock,
-    { ticketId: string; move: DomainTicketBoardMoveModel }
+    { ticketId: string; move: DomainTicketMoveBoardColumnModel }
   >((variables) => ({
     method: "PATCH",
     path: `/tickets/${variables.ticketId}/move-board-column`,
@@ -111,29 +112,16 @@ export function useMoveBoardColumn() {
 }
 
 /**
- * Move ticket to a board
- */
-export function useMoveToBoard() {
-  return useApiMutation<
-    DomainTicketModel,
-    HttpxErrBlock,
-    { ticketId: string; move: DomainTicketBoardMoveModel }
-  >((variables) => ({
-    method: "PATCH",
-    path: `/tickets/${variables.ticketId}/move-to-board`,
-    body: variables.move,
-  }));
-}
-
-/**
  * Move ticket to a sprint
  */
 export function useMoveToSprint() {
-  return useApiMutation<DomainTicketModel, HttpxErrBlock, { ticketId: string; sprintId: string }>(
-    (variables) => ({
-      method: "PATCH",
-      path: `/tickets/${variables.ticketId}/move-to-sprint`,
-      body: { sprintId: variables.sprintId },
-    }),
-  );
+  return useApiMutation<
+    DomainTicketModel,
+    HttpxErrBlock,
+    { ticketId: string; move: DomainTicketMoveToSprintModel }
+  >((variables) => ({
+    method: "PATCH",
+    path: `/tickets/${variables.ticketId}/move-to-sprint`,
+    body: variables.move,
+  }));
 }

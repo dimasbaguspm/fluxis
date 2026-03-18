@@ -97,6 +97,14 @@ type TicketBoardMoveModel struct {
 	BoardColumnID pgtype.UUID `json:"boardColumnId" validate:"required"`
 }
 
+type TicketMoveToSprintModel struct {
+	SprintID pgtype.UUID `json:"sprintId"`
+}
+
+type TicketMoveBoardColumnModel struct {
+	BoardColumnID pgtype.UUID `json:"boardColumnId" validate:"required"`
+}
+
 type TicketReader interface {
 	ListTickets(ctx context.Context, q TicketSearchModel) (TicketsPagedModel, error)
 	GetTicket(ctx context.Context, id pgtype.UUID) (TicketModel, error)
@@ -106,8 +114,7 @@ type TicketReader interface {
 type TicketWriter interface {
 	CreateTicket(ctx context.Context, p TicketCreateModel) (TicketModel, error)
 	UpdateTicket(ctx context.Context, id pgtype.UUID, p TicketUpdateModel) (TicketModel, error)
-	MoveTicketToBoard(ctx context.Context, id pgtype.UUID, p TicketBoardMoveModel) (TicketModel, error)
-	MoveTicketToSprint(ctx context.Context, id pgtype.UUID, sprintID pgtype.UUID) (TicketModel, error)
-	MoveTicketToBoardColumn(ctx context.Context, id pgtype.UUID, p TicketBoardMoveModel) (TicketModel, error)
+	MoveTicketToSprint(ctx context.Context, id pgtype.UUID, p TicketMoveToSprintModel) (TicketModel, error)
+	MoveTicketToBoardColumn(ctx context.Context, id pgtype.UUID, p TicketMoveBoardColumnModel) (TicketModel, error)
 	DeleteTicket(ctx context.Context, id pgtype.UUID) error
 }

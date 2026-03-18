@@ -35,9 +35,8 @@ func TestTicket_MoveToBoardColumn_Success(t *testing.T) {
 	ticket := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "story", "medium")
 	ticketID := uuidToString(ticket.ID)
 
-	// Move ticket to board column
-	statusCode, resp := do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID+"/move-board-column", domain.TicketBoardMoveModel{
-		BoardID:       stringToUUID(boardID),
+	// Move ticket to board column (only boardColumnId required)
+	statusCode, resp := do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID+"/move-board-column", domain.TicketMoveBoardColumnModel{
 		BoardColumnID: stringToUUID(boardColumnID),
 	}, tokens.AccessToken)
 
@@ -52,9 +51,13 @@ func TestTicket_MoveToBoardColumn_Success(t *testing.T) {
 	if uuidToString(resp.Data.BoardColumnID) != boardColumnID {
 		t.Fatalf("expected board column ID '%s', got '%s'", boardColumnID, uuidToString(resp.Data.BoardColumnID))
 	}
+
+	if uuidToString(resp.Data.BoardID) != boardID {
+		t.Fatalf("expected board ID '%s', got '%s'", boardID, uuidToString(resp.Data.BoardID))
+	}
 }
 
-func TestTicket_MoveToBoardColumn_MismatchedColumn(t *testing.T) {
+func TestTicket_MoveToBoardColumn_ColumnNotFound(t *testing.T) {
 	tokens := register(t, randomEmail(), "Test User", "SecurePassword123!")
 
 	statusCode, orgResp := do[domain.OrganisationModel](t, "POST", "/orgs", domain.OrganisationCreateModel{
@@ -69,29 +72,16 @@ func TestTicket_MoveToBoardColumn_MismatchedColumn(t *testing.T) {
 	project := createProject(t, orgID, tokens.AccessToken, randomProjectKey(), "Test Project "+randomString(8), "private")
 	projectID := uuidToString(project.ID)
 
-	// Create sprints, boards, board columns, and ticket
-	sprint1 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
-	board1 := createBoard(t, uuidToString(sprint1.ID), tokens.AccessToken, randomBoardName())
-	boardID1 := uuidToString(board1.ID)
-
-	sprint2 := createSprint(t, projectID, tokens.AccessToken, randomSprintName())
-	board2 := createBoard(t, uuidToString(sprint2.ID), tokens.AccessToken, randomBoardName())
-	boardID2 := uuidToString(board2.ID)
-
-	// Create column in board2
-	boardColumn2 := createBoardColumn(t, boardID2, tokens.AccessToken, randomBoardColumnName())
-	boardColumnID2 := uuidToString(boardColumn2.ID)
-
 	ticket := createTicket(t, projectID, tokens.AccessToken, randomTicketTitle(), "story", "medium")
 	ticketID := uuidToString(ticket.ID)
 
-	// Try to move ticket to board1 with column from board2
-	statusCode, resp := do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID+"/move-board-column", domain.TicketBoardMoveModel{
-		BoardID:       stringToUUID(boardID1),
-		BoardColumnID: stringToUUID(boardColumnID2),
+	// Try to move ticket to non-existent column
+	invalidColumnID := "550e8400-e29b-41d4-a716-446655440000"
+	statusCode, resp := do[domain.TicketModel](t, "PATCH", "/tickets/"+ticketID+"/move-board-column", domain.TicketMoveBoardColumnModel{
+		BoardColumnID: stringToUUID(invalidColumnID),
 	}, tokens.AccessToken)
 
-	if statusCode != http.StatusBadRequest {
-		t.Fatalf("expected status 400 for mismatched column, got %d: %v", statusCode, resp.Error)
+	if statusCode != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d: %v", statusCode, resp.Error)
 	}
 }

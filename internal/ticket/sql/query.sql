@@ -113,3 +113,9 @@ WITH filtered_tickets AS (
 SELECT * FROM filtered_tickets
 ORDER BY ticket_number DESC
 LIMIT $5 OFFSET $6;
+
+-- name: UpdateTicketSprintAndBoard :one
+UPDATE tickets
+SET sprint_id = $2, board_id = $3, board_column_id = $4, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, project_id, ticket_number, key, sprint_id, board_id, board_column_id, type, priority, title, description, assignee_id, reporter_id, epic_id, parent_id, story_points, due_date, created_at, updated_at, deleted_at;

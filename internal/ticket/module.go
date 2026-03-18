@@ -31,7 +31,6 @@ func (m *Module) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /tickets/{ticketId}", httpx.RequireAuth(m.h.GetTicket))
 	mux.HandleFunc("POST /tickets", httpx.RequireAuth(m.h.CreateTicket))
 	mux.HandleFunc("PATCH /tickets/{ticketId}", httpx.RequireAuth(m.h.UpdateTicket))
-	mux.HandleFunc("PATCH /tickets/{ticketId}/move-to-board", httpx.RequireAuth(m.h.MoveTicketToBoard))
 	mux.HandleFunc("PATCH /tickets/{ticketId}/move-to-sprint", httpx.RequireAuth(m.h.MoveTicketToSprint))
 	mux.HandleFunc("PATCH /tickets/{ticketId}/move-board-column", httpx.RequireAuth(m.h.MoveTicketToBoardColumn))
 	mux.HandleFunc("DELETE /tickets/{ticketId}", httpx.RequireAuth(m.h.DeleteTicket))
@@ -50,12 +49,10 @@ func (m *Module) StartSubscriber(ctx context.Context) {
 			m.ticketCache.InvalidatePagedBoardTickets(ctx)
 			m.ticketCache.InvalidatePagedSprintTickets(ctx)
 			m.ticketCache.InvalidatePagedProjectBacklog(ctx)
-		case pubsub.TicketMovedToBoard:
-			m.ticketCache.InvalidatePagedBoardTickets(ctx)
-			m.ticketCache.InvalidatePagedProjectBacklog(ctx)
 		case pubsub.TicketMovedToBoardColumn:
 			m.ticketCache.InvalidatePagedBoardTickets(ctx)
 		case pubsub.TicketMovedToSprint:
+			m.ticketCache.InvalidatePagedBoardTickets(ctx)
 			m.ticketCache.InvalidatePagedSprintTickets(ctx)
 			m.ticketCache.InvalidatePagedProjectBacklog(ctx)
 		}

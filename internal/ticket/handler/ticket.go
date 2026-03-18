@@ -134,52 +134,15 @@ func (h *Handler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	httpx.OK(w, ticket)
 }
 
-// MoveTicketToBoard godoc
-//
-//	@Summary		Move ticket to board column
-//	@Description	Moves a ticket to a specific board and column
-//	@Tags			ticket
-//	@Accept			json
-//	@Produce		json
-//	@Param			ticketId	path		string							true	"Ticket ID"
-//	@Param			body		body		domain.TicketBoardMoveModel	true	"Move payload"
-//	@Success		200			{object}	domain.TicketModel
-//	@Failure		400			{object}	httpx.ErrBlock
-//	@Failure		401			{object}	httpx.ErrBlock
-//	@Failure		404			{object}	httpx.ErrBlock
-//	@Security		BearerAuth
-//	@Router			/tickets/{ticketId}/move-to-board [patch]
-func (h *Handler) MoveTicketToBoard(w http.ResponseWriter, r *http.Request) {
-	id, err := httpx.PathUUID(r, "ticketId")
-	if err != nil {
-		httpx.Handle(w, err)
-		return
-	}
-
-	var req domain.TicketBoardMoveModel
-	if err := httpx.DecodeAndValidate(r, &req); err != nil {
-		httpx.Handle(w, httpx.BadRequest(err.Error()))
-		return
-	}
-
-	ticket, err := h.svc.MoveTicketToBoard(r.Context(), id, req)
-	if err != nil {
-		httpx.Handle(w, err)
-		return
-	}
-
-	httpx.OK(w, ticket)
-}
-
 // MoveTicketToSprint godoc
 //
 //	@Summary		Move ticket to sprint
-//	@Description	Moves a ticket to a specific sprint
+//	@Description	Moves a ticket to a specific sprint or backlog
 //	@Tags			ticket
 //	@Accept			json
 //	@Produce		json
-//	@Param			ticketId	path		string	true	"Ticket ID"
-//	@Param			sprintId	query		string	true	"Sprint ID"
+//	@Param			ticketId	path		string								true	"Ticket ID"
+//	@Param			body		body		domain.TicketMoveToSprintModel	true	"Move payload"
 //	@Success		200			{object}	domain.TicketModel
 //	@Failure		400			{object}	httpx.ErrBlock
 //	@Failure		401			{object}	httpx.ErrBlock
@@ -193,13 +156,13 @@ func (h *Handler) MoveTicketToSprint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sprintID, err := httpx.QueryUUID(r, "sprintId")
-	if err != nil {
-		httpx.Handle(w, err)
+	var req domain.TicketMoveToSprintModel
+	if err := httpx.DecodeAndValidate(r, &req); err != nil {
+		httpx.Handle(w, httpx.BadRequest(err.Error()))
 		return
 	}
 
-	ticket, err := h.svc.MoveTicketToSprint(r.Context(), id, sprintID)
+	ticket, err := h.svc.MoveTicketToSprint(r.Context(), id, req)
 	if err != nil {
 		httpx.Handle(w, err)
 		return
@@ -215,8 +178,8 @@ func (h *Handler) MoveTicketToSprint(w http.ResponseWriter, r *http.Request) {
 //	@Tags			ticket
 //	@Accept			json
 //	@Produce		json
-//	@Param			ticketId	path		string							true	"Ticket ID"
-//	@Param			body		body		domain.TicketBoardMoveModel	true	"Move payload"
+//	@Param			ticketId	path		string									true	"Ticket ID"
+//	@Param			body		body		domain.TicketMoveBoardColumnModel	true	"Move payload"
 //	@Success		200			{object}	domain.TicketModel
 //	@Failure		400			{object}	httpx.ErrBlock
 //	@Failure		401			{object}	httpx.ErrBlock
@@ -230,7 +193,7 @@ func (h *Handler) MoveTicketToBoardColumn(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var req domain.TicketBoardMoveModel
+	var req domain.TicketMoveBoardColumnModel
 	if err := httpx.DecodeAndValidate(r, &req); err != nil {
 		httpx.Handle(w, httpx.BadRequest(err.Error()))
 		return
