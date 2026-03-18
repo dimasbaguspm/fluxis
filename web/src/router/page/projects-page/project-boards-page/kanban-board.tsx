@@ -1,9 +1,9 @@
-import { Button, Text, Badge, Heading } from "@versaur/react/primitive";
-import { Card, BadgeGroup } from "@versaur/react/blocks";
-import type { DomainBoardColumnModel, DomainTicketModel } from "@/interfaces/openapi.generated";
-import { useOutletContext } from "react-router";
-import { useDrawer } from "@/providers/drawer";
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
+import type { DomainBoardColumnModel, DomainTicketModel } from "@/interfaces/openapi.generated";
+import { useDrawer } from "@/providers/drawer";
+import { BadgeGroup, Card } from "@versaur/react/blocks";
+import { Badge, Button, Heading, Text } from "@versaur/react/primitive";
+import { useOutletContext } from "react-router";
 import type { ProjectDetailContextType } from "../project-detail-layout";
 
 // Mock tickets for demonstration
@@ -80,7 +80,6 @@ export const KanbanBoard = () => {
       style={{
         display: "grid",
         gridTemplateColumns: `repeat(${columnsList.length}, minmax(300px, 1fr))`,
-        gap: "1rem",
         overflowX: "auto",
         overflowY: "hidden",
         width: "100%",
@@ -115,14 +114,10 @@ function BoardColumn({ column, projectId }: BoardColumnProps) {
         display: "flex",
         flexDirection: "column",
         backgroundColor: "#f9fafb",
-        borderRadius: "0.75rem",
-        border: "1px solid #e5e7eb",
         height: "100%",
         minWidth: "300px",
-        boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
       }}
     >
-      {/* Column Header */}
       <div
         style={{
           padding: "1rem",

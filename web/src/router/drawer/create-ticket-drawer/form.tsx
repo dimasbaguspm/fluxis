@@ -1,8 +1,9 @@
+import { SelectProjectsInput } from "@/components/ui";
+import { When } from "@/lib/when";
 import { FormGroup } from "@versaur/react/blocks";
-import { TextInput } from "@versaur/react/forms";
+import { Select, TextArea, TextInput } from "@versaur/react/forms";
 import { useForm } from "react-hook-form";
-import { SelectProjectsInput, SelectSprintsInput } from "@/components/ui";
-import { CREATE_TICKET_FORM_ID } from "./constants";
+import { CREATE_TICKET_FORM_ID, TICKET_PRIORITIES, TICKET_TYPES } from "./constants";
 import type { CreateTicketFormInputs } from "./types";
 
 interface CreateTicketFormProps {
@@ -10,10 +11,7 @@ interface CreateTicketFormProps {
   projectId?: string;
 }
 
-export const CreateTicketForm = ({
-  onSubmit,
-  projectId,
-}: CreateTicketFormProps) => {
+export const CreateTicketForm = ({ onSubmit, projectId }: CreateTicketFormProps) => {
   const {
     register,
     formState: { errors },
@@ -35,9 +33,11 @@ export const CreateTicketForm = ({
 
   return (
     <FormGroup id={CREATE_TICKET_FORM_ID} onSubmit={handleSubmit(onSubmit)}>
-      <FormGroup.Field>
-        <SelectProjectsInput control={control} name="projectId" required />
-      </FormGroup.Field>
+      <When condition={!projectId}>
+        <FormGroup.Field>
+          <SelectProjectsInput control={control} name="projectId" required />
+        </FormGroup.Field>
+      </When>
       <FormGroup.Field>
         <TextInput
           placeholder="Ticket Title"
@@ -50,36 +50,38 @@ export const CreateTicketForm = ({
         />
       </FormGroup.Field>
       <FormGroup.Field>
-        <TextInput
-          placeholder="bug / story / task / epic"
+        <Select
           label="Type"
           required
           error={errors.type?.message}
           {...register("type", {
             required: "Type is required",
           })}
-        />
+        >
+          <Select.Option value="">Select a type</Select.Option>
+          {TICKET_TYPES.map((type) => (
+            <Select.Option key={type} value={type}>
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </Select.Option>
+          ))}
+        </Select>
       </FormGroup.Field>
       <FormGroup.Field>
-        <TextInput
-          placeholder="low / medium / high / critical"
+        <Select
           label="Priority"
           required
           error={errors.priority?.message}
           {...register("priority", {
             required: "Priority is required",
           })}
-        />
-      </FormGroup.Field>
-      <FormGroup.Field>
-        <TextInput
-          placeholder="Description"
-          label="Description"
-          {...register("description")}
-        />
-      </FormGroup.Field>
-      <FormGroup.Field>
-        <SelectSprintsInput control={control} name="sprintId" />
+        >
+          <Select.Option value="">Select a priority</Select.Option>
+          {TICKET_PRIORITIES.map((priority) => (
+            <Select.Option key={priority} value={priority}>
+              {priority.charAt(0).toUpperCase() + priority.slice(1)}
+            </Select.Option>
+          ))}
+        </Select>
       </FormGroup.Field>
       <FormGroup.Field>
         <TextInput
@@ -92,11 +94,15 @@ export const CreateTicketForm = ({
         />
       </FormGroup.Field>
       <FormGroup.Field>
-        <TextInput
-          placeholder="Due Date"
-          label="Due Date"
-          type="date"
-          {...register("dueDate")}
+        <TextInput placeholder="Due Date" label="Due Date" type="date" {...register("dueDate")} />
+      </FormGroup.Field>
+      <FormGroup.Field>
+        <TextArea
+          placeholder="Enter ticket description..."
+          label="Description"
+          minRows={5}
+          resizable={false}
+          {...register("description")}
         />
       </FormGroup.Field>
     </FormGroup>

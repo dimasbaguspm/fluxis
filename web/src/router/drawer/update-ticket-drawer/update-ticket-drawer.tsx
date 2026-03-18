@@ -1,10 +1,11 @@
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
 import { useGetTicket, useUpdateTicket } from "@/hooks/use-api";
+import { dateFormat, FormatDate } from "@/lib";
+import { When } from "@/lib/when";
 import { useDrawer } from "@/providers/drawer";
+import { SearchXIcon } from "@versaur/icons";
 import { ButtonGroup, Drawer, NoResults } from "@versaur/react/blocks";
 import { Banner, Button, Loader } from "@versaur/react/primitive";
-import { When } from "@/lib/when";
-import { SearchXIcon } from "@versaur/icons";
 import { UPDATE_TICKET_FORM_ID } from "./constants";
 import { UpdateTicketForm } from "./form";
 import type { UpdateTicketFormInputs } from "./types";
@@ -25,9 +26,9 @@ export const UpdateTicketDrawer = () => {
         type: data.type as "bug" | "story" | "task" | "epic" | undefined,
         priority: data.priority as "low" | "medium" | "high" | "critical" | undefined,
         description: data.description,
-        sprintId: data.sprintId,
-        storyPoints: data.storyPoints,
-        dueDate: data.dueDate,
+        sprintId: data?.sprintId ? data.sprintId : undefined,
+        storyPoints: data?.storyPoints ? data.storyPoints : undefined,
+        dueDate: data?.dueDate ? dateFormat(data.dueDate, FormatDate.ISO) : undefined,
       },
     });
     closeDrawer();

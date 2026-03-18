@@ -15,13 +15,14 @@ export const CreateTicketDrawer = () => {
     await createTicket({
       projectId: data.projectId,
       data: {
+        projectId: data.projectId,
         title: data.title,
         type: data.type as "bug" | "story" | "task" | "epic",
         priority: data.priority as "low" | "medium" | "high" | "critical",
         description: data.description,
-        sprintId: data.sprintId,
-        storyPoints: data.storyPoints,
-        dueDate: data.dueDate,
+        sprintId: data.sprintId ? data.sprintId : undefined,
+        storyPoints: data.storyPoints ? data.storyPoints : undefined,
+        dueDate: data.dueDate ? data.dueDate : undefined,
       },
     });
     closeDrawer();

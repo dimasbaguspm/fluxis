@@ -1,10 +1,11 @@
-import { FormGroup } from "@versaur/react/blocks";
-import { TextInput } from "@versaur/react/forms";
-import { useForm } from "react-hook-form";
 import { SelectSprintsInput } from "@/components/ui";
-import { UPDATE_TICKET_FORM_ID } from "./constants";
-import type { UpdateTicketFormInputs } from "./types";
 import type { DomainTicketModel } from "@/interfaces/openapi.generated";
+import { dateFormat, FormatDate } from "@/lib";
+import { FormGroup } from "@versaur/react/blocks";
+import { Select, TextArea, TextInput } from "@versaur/react/forms";
+import { useForm } from "react-hook-form";
+import { TICKET_PRIORITIES, TICKET_TYPES, UPDATE_TICKET_FORM_ID } from "./constants";
+import type { UpdateTicketFormInputs } from "./types";
 
 interface UpdateTicketFormProps {
   onSubmit: (data: UpdateTicketFormInputs) => void;
@@ -26,7 +27,7 @@ export const UpdateTicketForm = ({ onSubmit, ticket }: UpdateTicketFormProps) =>
       description: ticket.description ?? "",
       sprintId: ticket.sprintId ?? "",
       storyPoints: ticket.storyPoints,
-      dueDate: ticket.dueDate ?? "",
+      dueDate: ticket.dueDate ? dateFormat(ticket.dueDate, FormatDate.DateInput) : "",
     },
   });
 
@@ -41,27 +42,24 @@ export const UpdateTicketForm = ({ onSubmit, ticket }: UpdateTicketFormProps) =>
         />
       </FormGroup.Field>
       <FormGroup.Field>
-        <TextInput
-          placeholder="bug / story / task / epic"
-          label="Type"
-          error={errors.type?.message}
-          {...register("type")}
-        />
+        <Select label="Type" error={errors.type?.message} {...register("type")}>
+          <Select.Option value="">Select a type</Select.Option>
+          {TICKET_TYPES.map((type) => (
+            <Select.Option key={type} value={type}>
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </Select.Option>
+          ))}
+        </Select>
       </FormGroup.Field>
       <FormGroup.Field>
-        <TextInput
-          placeholder="low / medium / high / critical"
-          label="Priority"
-          error={errors.priority?.message}
-          {...register("priority")}
-        />
-      </FormGroup.Field>
-      <FormGroup.Field>
-        <TextInput
-          placeholder="Description"
-          label="Description"
-          {...register("description")}
-        />
+        <Select label="Priority" error={errors.priority?.message} {...register("priority")}>
+          <Select.Option value="">Select a priority</Select.Option>
+          {TICKET_PRIORITIES.map((priority) => (
+            <Select.Option key={priority} value={priority}>
+              {priority.charAt(0).toUpperCase() + priority.slice(1)}
+            </Select.Option>
+          ))}
+        </Select>
       </FormGroup.Field>
       <FormGroup.Field>
         <SelectSprintsInput control={control} name="sprintId" />
@@ -77,11 +75,15 @@ export const UpdateTicketForm = ({ onSubmit, ticket }: UpdateTicketFormProps) =>
         />
       </FormGroup.Field>
       <FormGroup.Field>
-        <TextInput
-          placeholder="Due Date"
-          label="Due Date"
-          type="date"
-          {...register("dueDate")}
+        <TextInput placeholder="Due Date" label="Due Date" type="date" {...register("dueDate")} />
+      </FormGroup.Field>
+      <FormGroup.Field>
+        <TextArea
+          placeholder="Enter ticket description..."
+          label="Description"
+          minRows={5}
+          resizable={false}
+          {...register("description")}
         />
       </FormGroup.Field>
     </FormGroup>

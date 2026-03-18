@@ -78,7 +78,7 @@ type TicketCreateModel struct {
 	AssigneeID  pgtype.UUID `json:"assigneeId" validate:"omitempty,uuid4"`
 	SprintID    pgtype.UUID `json:"sprintId" validate:"omitempty,uuid4"`
 	StoryPoints int32       `json:"storyPoints" validate:"omitempty,min=0"`
-	DueDate     time.Time   `json:"dueDate,omitempty"`
+	DueDate     time.Time   `json:"dueDate" validate:"omitempty,datetime=2006-01-02T15:04:05.000Z07:00"`
 }
 
 type TicketUpdateModel struct {
