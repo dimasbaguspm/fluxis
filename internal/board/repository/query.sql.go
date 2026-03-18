@@ -11,6 +11,56 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const bulkCreateBoardColumns = `-- name: BulkCreateBoardColumns :many
+WITH column_data AS (
+  SELECT
+    $1::uuid as board_id,
+    $2::text[] as names,
+    $3::int4[] as positions
+)
+INSERT INTO board_columns (board_id, name, position)
+SELECT
+  board_id,
+  names[idx],
+  positions[idx]
+FROM column_data, generate_series(1, array_length(names, 1)) AS idx
+RETURNING id, board_id, name, position, created_at, updated_at, deleted_at
+`
+
+type BulkCreateBoardColumnsParams struct {
+	Column1 pgtype.UUID `db:"column_1" json:"column_1"`
+	Column2 []string    `db:"column_2" json:"column_2"`
+	Column3 []int32     `db:"column_3" json:"column_3"`
+}
+
+func (q *Queries) BulkCreateBoardColumns(ctx context.Context, arg BulkCreateBoardColumnsParams) ([]BoardColumn, error) {
+	rows, err := q.db.Query(ctx, bulkCreateBoardColumns, arg.Column1, arg.Column2, arg.Column3)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []BoardColumn{}
+	for rows.Next() {
+		var i BoardColumn
+		if err := rows.Scan(
+			&i.ID,
+			&i.BoardID,
+			&i.Name,
+			&i.Position,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createBoard = `-- name: CreateBoard :one
 INSERT INTO boards (sprint_id, name)
 VALUES ($1, $2)

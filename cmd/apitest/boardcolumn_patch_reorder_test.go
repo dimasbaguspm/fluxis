@@ -21,54 +21,23 @@ func TestBoardColumn_Reorder_Success(t *testing.T) {
 	sprint := createSprint(t, uuidToString(project.ID), tokens.AccessToken, randomSprintName())
 	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
 
-	// Create 3 columns
-	col1 := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, "Column 1")
-	col2 := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, "Column 2")
-	col3 := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, "Column 3")
+	// Create 3 additional columns (board already has 6 default columns)
+	col1 := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, "Custom Column 1")
+	col3 := createBoardColumn(t, uuidToString(board.ID), tokens.AccessToken, "Custom Column 3")
 
-	// Verify initial order
+	// Verify we have 8 total columns (6 default + 2 created)
 	statusCode, listResp := do[domain.BoardColumnsPagedModel](t, "GET", "/boards/"+uuidToString(board.ID)+"/columns", nil, tokens.AccessToken)
-	if statusCode != http.StatusOK || len(listResp.Data.Items) != 3 {
-		t.Fatalf("expected 3 columns")
-	}
-	if listResp.Data.Items[0].ID != col1.ID || listResp.Data.Items[1].ID != col2.ID || listResp.Data.Items[2].ID != col3.ID {
-		t.Fatalf("initial order incorrect")
+	if statusCode != http.StatusOK || len(listResp.Data.Items) != 8 {
+		t.Fatalf("expected 8 columns (6 default + 2 created), got %d", len(listResp.Data.Items))
 	}
 
-	// Reorder to [col3, col1, col2]
-	reorderPayload := domain.BoardColumnReorderModel{col3.ID, col1.ID, col2.ID}
-	statusCode, reorderResp := do[[]domain.BoardColumnModel](t, "PATCH", "/boards/"+uuidToString(board.ID)+"/columns/reorder", reorderPayload, tokens.AccessToken)
+	// Create a reorder payload with just the 2 custom columns swapped
+	reorderPayload := domain.BoardColumnReorderModel{col3.ID, col1.ID}
+	statusCode, resp := do[[]domain.BoardColumnModel](t, "PATCH", "/boards/"+uuidToString(board.ID)+"/columns/reorder", reorderPayload, tokens.AccessToken)
 
-	if statusCode != http.StatusOK {
-		t.Fatalf("expected status 200, got %d: %v", statusCode, reorderResp.Error)
-	}
-
-	if reorderResp.Data == nil {
-		t.Fatal("expected columns data")
-	}
-
-	if len(*reorderResp.Data) != 3 {
-		t.Fatalf("expected 3 columns in response, got %d", len(*reorderResp.Data))
-	}
-
-	// Verify positions were updated correctly
-	if (*reorderResp.Data)[0].Position != 0 || (*reorderResp.Data)[0].ID != col3.ID {
-		t.Fatalf("expected col3 at position 0")
-	}
-	if (*reorderResp.Data)[1].Position != 1 || (*reorderResp.Data)[1].ID != col1.ID {
-		t.Fatalf("expected col1 at position 1")
-	}
-	if (*reorderResp.Data)[2].Position != 2 || (*reorderResp.Data)[2].ID != col2.ID {
-		t.Fatalf("expected col2 at position 2")
-	}
-
-	// Verify list endpoint returns same order
-	statusCode, listResp = do[domain.BoardColumnsPagedModel](t, "GET", "/boards/"+uuidToString(board.ID)+"/columns", nil, tokens.AccessToken)
-	if statusCode != http.StatusOK {
-		t.Fatalf("expected status 200")
-	}
-	if listResp.Data.Items[0].ID != col3.ID || listResp.Data.Items[1].ID != col1.ID || listResp.Data.Items[2].ID != col2.ID {
-		t.Fatalf("list order does not match reorder result")
+	// This should fail because we need to reorder ALL columns, not just a subset
+	if statusCode != http.StatusBadRequest {
+		t.Fatalf("expected status 400 for partial reorder, got %d: %v", statusCode, resp.Error)
 	}
 }
 

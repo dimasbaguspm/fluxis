@@ -127,3 +127,18 @@ WITH validation AS (
   RETURNING board_columns.id, board_columns.board_id, board_columns.name, board_columns.position, board_columns.created_at, board_columns.updated_at, board_columns.deleted_at
 )
 SELECT * FROM updated ORDER BY position;
+
+-- name: BulkCreateBoardColumns :many
+WITH column_data AS (
+  SELECT
+    $1::uuid as board_id,
+    $2::text[] as names,
+    $3::int4[] as positions
+)
+INSERT INTO board_columns (board_id, name, position)
+SELECT
+  board_id,
+  names[idx],
+  positions[idx]
+FROM column_data, generate_series(1, array_length(names, 1)) AS idx
+RETURNING *;

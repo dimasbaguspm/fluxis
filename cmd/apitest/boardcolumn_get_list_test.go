@@ -35,20 +35,21 @@ func TestBoardColumn_List_Success(t *testing.T) {
 		t.Fatal("expected columns data")
 	}
 
-	if len(resp.Data.Items) != 2 {
-		t.Fatalf("expected 2 columns, got %d", len(resp.Data.Items))
+	// 6 default columns + 2 created = 8 total
+	if len(resp.Data.Items) != 8 {
+		t.Fatalf("expected 8 columns (6 default + 2 created), got %d", len(resp.Data.Items))
 	}
 
-	// Verify columns are in order
-	if resp.Data.Items[0].ID != col1.ID {
-		t.Fatalf("expected first column to be col1")
+	// Verify created columns are at the end (after default columns)
+	if resp.Data.Items[6].ID != col1.ID {
+		t.Fatalf("expected 7th column to be col1")
 	}
-	if resp.Data.Items[1].ID != col2.ID {
-		t.Fatalf("expected second column to be col2")
+	if resp.Data.Items[7].ID != col2.ID {
+		t.Fatalf("expected 8th column to be col2")
 	}
 
-	if resp.Data.TotalCount != 2 {
-		t.Fatalf("expected total count 2, got %d", resp.Data.TotalCount)
+	if resp.Data.TotalCount != 8 {
+		t.Fatalf("expected total count 8, got %d", resp.Data.TotalCount)
 	}
 
 	if resp.Data.PageNumber != 1 {
@@ -80,12 +81,13 @@ func TestBoardColumn_List_EmptyBoard(t *testing.T) {
 		t.Fatal("expected columns data")
 	}
 
-	if len(resp.Data.Items) != 0 {
-		t.Fatalf("expected 0 columns, got %d", len(resp.Data.Items))
+	// Board is created with 6 default columns
+	if len(resp.Data.Items) != 6 {
+		t.Fatalf("expected 6 default columns, got %d", len(resp.Data.Items))
 	}
 
-	if resp.Data.TotalCount != 0 {
-		t.Fatalf("expected total count 0, got %d", resp.Data.TotalCount)
+	if resp.Data.TotalCount != 6 {
+		t.Fatalf("expected total count 6, got %d", resp.Data.TotalCount)
 	}
 }
 
@@ -119,16 +121,25 @@ func TestBoardColumn_List_WithNameFilter(t *testing.T) {
 		t.Fatal("expected columns data")
 	}
 
-	if len(resp.Data.Items) != 1 {
-		t.Fatalf("expected 1 column matching 'In Progress', got %d", len(resp.Data.Items))
+	// Should match both the default "In Progress" column and "In Progress Column"
+	if len(resp.Data.Items) != 2 {
+		t.Fatalf("expected 2 columns matching 'In Progress' (1 default + 1 created), got %d", len(resp.Data.Items))
 	}
 
-	if resp.Data.Items[0].Name != "In Progress Column" {
-		t.Fatalf("expected column name 'In Progress Column', got '%s'", resp.Data.Items[0].Name)
+	// Check that "In Progress Column" is in the results
+	found := false
+	for _, item := range resp.Data.Items {
+		if item.Name == "In Progress Column" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected 'In Progress Column' in results")
 	}
 
-	if resp.Data.TotalCount != 1 {
-		t.Fatalf("expected total count 1, got %d", resp.Data.TotalCount)
+	if resp.Data.TotalCount != 2 {
+		t.Fatalf("expected total count 2, got %d", resp.Data.TotalCount)
 	}
 }
 
@@ -184,7 +195,7 @@ func TestBoardColumn_List_WithPagination(t *testing.T) {
 	board := createBoard(t, uuidToString(sprint.ID), tokens.AccessToken, randomBoardName())
 	boardID := uuidToString(board.ID)
 
-	// Create 4 columns
+	// Create 4 columns (board already has 6 default columns, so total will be 10)
 	for i := 0; i < 4; i++ {
 		createBoardColumn(t, boardID, tokens.AccessToken, "Column "+string(rune('1'+i)))
 	}
@@ -200,12 +211,13 @@ func TestBoardColumn_List_WithPagination(t *testing.T) {
 		t.Fatalf("expected 2 columns on page 1, got %d", len(resp.Data.Items))
 	}
 
-	if resp.Data.TotalCount != 4 {
-		t.Fatalf("expected total count 4, got %d", resp.Data.TotalCount)
+	// Total count should be 10 (6 default + 4 created)
+	if resp.Data.TotalCount != 10 {
+		t.Fatalf("expected total count 10, got %d", resp.Data.TotalCount)
 	}
 
-	if resp.Data.TotalPages != 2 {
-		t.Fatalf("expected 2 total pages, got %d", resp.Data.TotalPages)
+	if resp.Data.TotalPages != 5 {
+		t.Fatalf("expected 5 total pages, got %d", resp.Data.TotalPages)
 	}
 
 	// Get second page

@@ -17,7 +17,15 @@ import (
 )
 
 var (
-	ErrBoardNotFound = httpx.NotFound("board not found")
+	ErrBoardNotFound           = httpx.NotFound("board not found")
+	defaultBoardColumnNames    = []string{
+		"To Do",
+		"In Progress",
+		"Code Review",
+		"Ready to Test",
+		"Ready for PO Review",
+		"Done",
+	}
 )
 
 func toBoardModel(board repository.Board) domain.BoardModel {
@@ -28,6 +36,35 @@ func toBoardModel(board repository.Board) domain.BoardModel {
 		CreatedAt: board.CreatedAt.Time,
 		UpdatedAt: board.UpdatedAt.Time,
 	}
+}
+
+func (s *Service) seedDefaultColumns(ctx context.Context, boardID pgtype.UUID) ([]domain.BoardColumnModel, error) {
+	positions := make([]int32, len(defaultBoardColumnNames))
+	for i := range positions {
+		positions[i] = int32(i)
+	}
+
+	cols, err := s.Repo.BulkCreateBoardColumns(ctx, repository.BulkCreateBoardColumnsParams{
+		Column1: boardID,
+		Column2: defaultBoardColumnNames,
+		Column3: positions,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("seed default columns: %w", err)
+	}
+
+	result := make([]domain.BoardColumnModel, len(cols))
+	for i, col := range cols {
+		result[i] = domain.BoardColumnModel{
+			ID:        col.ID,
+			BoardID:   col.BoardID,
+			Name:      col.Name,
+			Position:  col.Position,
+			CreatedAt: col.CreatedAt.Time,
+			UpdatedAt: col.UpdatedAt.Time,
+		}
+	}
+	return result, nil
 }
 
 func (s *Service) CreateBoard(ctx context.Context, b domain.BoardCreateModel) (domain.BoardModel, error) {
@@ -57,6 +94,10 @@ func (s *Service) CreateBoard(ctx context.Context, b domain.BoardCreateModel) (d
 	})
 	if err != nil {
 		return domain.BoardModel{}, fmt.Errorf("create board: %w", err)
+	}
+
+	if _, err := s.seedDefaultColumns(ctx, board.ID); err != nil {
+		return domain.BoardModel{}, err
 	}
 
 	result := toBoardModel(board)
