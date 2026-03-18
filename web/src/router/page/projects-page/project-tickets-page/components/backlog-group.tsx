@@ -45,10 +45,6 @@ export const BacklogGroup = ({ projectId, onEditTicket, onMoveTicket }: BacklogG
     });
   }, [onMoveTicket]);
 
-  if (ticketsList.length === 0) {
-    return null;
-  }
-
   return (
     <div
       ref={dropRef}

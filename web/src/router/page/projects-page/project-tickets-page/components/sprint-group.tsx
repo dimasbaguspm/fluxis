@@ -1,7 +1,7 @@
-import { useRef, useEffect, useState } from "react";
 import { useListTickets } from "@/hooks/use-api";
 import type { DomainSprintModel } from "@/interfaces/openapi.generated";
 import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { useEffect, useRef, useState } from "react";
 import { TicketGroupHeader } from "./ticket-group-header";
 import { TicketsTable } from "./tickets-table";
 
