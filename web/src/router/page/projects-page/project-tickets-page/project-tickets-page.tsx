@@ -1,5 +1,5 @@
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
-import { useListSprints } from "@/hooks/use-api";
+import { useListSprints, useMoveToSprint, useUpdateTicket } from "@/hooks/use-api";
 import { useDrawer } from "@/providers/drawer";
 import { PageContent } from "@versaur/react/blocks";
 import { useOutletContext } from "react-router";
@@ -14,9 +14,20 @@ export const ProjectTicketsPage = () => {
     projectId: [projectId],
     pageSize: 50,
   });
+  const [moveToSprint] = useMoveToSprint();
+  const [updateTicket] = useUpdateTicket();
 
   const handleOnEditTicket = (ticketId: string) => {
     openDrawer(DRAWER_ROUTES.UPDATE_TICKET, { ticketId });
+  };
+
+  const handleMoveTicket = (ticketId: string, targetSprintId: string | null) => {
+    if (targetSprintId) {
+      moveToSprint({ ticketId, sprintId: targetSprintId });
+    } else {
+      // Move to backlog by removing sprint assignment
+      updateTicket({ ticketId, data: { sprintId: "" } });
+    }
   };
 
   if (isLoadingSprints) {
@@ -38,9 +49,18 @@ export const ProjectTicketsPage = () => {
       ) : (
         <>
           {sprintsList.map((sprint) => (
-            <SprintGroup key={sprint.id} sprint={sprint} onEditTicket={handleOnEditTicket} />
+            <SprintGroup
+              key={sprint.id}
+              sprint={sprint}
+              onEditTicket={handleOnEditTicket}
+              onMoveTicket={handleMoveTicket}
+            />
           ))}
-          <BacklogGroup projectId={projectId} onEditTicket={handleOnEditTicket} />
+          <BacklogGroup
+            projectId={projectId}
+            onEditTicket={handleOnEditTicket}
+            onMoveTicket={handleMoveTicket}
+          />
         </>
       )}
     </PageContent>

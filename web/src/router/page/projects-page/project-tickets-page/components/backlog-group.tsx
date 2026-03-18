@@ -1,30 +1,64 @@
+import { useRef, useEffect, useState } from "react";
 import { useListTickets } from "@/hooks/use-api";
+import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { TicketGroupHeader } from "./ticket-group-header";
 import { TicketsTable } from "./tickets-table";
 
 interface BacklogGroupProps {
   projectId: string;
   onEditTicket: (ticketId: string) => void;
+  onMoveTicket?: (ticketId: string, targetSprintId: string | null) => void;
 }
 
-export const BacklogGroup = ({ projectId, onEditTicket }: BacklogGroupProps) => {
+export const BacklogGroup = ({ projectId, onEditTicket, onMoveTicket }: BacklogGroupProps) => {
   const [tickets, error, { isLoading }] = useListTickets({
     projectId: [projectId],
     // @ts-ignore
     sprintId: "",
     pageSize: 50,
   });
+  const dropRef = useRef<HTMLDivElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   // Filter for tickets without sprintId (backlog items)
   const ticketsList = (tickets?.items || []).filter((ticket) => !ticket.sprintId);
   const totalStoryPoints = ticketsList.reduce((sum, ticket) => sum + (ticket.storyPoints || 0), 0);
+
+  useEffect(() => {
+    if (!dropRef.current) return;
+
+    return dropTargetForElements({
+      element: dropRef.current,
+      onDrag: () => {
+        setIsDragOver(true);
+      },
+      onDragLeave: () => {
+        setIsDragOver(false);
+      },
+      onDrop: ({ source }: any) => {
+        setIsDragOver(false);
+        const data = source.data as { ticketId: string; sourceGroupId?: string };
+        if (data.ticketId && onMoveTicket && data.sourceGroupId !== null) {
+          onMoveTicket(data.ticketId, null);
+        }
+      },
+    });
+  }, [onMoveTicket]);
 
   if (ticketsList.length === 0) {
     return null;
   }
 
   return (
-    <div style={{ marginBottom: "2rem" }}>
+    <div
+      ref={dropRef}
+      style={{
+        marginBottom: "2rem",
+        opacity: isDragOver ? 0.8 : 1,
+        transition: "opacity 0.2s",
+        backgroundColor: isDragOver ? "#f5f5f5" : "transparent",
+      }}
+    >
       <TicketGroupHeader
         title="Backlog"
         description="Tickets not assigned to any sprint"
@@ -40,6 +74,7 @@ export const BacklogGroup = ({ projectId, onEditTicket }: BacklogGroupProps) => 
           tickets={ticketsList}
           onEditTicket={onEditTicket}
           isLoading={isLoading}
+          groupId={null}
         />
       )}
     </div>
