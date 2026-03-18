@@ -19,7 +19,7 @@ export const UpdateProjectDrawer = () => {
   const onSubmit = async (data: UpdateProjectFormInputs) => {
     if (!projectId) return;
     await updateProject({
-      projectId: projectId,
+      projectId,
       data: {
         name: data.name,
         description: data.description,

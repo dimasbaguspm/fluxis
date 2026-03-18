@@ -8,6 +8,7 @@ export enum FormatDate {
   DateTime = "MM/DD/YYYY HH:mm",
   DateTimeSeconds = "MM/DD/YYYY HH:mm:ss",
   ISO = "YYYY-MM-DDTHH:mm:ss[Z]",
+  DateInput = "YYYY-MM-DD",
 }
 
 export function dateFormat(

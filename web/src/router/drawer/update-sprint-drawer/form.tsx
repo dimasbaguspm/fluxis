@@ -21,8 +21,8 @@ export const UpdateSprintForm = ({ onSubmit, sprint }: UpdateSprintFormProps) =>
     defaultValues: {
       name: sprint.name,
       goal: sprint.goal ?? "",
-      plannedStartedAt: dateFormat(sprint.plannedStartedAt, FormatDate.ShortDate) ?? "",
-      plannedCompletedAt: dateFormat(sprint.plannedCompletedAt, FormatDate.ShortDate) ?? "",
+      plannedStartedAt: dateFormat(sprint.plannedStartedAt, FormatDate.DateInput) ?? "",
+      plannedCompletedAt: dateFormat(sprint.plannedCompletedAt, FormatDate.DateInput) ?? "",
     },
   });
 
