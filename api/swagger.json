@@ -2810,6 +2810,12 @@
                 "sprintId"
             ],
             "properties": {
+                "columns": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.BoardColumnModel"
+                    }
+                },
                 "createdAt": {
                     "type": "string"
                 },

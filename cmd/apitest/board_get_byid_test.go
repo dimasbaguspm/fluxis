@@ -43,6 +43,10 @@ func TestBoard_GetByID_Success(t *testing.T) {
 	if resp.Data.Name != boardName {
 		t.Fatalf("expected name '%s', got '%s'", boardName, resp.Data.Name)
 	}
+
+	if len(resp.Data.Columns) != 6 {
+		t.Fatalf("expected 6 columns, got %d", len(resp.Data.Columns))
+	}
 }
 
 func TestBoard_GetByID_NotFound(t *testing.T) {

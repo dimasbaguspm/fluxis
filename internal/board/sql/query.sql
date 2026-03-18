@@ -40,9 +40,31 @@ filtered_boards AS (
     AND ($4::text = '' OR b.name ILIKE '%' || $4 || '%')
 )
 SELECT
-  id, sprint_id, name, created_at, updated_at, deleted_at, total_count
+  fb.id,
+  fb.sprint_id,
+  fb.name,
+  fb.created_at,
+  fb.updated_at,
+  fb.deleted_at,
+  fb.total_count,
+  COALESCE(
+    json_agg(
+      json_build_object(
+        'id',         bc.id,
+        'board_id',   bc.board_id,
+        'name',       bc.name,
+        'position',   bc.position,
+        'created_at', bc.created_at,
+        'updated_at', bc.updated_at
+      ) ORDER BY bc.position ASC
+    ) FILTER (WHERE bc.id IS NOT NULL),
+    '[]'
+  ) AS columns
 FROM
-  filtered_boards
+  filtered_boards fb
+LEFT JOIN board_columns bc ON bc.board_id = fb.id AND bc.deleted_at IS NULL
+GROUP BY
+  fb.id, fb.sprint_id, fb.name, fb.created_at, fb.updated_at, fb.deleted_at, fb.total_count
 LIMIT $5
 OFFSET $6;
 

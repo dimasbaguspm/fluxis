@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -28,14 +29,31 @@ var (
 	}
 )
 
-func toBoardModel(board repository.Board) domain.BoardModel {
+func toBoardColumnModel(col repository.BoardColumn) domain.BoardColumnModel {
+	return domain.BoardColumnModel{
+		ID:        col.ID,
+		BoardID:   col.BoardID,
+		Name:      col.Name,
+		Position:  col.Position,
+		CreatedAt: col.CreatedAt.Time,
+		UpdatedAt: col.UpdatedAt.Time,
+	}
+}
+
+func toBoardModelWithColumns(board repository.Board, cols []domain.BoardColumnModel) domain.BoardModel {
 	return domain.BoardModel{
 		ID:        board.ID,
 		SprintID:  board.SprintID,
 		Name:      board.Name,
+		Columns:   cols,
 		CreatedAt: board.CreatedAt.Time,
 		UpdatedAt: board.UpdatedAt.Time,
 	}
+}
+
+// keep existing toBoardModel as a nil-columns convenience wrapper
+func toBoardModel(board repository.Board) domain.BoardModel {
+	return toBoardModelWithColumns(board, nil)
 }
 
 func (s *Service) seedDefaultColumns(ctx context.Context, boardID pgtype.UUID) ([]domain.BoardColumnModel, error) {
@@ -96,11 +114,12 @@ func (s *Service) CreateBoard(ctx context.Context, b domain.BoardCreateModel) (d
 		return domain.BoardModel{}, fmt.Errorf("create board: %w", err)
 	}
 
-	if _, err := s.seedDefaultColumns(ctx, board.ID); err != nil {
+	cols, err := s.seedDefaultColumns(ctx, board.ID)
+	if err != nil {
 		return domain.BoardModel{}, err
 	}
 
-	result := toBoardModel(board)
+	result := toBoardModelWithColumns(board, cols)
 	if err := s.Bus.Publish(ctx, pubsub.BoardCreated, httpx.EncodePayload(result)); err != nil {
 		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.BoardCreated), "error", err)
 	}
@@ -109,15 +128,33 @@ func (s *Service) CreateBoard(ctx context.Context, b domain.BoardCreateModel) (d
 }
 
 func (s *Service) GetBoard(ctx context.Context, id pgtype.UUID) (domain.BoardModel, error) {
-	board, err := s.Repo.GetBoard(ctx, id)
+	var rawBoard repository.Board
+	var rawCols []repository.BoardColumn
+
+	err := syncx.Run(ctx,
+		func(ctx context.Context) error {
+			b, err := s.Repo.GetBoard(ctx, id)
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrBoardNotFound
+			}
+			rawBoard = b
+			return err
+		},
+		func(ctx context.Context) error {
+			c, err := s.Repo.ListBoardColumns(ctx, id)
+			rawCols = c
+			return err
+		},
+	)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return domain.BoardModel{}, ErrBoardNotFound
-		}
-		return domain.BoardModel{}, fmt.Errorf("get board: %w", err)
+		return domain.BoardModel{}, err
 	}
 
-	return toBoardModel(board), nil
+	domainCols := make([]domain.BoardColumnModel, len(rawCols))
+	for i, c := range rawCols {
+		domainCols[i] = toBoardColumnModel(c)
+	}
+	return toBoardModelWithColumns(rawBoard, domainCols), nil
 }
 
 func (s *Service) ListBoards(ctx context.Context, q domain.BoardsSearchModel) (domain.BoardsPagedModel, error) {
@@ -147,15 +184,44 @@ func (s *Service) ListBoards(ctx context.Context, q domain.BoardsSearchModel) (d
 		totalPages = 1
 	}
 
+	type columnJSON struct {
+		ID        pgtype.UUID        `json:"id"`
+		BoardID   pgtype.UUID        `json:"board_id"`
+		Name      string             `json:"name"`
+		Position  int32              `json:"position"`
+		CreatedAt pgtype.Timestamptz `json:"created_at"`
+		UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	}
+
 	items := make([]domain.BoardModel, len(rows))
 	for i, row := range rows {
-		items[i] = domain.BoardModel{
+		// Unmarshal columns from JSON
+		var jsonCols []columnJSON
+		colsBytes, _ := json.Marshal(row.Columns)
+		if err := json.Unmarshal(colsBytes, &jsonCols); err != nil {
+			return domain.BoardsPagedModel{}, fmt.Errorf("unmarshal columns: %w", err)
+		}
+
+		domainCols := make([]domain.BoardColumnModel, len(jsonCols))
+		for j, jc := range jsonCols {
+			domainCols[j] = domain.BoardColumnModel{
+				ID:        jc.ID,
+				BoardID:   jc.BoardID,
+				Name:      jc.Name,
+				Position:  jc.Position,
+				CreatedAt: jc.CreatedAt.Time,
+				UpdatedAt: jc.UpdatedAt.Time,
+			}
+		}
+
+		board := repository.Board{
 			ID:        row.ID,
 			SprintID:  row.SprintID,
 			Name:      row.Name,
-			CreatedAt: row.CreatedAt.Time,
-			UpdatedAt: row.UpdatedAt.Time,
+			CreatedAt: row.CreatedAt,
+			UpdatedAt: row.UpdatedAt,
 		}
+		items[i] = toBoardModelWithColumns(board, domainCols)
 	}
 
 	return domain.BoardsPagedModel{
@@ -217,7 +283,15 @@ func (s *Service) UpdateBoard(ctx context.Context, id pgtype.UUID, b domain.Boar
 		return domain.BoardModel{}, fmt.Errorf("update board: %w", err)
 	}
 
-	result := toBoardModel(board)
+	rawCols, err := s.Repo.ListBoardColumns(ctx, id)
+	if err != nil {
+		return domain.BoardModel{}, fmt.Errorf("list board columns: %w", err)
+	}
+	domainCols := make([]domain.BoardColumnModel, len(rawCols))
+	for i, c := range rawCols {
+		domainCols[i] = toBoardColumnModel(c)
+	}
+	result := toBoardModelWithColumns(board, domainCols)
 	if err := s.Bus.Publish(ctx, pubsub.BoardUpdated, httpx.EncodePayload(result)); err != nil {
 		slog.Warn("[EventBus]: failed to publish event", "type", string(pubsub.BoardUpdated), "error", err)
 	}

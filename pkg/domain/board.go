@@ -8,11 +8,12 @@ import (
 )
 
 type BoardModel struct {
-	ID        pgtype.UUID `json:"id" validate:"required,uuid4"`
-	SprintID  pgtype.UUID `json:"sprintId" validate:"required,uuid4"`
-	Name      string      `json:"name" validate:"required,min=1"`
-	CreatedAt time.Time   `json:"createdAt"`
-	UpdatedAt time.Time   `json:"updatedAt"`
+	ID        pgtype.UUID         `json:"id" validate:"required,uuid4"`
+	SprintID  pgtype.UUID         `json:"sprintId" validate:"required,uuid4"`
+	Name      string              `json:"name" validate:"required,min=1"`
+	Columns   []BoardColumnModel  `json:"columns"`
+	CreatedAt time.Time           `json:"createdAt"`
+	UpdatedAt time.Time           `json:"updatedAt"`
 }
 
 type BoardCreateModel struct {

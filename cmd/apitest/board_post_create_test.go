@@ -48,6 +48,25 @@ func TestBoard_Create_Success(t *testing.T) {
 	if uuidToString(resp.Data.ID) == "" {
 		t.Fatal("expected non-empty ID")
 	}
+
+	if len(resp.Data.Columns) != 6 {
+		t.Fatalf("expected 6 columns, got %d", len(resp.Data.Columns))
+	}
+
+	expectedColumnNames := []string{
+		"To Do",
+		"In Progress",
+		"Code Review",
+		"Ready to Test",
+		"Ready for PO Review",
+		"Done",
+	}
+
+	for i, col := range resp.Data.Columns {
+		if col.Name != expectedColumnNames[i] {
+			t.Fatalf("expected column %d name '%s', got '%s'", i, expectedColumnNames[i], col.Name)
+		}
+	}
 }
 
 func TestBoard_Create_Unauthenticated(t *testing.T) {
