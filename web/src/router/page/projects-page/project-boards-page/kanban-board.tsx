@@ -1,60 +1,14 @@
 import { Text } from "@versaur/react/primitive";
 import type { DomainBoardColumnModel } from "@/interfaces/openapi.generated";
+import { useListBoardColumns } from "@/hooks/use-api";
+import { useOutletContext } from "react-router";
+import type { ProjectDetailContextType } from "../project-detail-layout";
 
-interface KanbanBoardProps {
-  boardId: string;
-}
+export const KanbanBoard = () => {
+  const { activeBoard } = useOutletContext<ProjectDetailContextType>();
+  const [columns] = useListBoardColumns(activeBoard?.id || "");
 
-// Mock data matching DomainBoardColumnModel structure
-const MOCK_COLUMNS: DomainBoardColumnModel[] = [
-  {
-    id: "col-1",
-    boardId: "board-1",
-    name: "Backlog",
-    position: 0,
-    createdAt: "2026-03-18T09:00:00Z",
-    updatedAt: "2026-03-18T09:00:00Z",
-  },
-  {
-    id: "col-2",
-    boardId: "board-1",
-    name: "To Do",
-    position: 1,
-    createdAt: "2026-03-18T09:00:00Z",
-    updatedAt: "2026-03-18T09:00:00Z",
-  },
-  {
-    id: "col-3",
-    boardId: "board-1",
-    name: "In Progress",
-    position: 2,
-    createdAt: "2026-03-18T09:00:00Z",
-    updatedAt: "2026-03-18T09:00:00Z",
-  },
-  {
-    id: "col-4",
-    boardId: "board-1",
-    name: "In Review",
-    position: 3,
-    createdAt: "2026-03-18T09:00:00Z",
-    updatedAt: "2026-03-18T09:00:00Z",
-  },
-  {
-    id: "col-5",
-    boardId: "board-1",
-    name: "Done",
-    position: 4,
-    createdAt: "2026-03-18T09:00:00Z",
-    updatedAt: "2026-03-18T09:00:00Z",
-  },
-];
-
-export const KanbanBoard = ({ boardId: _boardId }: KanbanBoardProps) => {
-  // TODO: Replace mock data with actual API call
-  // const [columns, error, { isLoading }] = useListBoardColumns(_boardId);
-  // const columnsList = columns?.items || [];
-
-  const columnsList = MOCK_COLUMNS;
+  const columnsList = columns?.items || [];
 
   return (
     <div
