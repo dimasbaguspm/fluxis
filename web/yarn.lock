@@ -863,31 +863,31 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@versaur/core@npm:0.0.14":
-  version: 0.0.14
-  resolution: "@versaur/core@npm:0.0.14"
-  checksum: 10c0/71742d7c3d8bcedf3b3a987706dc9cd2d7baa670c45959585a91453b2e004cdeb0c7f3ab92dc04f07d152293121dbb1938253ca3719e99379b00214effbee1ba
+"@versaur/core@npm:0.0.16":
+  version: 0.0.16
+  resolution: "@versaur/core@npm:0.0.16"
+  checksum: 10c0/938fd8f33724e0baedd968dac1a7011d346526d60baf049cc8a2bfa87fbeda6e9930eb9ff9eecbe60867a84e969ac639443a231915e08f289d17db232616657d
   languageName: node
   linkType: hard
 
-"@versaur/icons@npm:1.0.0":
-  version: 1.0.0
-  resolution: "@versaur/icons@npm:1.0.0"
+"@versaur/icons@npm:1.0.1":
+  version: 1.0.1
+  resolution: "@versaur/icons@npm:1.0.1"
   peerDependencies:
     react: ^18.0.0 || ^19.0.0
-  checksum: 10c0/abe919396b957246ae2ecdfe06ff3069842eec9654a79949276a9bbb08617e94fb86e5f7b4539190a389d986004da16850edab1a3d8ff903d1603a3f92d5da28
+  checksum: 10c0/9c42543d13c9234f3eb33ed0321ecebe1ad043d18ec826e129f0438cd4116a489a43bc441cda02d297db3e69e346fe279719404272ae95184331f8c948589b55
   languageName: node
   linkType: hard
 
-"@versaur/react@npm:1.0.19":
-  version: 1.0.19
-  resolution: "@versaur/react@npm:1.0.19"
+"@versaur/react@npm:1.0.21":
+  version: 1.0.21
+  resolution: "@versaur/react@npm:1.0.21"
   peerDependencies:
-    "@versaur/core": 0.0.14
-    "@versaur/icons": 1.0.0
+    "@versaur/core": 0.0.16
+    "@versaur/icons": 1.0.1
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
-  checksum: 10c0/54dc9e83a3d91b98bcf15f636b67c56ef27ead99a720f2f193909bf68e5c6978e077e0748ab6b0faa5f348c1c7ca156be5fcdf011e7f112d9a09e84d03f6940c
+  checksum: 10c0/deacbc5155f5e8b7279916be36a2896f0d6869690544cddd9e5ccb540c99651fe48292688b2b0617d69a1bb2e2cefa35c5ce9ec9bb093c15992d7c1719694ac0
   languageName: node
   linkType: hard
 
@@ -2118,9 +2118,9 @@ __metadata:
     "@types/node": "npm:25.5.0"
     "@types/react": "npm:19.2.14"
     "@types/react-dom": "npm:19.2.3"
-    "@versaur/core": "npm:0.0.14"
-    "@versaur/icons": "npm:1.0.0"
-    "@versaur/react": "npm:1.0.19"
+    "@versaur/core": "npm:0.0.16"
+    "@versaur/icons": "npm:1.0.1"
+    "@versaur/react": "npm:1.0.21"
     "@vitejs/plugin-react": "npm:6.0.1"
     babel-plugin-react-compiler: "npm:1.0.0"
     dayjs: "npm:1.11.20"
