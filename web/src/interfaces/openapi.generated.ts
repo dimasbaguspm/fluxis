@@ -78,6 +78,7 @@ export interface DomainBoardCreateModel {
 }
 
 export interface DomainBoardModel {
+  columns?: DomainBoardColumnModel[];
   createdAt?: string;
   id: string;
   /** @minLength 1 */
