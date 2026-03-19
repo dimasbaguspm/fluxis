@@ -1418,7 +1418,7 @@ export class Api<
   };
   tickets = {
     /**
-     * @description Returns paginated tickets for a project, optionally filtered by sprint or board
+     * @description Returns paginated tickets for a project, optionally filtered by sprint, board, or board column
      *
      * @tags ticket
      * @name TicketsList
@@ -1428,6 +1428,7 @@ export class Api<
      */
     ticketsList: (
       query?: {
+        boardColumnId?: string[];
         boardId?: string[];
         id?: string[];
         /** @min 1 */

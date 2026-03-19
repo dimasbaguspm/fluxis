@@ -33,6 +33,7 @@ func (s *Service) ListTickets(ctx context.Context, q domain.TicketSearchModel) (
 		Column2: q.ID,
 		Column3: q.SprintID,
 		Column4: q.BoardID,
+		Column5: q.BoardColumnID,
 		Limit:   int32(q.PageSize),
 		Offset:  offset,
 	})

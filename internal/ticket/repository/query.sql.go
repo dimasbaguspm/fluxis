@@ -429,10 +429,11 @@ WITH filtered_tickets AS (
         AND (array_length($2::uuid[], 1) IS NULL OR id = ANY($2::uuid[]))
         AND (array_length($3::uuid[], 1) IS NULL OR sprint_id = ANY($3::uuid[]))
         AND (array_length($4::uuid[], 1) IS NULL OR board_id = ANY($4::uuid[]))
+        AND (array_length($5::uuid[], 1) IS NULL OR board_column_id = ANY($5::uuid[]))
 )
 SELECT id, project_id, ticket_number, key, sprint_id, board_id, board_column_id, type, priority, title, description, assignee_id, reporter_id, epic_id, parent_id, story_points, due_date, created_at, updated_at, deleted_at, total_count FROM filtered_tickets
 ORDER BY ticket_number DESC
-LIMIT $5 OFFSET $6
+LIMIT $6 OFFSET $7
 `
 
 type ListTicketsPagedParams struct {
@@ -440,6 +441,7 @@ type ListTicketsPagedParams struct {
 	Column2 []pgtype.UUID `db:"column_2" json:"column_2"`
 	Column3 []pgtype.UUID `db:"column_3" json:"column_3"`
 	Column4 []pgtype.UUID `db:"column_4" json:"column_4"`
+	Column5 []pgtype.UUID `db:"column_5" json:"column_5"`
 	Limit   int32         `db:"limit" json:"limit"`
 	Offset  int32         `db:"offset" json:"offset"`
 }
@@ -474,6 +476,7 @@ func (q *Queries) ListTicketsPaged(ctx context.Context, arg ListTicketsPagedPara
 		arg.Column2,
 		arg.Column3,
 		arg.Column4,
+		arg.Column5,
 		arg.Limit,
 		arg.Offset,
 	)

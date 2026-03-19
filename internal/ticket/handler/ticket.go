@@ -10,10 +10,10 @@ import (
 // ListTickets godoc
 //
 //	@Summary		List tickets with pagination
-//	@Description	Returns paginated tickets for a project, optionally filtered by sprint or board
+//	@Description	Returns paginated tickets for a project, optionally filtered by sprint, board, or board column
 //	@Tags			ticket
 //	@Produce		json
-//	@Param			query	query	domain.TicketSearchModel	false	"Search parameters: projectId (required), sprintId (optional), boardId (optional), pageNumber, pageSize"
+//	@Param			query	query	domain.TicketSearchModel	false	"Search parameters: projectId (required), sprintId (optional), boardId (optional), boardColumnId (optional), pageNumber, pageSize"
 //	@Success		200	{object}	domain.TicketsPagedModel
 //	@Failure		400	{object}	httpx.ErrBlock
 //	@Failure		401	{object}	httpx.ErrBlock
@@ -21,12 +21,13 @@ import (
 //	@Router			/tickets [get]
 func (h *Handler) ListTickets(w http.ResponseWriter, r *http.Request) {
 	req := domain.TicketSearchModel{
-		ID:         httpx.QueryUUIDs(r, "id"),
-		ProjectID:  httpx.QueryUUIDs(r, "projectId"),
-		SprintID:   httpx.QueryUUIDs(r, "sprintId"),
-		BoardID:    httpx.QueryUUIDs(r, "boardId"),
-		PageNumber: httpx.QueryNumber(r, "pageNumber"),
-		PageSize:   httpx.QueryNumber(r, "pageSize"),
+		ID:            httpx.QueryUUIDs(r, "id"),
+		ProjectID:     httpx.QueryUUIDs(r, "projectId"),
+		SprintID:      httpx.QueryUUIDs(r, "sprintId"),
+		BoardID:       httpx.QueryUUIDs(r, "boardId"),
+		BoardColumnID: httpx.QueryUUIDs(r, "boardColumnId"),
+		PageNumber:    httpx.QueryNumber(r, "pageNumber"),
+		PageSize:      httpx.QueryNumber(r, "pageSize"),
 	}
 
 	tickets, err := h.svc.ListTickets(r.Context(), req)

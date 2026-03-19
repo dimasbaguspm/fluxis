@@ -14,6 +14,7 @@ import { useApiQuery } from "../use-api-query";
 
 interface ListTicketsParams {
   boardId?: string[];
+  boardColumnId?: string[];
   id?: string[];
   pageNumber?: number;
   pageSize?: number;

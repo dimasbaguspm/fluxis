@@ -8,12 +8,13 @@ import (
 )
 
 type TicketSearchModel struct {
-	ID         []pgtype.UUID `json:"id" validate:"omitempty,dive,uuid4"`
-	ProjectID  []pgtype.UUID `json:"projectId" validate:"omitempty,dive,uuid4"`
-	SprintID   []pgtype.UUID `json:"sprintId" validate:"omitempty,dive,uuid4"`
-	BoardID    []pgtype.UUID `json:"boardId" validate:"omitempty,dive,uuid4"`
-	PageNumber int           `json:"pageNumber" validate:"omitempty,min=1"`
-	PageSize   int           `json:"pageSize" validate:"omitempty,min=1,max=100"`
+	ID            []pgtype.UUID `json:"id" validate:"omitempty,dive,uuid4"`
+	ProjectID     []pgtype.UUID `json:"projectId" validate:"omitempty,dive,uuid4"`
+	SprintID      []pgtype.UUID `json:"sprintId" validate:"omitempty,dive,uuid4"`
+	BoardID       []pgtype.UUID `json:"boardId" validate:"omitempty,dive,uuid4"`
+	BoardColumnID []pgtype.UUID `json:"boardColumnId" validate:"omitempty,dive,uuid4"`
+	PageNumber    int           `json:"pageNumber" validate:"omitempty,min=1"`
+	PageSize      int           `json:"pageSize" validate:"omitempty,min=1,max=100"`
 }
 
 func (t *TicketSearchModel) ApplyDefaults() {

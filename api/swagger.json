@@ -2121,7 +2121,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns paginated tickets for a project, optionally filtered by sprint or board",
+                "description": "Returns paginated tickets for a project, optionally filtered by sprint, board, or board column",
                 "produces": [
                     "application/json"
                 ],
@@ -2130,6 +2130,15 @@
                 ],
                 "summary": "List tickets with pagination",
                 "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "boardColumnId",
+                        "in": "query"
+                    },
                     {
                         "type": "array",
                         "items": {

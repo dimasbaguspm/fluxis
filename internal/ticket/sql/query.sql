@@ -109,10 +109,11 @@ WITH filtered_tickets AS (
         AND (array_length($2::uuid[], 1) IS NULL OR id = ANY($2::uuid[]))
         AND (array_length($3::uuid[], 1) IS NULL OR sprint_id = ANY($3::uuid[]))
         AND (array_length($4::uuid[], 1) IS NULL OR board_id = ANY($4::uuid[]))
+        AND (array_length($5::uuid[], 1) IS NULL OR board_column_id = ANY($5::uuid[]))
 )
 SELECT * FROM filtered_tickets
 ORDER BY ticket_number DESC
-LIMIT $5 OFFSET $6;
+LIMIT $6 OFFSET $7;
 
 -- name: UpdateTicketSprintAndBoard :one
 UPDATE tickets
