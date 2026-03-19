@@ -1,7 +1,8 @@
+import { SelectProjectsInput } from "@/components/ui";
+import { When } from "@/lib/when";
 import { FormGroup } from "@versaur/react/blocks";
 import { TextInput } from "@versaur/react/forms";
 import { useForm } from "react-hook-form";
-import { SelectProjectsInput } from "@/components/ui";
 import { CREATE_SPRINT_FORM_ID } from "./constants";
 import type { CreateSprintFormInputs } from "./types";
 
@@ -10,10 +11,7 @@ interface CreateSprintFormProps {
   projectId?: string;
 }
 
-export const CreateSprintForm = ({
-  onSubmit,
-  projectId,
-}: CreateSprintFormProps) => {
+export const CreateSprintForm = ({ onSubmit, projectId }: CreateSprintFormProps) => {
   const {
     register,
     formState: { errors },
@@ -32,9 +30,11 @@ export const CreateSprintForm = ({
 
   return (
     <FormGroup id={CREATE_SPRINT_FORM_ID} onSubmit={handleSubmit(onSubmit)}>
-      <FormGroup.Field>
-        <SelectProjectsInput control={control} name="projectId" required />
-      </FormGroup.Field>
+      <When condition={!projectId}>
+        <FormGroup.Field>
+          <SelectProjectsInput control={control} name="projectId" required />
+        </FormGroup.Field>
+      </When>
       <FormGroup.Field>
         <TextInput
           placeholder="Sprint Name"

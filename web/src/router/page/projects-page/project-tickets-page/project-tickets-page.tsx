@@ -1,5 +1,10 @@
 import { DRAWER_ROUTES } from "@/constants/drawer-routes";
-import { useListSprints, useMoveToSprint } from "@/hooks/use-api";
+import {
+  useCompleteSprint,
+  useListSprints,
+  useMoveToSprint,
+  useStartSprint,
+} from "@/hooks/use-api";
 import { useDrawer } from "@/providers/drawer";
 import { PageContent } from "@versaur/react/blocks";
 import { useOutletContext } from "react-router";
@@ -15,9 +20,15 @@ export const ProjectTicketsPage = () => {
     pageSize: 50,
   });
   const [moveToSprint] = useMoveToSprint();
+  const [startSprint] = useStartSprint();
+  const [completeSprint] = useCompleteSprint();
 
   const handleOnEditTicket = (ticketId: string) => {
     openDrawer(DRAWER_ROUTES.UPDATE_TICKET, { ticketId });
+  };
+
+  const handleEditSprint = (sprintId: string) => {
+    openDrawer(DRAWER_ROUTES.UPDATE_SPRINT, { sprintId });
   };
 
   const handleMoveTicket = (ticketId: string, targetSprintId: string | null) => {
@@ -33,8 +44,11 @@ export const ProjectTicketsPage = () => {
   };
 
   const handleStartSprint = (sprintId: string) => {
-    // TODO: Implement start sprint functionality
-    console.log("Start sprint:", sprintId);
+    startSprint(sprintId);
+  };
+
+  const handleCompleteSprint = (sprintId: string) => {
+    completeSprint(sprintId);
   };
 
   if (isLoadingSprints) {
@@ -47,16 +61,25 @@ export const ProjectTicketsPage = () => {
 
   const sprintsList = sprints?.items || [];
 
+  // Sort: active first, then others by createdAt desc, backlog always last
+  const activeSprints = sprintsList.filter((s) => s.status === "active");
+  const otherSprints = sprintsList
+    .filter((s) => s.status !== "active")
+    .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
+  const orderedSprints = [...activeSprints, ...otherSprints];
+
   return (
     <PageContent>
-      {sprintsList.map((sprint) => (
+      {orderedSprints.map((sprint) => (
         <SprintGroup
           key={sprint.id}
           sprint={sprint}
           onEditTicket={handleOnEditTicket}
+          onEditSprint={handleEditSprint}
           onMoveTicket={handleMoveTicket}
           onCreateTicket={handleCreateTicket}
           onStartSprint={handleStartSprint}
+          onCompleteSprint={handleCompleteSprint}
         />
       ))}
       <BacklogGroup

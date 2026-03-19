@@ -1,37 +1,45 @@
 import type { DomainSprintModel } from "@/interfaces/openapi.generated";
-import { dateFormat, FormatDate } from "@/lib";
+import { When } from "@/lib/when";
 import { ButtonGroup } from "@versaur/react/blocks";
-import { Button } from "@versaur/react/primitive";
-
-interface TicketGroupHeaderAction {
-  label: string;
-  onClick: () => void;
-  variant?: "primary" | "secondary";
-}
+import { Badge, Button, Heading, Text } from "@versaur/react/primitive";
 
 interface TicketGroupHeaderProps {
   title: string;
   description?: string;
-  ticketCount: number;
   totalStoryPoints: number;
   sprint?: DomainSprintModel;
-  actions?: TicketGroupHeaderAction[];
+  onCreateTicket?: () => void;
+  onStartSprint?: () => void;
+  onCompleteSprint?: () => void;
+  onEditSprint?: () => void;
 }
 
 export const TicketGroupHeader = ({
   title,
   description,
-  ticketCount,
   totalStoryPoints,
   sprint,
-  actions,
+  onCreateTicket,
+  onStartSprint,
+  onCompleteSprint,
+  onEditSprint,
 }: TicketGroupHeaderProps) => {
+  const getSprintStatusVariant = (status?: string) => {
+    switch (status) {
+      case "active":
+        return "primary" as const;
+      case "planned":
+        return "info" as const;
+      case "completed":
+        return "success" as const;
+      default:
+        return "success" as const;
+    }
+  };
+
   return (
     <div
       style={{
-        padding: "1rem",
-        backgroundColor: "#f5f5f5",
-        borderRadius: "4px 4px 0 0",
         borderBottom: "1px solid #e0e0e0",
       }}
     >
@@ -39,83 +47,79 @@ export const TicketGroupHeader = ({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: "0.5rem",
+          alignItems: "center",
+          gap: "1rem",
         }}
       >
-        <div>
-          <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>{title}</h3>
-        </div>
-        {actions && actions.length > 0 && (
-          <ButtonGroup>
-            {actions.map((action, idx) => (
-              <Button key={idx} onClick={action.onClick} variant="outline" size="small">
-                {action.label}
-              </Button>
-            ))}
-          </ButtonGroup>
-        )}
-      </div>
-
-      {(description || sprint) && (
-        <div style={{ marginBottom: "0.5rem" }}>
-          {description && (
-            <div style={{ fontSize: "0.875rem", color: "#666", marginTop: "0.25rem" }}>
-              {description}
-            </div>
-          )}
-          {sprint && (
-            <div style={{ fontSize: "0.875rem", color: "#666", marginTop: "0.25rem" }}>
-              Status: <span style={{ fontWeight: 500 }}>{sprint.status}</span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {sprint && (sprint.plannedStartedAt || sprint.plannedCompletedAt || sprint.goal) && (
+        {/* Left: Title + Status Badge + Description */}
         <div
-          style={{ fontSize: "0.875rem", color: "#666", marginTop: "0.75rem", lineHeight: "1.6" }}
+          onClick={onEditSprint}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+            cursor: onEditSprint ? "pointer" : "default",
+            borderRadius: "4px",
+            padding: "0.5rem 1rem",
+            height: "100%",
+            transition: "background-color 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            if (onEditSprint) {
+              e.currentTarget.style.backgroundColor = "rgba(0, 0, 0, 0.04)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
         >
-          {sprint.plannedStartedAt && (
-            <div>
-              Planned start:{" "}
-              <span style={{ fontWeight: 500 }}>
-                {dateFormat(sprint.plannedStartedAt, FormatDate.ShortDate)}
-              </span>
-            </div>
-          )}
-          {sprint.plannedCompletedAt && (
-            <div>
-              Planned end:{" "}
-              <span style={{ fontWeight: 500 }}>
-                {dateFormat(sprint.plannedCompletedAt, FormatDate.ShortDate)}
-              </span>
-            </div>
-          )}
-          {sprint.goal && (
-            <div>
-              Goal: <span style={{ fontWeight: 500 }}>{sprint.goal}</span>
-            </div>
-          )}
+          <Heading as="h3" size="base">
+            {title}
+          </Heading>
+          <When condition={!!sprint}>
+            <Badge size="small" variant={getSprintStatusVariant(sprint?.status)}>
+              {sprint?.status.toUpperCase()}
+            </Badge>
+          </When>
+          <When condition={!!description}>
+            <Text as="span" intent="gray" size="xs">
+              {description}
+            </Text>
+          </When>
         </div>
-      )}
 
-      <div
-        style={{
-          fontSize: "0.875rem",
-          color: "#666",
-          marginTop: "0.75rem",
-          paddingTop: "0.75rem",
-          borderTop: "1px solid #ddd",
-          display: "flex",
-          gap: "1.5rem",
-        }}
-      >
-        <div>
-          {ticketCount} ticket{ticketCount !== 1 ? "s" : ""}
-        </div>
-        <div>
-          {totalStoryPoints} story point{totalStoryPoints !== 1 ? "s" : ""}
+        {/* Right: Story Points Badge + Action Buttons */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "1rem",
+            flexShrink: 0,
+            padding: "0.5rem 1rem",
+          }}
+        >
+          <Badge variant="info" size="small" shape="pill">
+            {totalStoryPoints}
+          </Badge>
+          <ButtonGroup>
+            <When condition={onCreateTicket}>
+              <Button onClick={onCreateTicket} variant="outline" size="small">
+                Create Ticket
+              </Button>
+            </When>
+            <When condition={[sprint?.status === "planned", onStartSprint]}>
+              <Button onClick={onStartSprint} variant="outline" size="small">
+                Start Sprint
+              </Button>
+            </When>
+            <When condition={[sprint?.status === "active", onCompleteSprint]}>
+              <Button onClick={onCompleteSprint} variant="outline" size="small">
+                Complete Sprint
+              </Button>
+            </When>
+          </ButtonGroup>
         </div>
       </div>
     </div>

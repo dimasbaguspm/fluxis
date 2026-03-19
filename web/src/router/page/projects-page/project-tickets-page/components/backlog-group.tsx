@@ -55,7 +55,10 @@ export const BacklogGroup = ({
     <div
       ref={dropRef}
       style={{
-        marginBottom: "2rem",
+        border: "1px solid #e0e0e0",
+        borderRadius: "6px",
+        marginBottom: "1.5rem",
+        overflow: "hidden",
         opacity: isDragOver ? 0.8 : 1,
         transition: "opacity 0.2s",
         backgroundColor: isDragOver ? "#f5f5f5" : "transparent",
@@ -64,9 +67,8 @@ export const BacklogGroup = ({
       <TicketGroupHeader
         title="Backlog"
         description="Tickets not assigned to any sprint"
-        ticketCount={ticketsList.length}
         totalStoryPoints={totalStoryPoints}
-        actions={onCreateTicket ? [{ label: "Create Ticket", onClick: onCreateTicket }] : undefined}
+        onCreateTicket={() => onCreateTicket?.()}
       />
       {error ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "#d32f2f" }}>

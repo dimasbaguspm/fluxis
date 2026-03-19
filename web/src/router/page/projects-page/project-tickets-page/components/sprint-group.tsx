@@ -8,17 +8,21 @@ import { TicketsTable } from "./tickets-table";
 interface SprintGroupProps {
   sprint: DomainSprintModel;
   onEditTicket: (ticketId: string) => void;
+  onEditSprint?: (sprintId: string) => void;
   onMoveTicket?: (ticketId: string, targetSprintId: string | null) => void;
   onCreateTicket?: (sprintId?: string) => void;
   onStartSprint?: (sprintId: string) => void;
+  onCompleteSprint?: (sprintId: string) => void;
 }
 
 export const SprintGroup = ({
   sprint,
   onEditTicket,
+  onEditSprint,
   onMoveTicket,
   onCreateTicket,
   onStartSprint,
+  onCompleteSprint,
 }: SprintGroupProps) => {
   const [tickets, error, { isLoading }] = useListTickets({
     projectId: [sprint.projectId],
@@ -56,29 +60,26 @@ export const SprintGroup = ({
     <div
       ref={dropRef}
       style={{
-        marginBottom: "2rem",
+        border: "1px solid var(--color-border)",
+        marginBottom: "1rem",
+        overflow: "hidden",
+        ...(sprint.status === "active" && {
+          borderLeft: "3px solid var(--color-primary, #1976d2)",
+        }),
         opacity: isDragOver ? 0.8 : 1,
         transition: "opacity 0.2s",
-        backgroundColor: isDragOver ? "#f5f5f5" : "transparent",
+        backgroundColor: isDragOver ? "#f5f5f5" : "var(--color-background)",
       }}
     >
       <TicketGroupHeader
         title={sprint.name}
-        ticketCount={ticketsList.length}
+        description={sprint.goal}
         totalStoryPoints={totalStoryPoints}
         sprint={sprint}
-        actions={
-          onCreateTicket || (onStartSprint && sprint.status !== "active")
-            ? [
-                ...(onCreateTicket
-                  ? [{ label: "Create Ticket", onClick: () => onCreateTicket(sprint.id) }]
-                  : []),
-                ...(onStartSprint && sprint.status !== "active"
-                  ? [{ label: "Start Sprint", onClick: () => onStartSprint(sprint.id) }]
-                  : []),
-              ]
-            : undefined
-        }
+        onCreateTicket={onCreateTicket ? () => onCreateTicket(sprint.id) : undefined}
+        onEditSprint={onEditSprint ? () => onEditSprint(sprint.id) : undefined}
+        onStartSprint={onStartSprint ? () => onStartSprint(sprint.id) : undefined}
+        onCompleteSprint={onCompleteSprint ? () => onCompleteSprint(sprint.id) : undefined}
       />
       {error ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "#d32f2f" }}>
